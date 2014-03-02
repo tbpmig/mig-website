@@ -2,3 +2,8 @@
 *.pot
 *.pyc
 local_settings.py
+archive_files/
+_static/
+migweb/media/
+gcal/calendar.dat
+gcal/client_secrets.json
