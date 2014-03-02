@@ -1,0 +1,33 @@
+{% extends "history/base_history.html" %}
+{% load staticfiles %}
+{% block subnavCornerstone %}{% if page_title == 'The Cornerstone' %}active{% endif %}{% endblock %} 
+{% block subnavAlumniNews %}{% if page_title == 'Alumni Newsletter' %}active{% endif %}{% endblock %} 
+
+{% block content %}
+<div class="row-fluid">
+    <div class="span12">
+<h3>{{page_title}}</h3>
+{% if post_button %}
+<p><a href={% url 'history:upload_article' %}>Upload Edition of &quot;{{page_title}}&quot;</a></p>
+{% endif %}
+    </div>
+</div>
+    {% if articles %}
+    {% regroup articles|dictsortreversed:"volume_number" by volume_number as articles_by_volume %}
+    {% for volume in articles_by_volume %}
+        {% if forloop.counter0|divisibleby:"6" %}
+        <div class="row-fluid">
+        {% endif %}
+        <div class="span2">
+            <h5>Volume {{volume.grouper}}</h5>
+            {% for edition in volume.list|dictsort:"edition_number" %}
+                <p><a href="{{edition.pdf_file.url}}">{{edition.name}}</a></p>
+            {% endfor %}
+        </div>
+        {% if forloop.counter|divisibleby:"6" or forloop.last%}
+        <hr>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+{% endblock content %}

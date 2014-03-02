@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block navPublications %}active{% endblock %}
+{% block subnav %}
+<li class="{% block subnavChapterNews %}{% endblock %}"><a href="{% url 'history:index' %}">Chapter News</a></li>
+<li class="{% block subnavCornerstone %}{% endblock %}"><a href="{% url 'history:cornerstone_view' %}">The Cornerstone</a></li>
+<li class="{% block subnavAlumniNews %}{% endblock %}"><a href="{% url 'history:alumninews_view' %}">Alumni Newsletters</a></li>
+{% endblock %}

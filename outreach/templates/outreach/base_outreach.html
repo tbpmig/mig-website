@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block navOutreach %}active{% endblock %}
+{% block subnav %}
+<li class="{% block subnavOverview %}{% endblock %}"><a href="{% url 'outreach:index' %}">Overview</a></li>
+<li class="{% block subnavMindSET %}{% endblock %}"><a href="{% url 'outreach:mindset' %}">MindSET</a></li>
+<li class="{% block subnavTutoring %}{% endblock %}"><a href="{% url 'outreach:tutoring' %}">Tutoring</a></li>
+<li class="{% block subnavTownhalls %}{% endblock %}"><a href="{% url 'outreach:townhalls' %}">Town Halls</a></li>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% if error_message and form.visible_fields|length > 10 %}
+    <p class="text-error">Errors</p>
+    {% for field in form %}
+        {% if field.errors %}
+            <p class="text-error">{{ field.label_tag }}</p>
+            <ul>    
+                {% for error in field.errors %}
+                    <li class="text-error">{{error|escape }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endfor %}
+{% endif %}
+{% if form.non_field_errors %}
+    <p class="text-error">{{form.non_field_errors}}</p>
+{% endif %}
+<table class="table-striped table-bordered">
+    <tbody>
+{% for field in form.visible_fields %}
+<tr>
+    <td>
+    {% if forloop.first %}
+        {% for hidden in form.hidden_fields %}
+            {{hidden}}
+        {% endfor %}
+    {% endif %}
+    {% if field.field.required %}
+        <span class="required">* {{field.label|capfirst}}:</span>
+    {% else %}
+        {{field.label|capfirst}}
+    {% endif %}
+    </td>
+    <td>
+        {{field}}
+    {% if error_message %}
+    </td>
+    <td>
+    {% endif %}
+    {% if field.errors|length > 1 %}
+        <ul>    
+            {% for error in field.errors %}
+                <li class="text-error">{{error|escape }}</li>
+            {% endfor %}
+        </ul>
+    {% elif field.errors|length == 1 %}
+        {% for error in field.errors %}<p class="text-error" style="display:inline;">{{error}}</p>{% endfor %}
+    {% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>

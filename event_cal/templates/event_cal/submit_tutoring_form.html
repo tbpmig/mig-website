@@ -1,0 +1,19 @@
+{% extends "event_cal/base_event_cal.html" %}
+{% load staticfiles %}
+{% block subnavTutoring %}active{% endblock %} 
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/datepicker.css' %}" />
+{% endblock css %}
+{% block js %}
+<script src="{% static 'js/bootstrap-datepicker.js' %}"></script>
+{% include 'datepicker.html' %}
+{% endblock js %}
+{% block cal_content %}
+<h3>Submit Tutoring Form</h3>
+<form action="{% url 'event_cal:submit_tutoring_form' %}" method="post">{% csrf_token %}
+    {% include 'form_template.html' %}
+    <input type="submit" value="Submit Tutoring Form" name = "submit"/>
+</form>
+<p> By submitting this form you attest that the student named was tutored for the claimed number of hours</p>
+{% endblock cal_content %}

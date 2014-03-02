@@ -1,0 +1,42 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+{% load member_resources_extras %}
+{% block subnavManageMembership %}active{% endblock %} 
+{% block content %}
+<div class="row-fluid">
+    <div class="span6">
+        <a class="btn" href="{% url 'member_resources:manage_membership' %}"><i class="icon-chevron-left"></i> Back to Membership Management</a>
+        <h4>Add/Remove Members as Officers for {{term}}</h4>
+<form enctype="multipart/form-data" method="post" action="{% url 'member_resources:manage_officers'  term.id%}">
+    {% csrf_token %}
+    {{ formset.management_form }}
+    <table class="table table-striped">
+        {% for form in formset %}
+            {% if forloop.first %}
+                <thead><tr>
+                {% for field in form.visible_fields %}
+                    <th>{{ field.label|capfirst }}</th>
+                {% endfor %}
+                </tr></thead>
+            {% endif %}
+            <tr>
+                {% for field in form.visible_fields %}
+                    <td>
+                        {% if forloop.first %}
+                            {% for hidden in form.hidden_fields %}
+                            {{ hidden }}
+                            {% endfor %}
+                        {% endif %}
+                        {{ field.errors.as_ul }}
+                        {{field}}
+                    </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+    <input type="submit" value="Add another Officer" name="add"/>
+    <input type="submit" value="Update Officers" name = "submit"/>
+</form>
+    </div>
+</div>
+{% endblock content %}

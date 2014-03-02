@@ -1,0 +1,61 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="row-fluid">
+    <div class="span6">
+        <h3>Requirement Management</h3>
+        <p>This page is for managing members' progress toward requirements (paperwork, dues, electee exams, etc.) and also for updating the requirements themselves</p>
+        <p>The items you have permission to manage are listed below.</p>
+        {% if can_change_requirements %}
+        <h4>Update/Change Requirements</h4>
+        <ul>
+            {% if can_change_active_reqs %}
+            <li><a href="{% url 'member_resources:change_event_categories' %}">Change Event Categories</a></li>
+            {% for distinction in active_distinctions %}
+            <li><a href="{% url 'member_resources:change_requirements' distinction.id %}">Update {{distinction.name}} Requirements</a></li>
+            {% endfor %}
+        {% endif %}
+        {% if can_change_ugrad_electee_reqs %}
+            {% for distinction in ugrad_electee_distinctions %}
+            <li><a href="{% url 'member_resources:change_requirements' distinction.id %}">Update {{distinction.name}} Requirements</a></li>
+            {% endfor %}
+        {% endif %}
+        {% if can_change_grad_electee_reqs %}
+            {% for distinction in grad_electee_distinctions %}
+            <li><a href="{% url 'member_resources:change_requirements' distinction.id %}">Update {{distinction.name}} Requirements</a></li>
+            {% endfor %}
+        {% endif %}
+        </ul>
+        {% endif %}
+        {% if can_manage_misc_reqs %}
+        <h4>Manage Members' Progress toward Requirements</h4>
+        <ul>
+        {% if can_add_leadership_credit %}
+            <li><a href="{% url 'member_resources:add_leadership_credit' %}">Add Leadership Credits</a></li>
+        {% endif %}
+        {% if can_manage_finances %}
+            <li><a href="{% url 'member_resources:manage_dues' %}">Manage Dues Payment</a></li>
+        {% endif %}
+        {% if can_approve_tutoring %}
+            <li><a href="{% url 'member_resources:approve_tutoring_forms' %}">Approve Tutoring Forms</a></li>
+        {% endif %}
+        {% if can_add_external_service %}
+            <li><a href="{% url 'member_resources:add_external_service' %}">Add External Service Hours</a></li>
+        {% endif %}
+        {% if can_manage_ugrad_paperwork %}
+            <li><a href="{% url 'member_resources:manage_ugrad_paperwork' %}">Manage Undergrad Electee Paperwork</a></li>
+        {% endif %}
+        {% if can_manage_grad_paperwork %}
+            <li><a href="{% url 'member_resources:manage_grad_paperwork' %}">Manage Grad Electee Paperwork</a></li>
+        {% endif %}
+        {% if can_manage_interviews %}
+            <li><a href="{% url 'member_resources:manage_interview_credit' %}">Manage Active's Interview Credit</a></li>
+            <li><a href="{% url 'member_resources:manage_active_group_meetings' %}">Manage Active's Group Meeting Attendance</a></li>
+        {% endif %}
+        </ul>
+        <hr>
+        {% endif %}
+    </div>
+</div>
+{% endblock content %}

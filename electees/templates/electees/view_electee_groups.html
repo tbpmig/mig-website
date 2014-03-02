@@ -1,0 +1,76 @@
+{% extends "electees/base_electees.html" %}
+
+{% block content %}
+<div class="row-fluid">
+    <div class="span4">
+        {% if can_edit_resources %}
+            <a href="{% url 'electees:edit_electee_resources' %}" class="btn">Edit Electee Resources</a>
+        {% endif %}
+        <h3>Electee Resources</h3>
+        <h4>Full Packets</h4>
+    {% regroup packets|dictsort:"resource_type.id" by resource_type as packets_by_type %}
+    {% for resource_type in packets_by_type %}
+        <h5>{{resource_type.grouper}}</h5>
+        {% for resource in resource_type.list|dictsort:"id"  %}
+        <p><a href="{{resource.resource_file.url}}">{{resource}}{% if resource_type.list|length > 1 %} -{{ forloop.counter }}{% endif %}</a></p>
+        {% endfor %}
+        {% endfor %}
+        <hr>
+        <h4>Packet Items</h4>
+    {% regroup resources|dictsort:"resource_type.id" by resource_type as resources_by_type %}
+    {% for resource_type in resources_by_type %}
+        <h5>{{resource_type.grouper}}</h5>
+        {% for resource in resource_type.list|dictsort:"id"  %}
+        <p><a href="{{resource.resource_file.url}}">{{resource}}{% if resource_type.list|length > 1 %} -{{ forloop.counter }}{% endif %}</a></p>
+        {% endfor %}
+    {% endfor %}
+    </div>
+    {% if groups|length > 0 %}
+    <div class="span4">
+        <h3>Electee Groups</h3>
+        {% for group in groups|dictsort:"group_name" %}
+        <div>
+            <h4>{{group.group_name}}</h4>
+            <p>Group Leaders</p>
+            <ul>
+            {% for leader in group.leaders.all %}
+                <li><a href="{% url 'member_resources:profile' leader.uniqname %}">{{leader.get_full_name}}</a></li>
+            {% endfor %}
+            </ul>
+            <p>Group Members</p>
+            <ul>
+            {% for member in group.members.all %}
+                <li><a href="{% url 'member_resources:profile' member.uniqname %}">{{member.get_full_name}}</a></li>
+            {% endfor %}
+            </ul>
+        </div>
+        <hr/>
+        {% endfor %}
+    </div>
+    <div class="span4">
+        <h4>Electee Competition Standings</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Team</th>
+                    <th>Points</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% regroup groups|dictsortreversed:"points" by points as groups_by_points %}
+            {% for groups in groups_by_points %}
+                {% for group in groups.list %}
+                    <tr>
+                        <td>{% if groups.list|length > 1 %}T{% endif %}{{group.get_ranking}}</td>
+                        <td>{{group.group_name}}</td>
+                        <td>{{groups.grouper}}</td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock content %}

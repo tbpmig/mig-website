@@ -1,0 +1,20 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="row-fluid">
+    <div class-"span12">
+{% if can_manage_electees %}
+    <p>Click <a href="{% url 'member_resources:view_progress_table' %}">here</a> for a table summarizing electee progress</p>
+{% endif %}
+{% if can_manage_actives %}
+    <p>Click <a href="{% url 'member_resources:view_progress_table' %}">here</a> for a table summarizing active's progress</p>
+{% endif %}
+<ul style="list-style-type:none;">
+    {% for profile in progress_profiles %}
+        <li><a href="{% url 'member_resources:view_progress' profile.uniqname %}">{{profile}}</a></li>
+    {% endfor %}
+</ul>
+</div>
+</div>
+{% endblock content %}

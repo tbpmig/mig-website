@@ -1,0 +1,24 @@
+{% extends "electees/base_electees.html" %}
+
+{% block content %}
+<div class="row-fluid">
+    <div class="span6">
+        <h4>Educational Background Form</h4>
+        <p>What is the degree type (M.S.E.,Ph.D.,etc.) of the degree you are currently pursuing?</p>
+<form enctype='multipart/form-data' method="post" action="{% url 'electees:submit_background_form' %}">
+    {% csrf_token %}
+    {% include 'form_template.html' %}
+    {{ formset.management_form }}
+    <h4>Previous Educational Institutions/Degrees</h4>
+    <p>Please include all prior degrees.</p>
+    <p>For the start and end dates, accurate to the nearest month is fine.</p>
+    <table class="table table-striped table-bordered">
+        {% include 'formset_template.html' %}
+    </table>
+    <p><a class="btn add-row"  href="javascript:void(0)"/>Add Degree</a></p>
+    <input type="submit" value="Submit Form" name = "submit"/>
+</form>
+<p>If you have any questions please email <a href='mailto:tbp.gradcoordinator@umich.edu'>tbp.gradcoordinator@umich.edu</a></p>
+    </div>
+</div>
+{% endblock content %}

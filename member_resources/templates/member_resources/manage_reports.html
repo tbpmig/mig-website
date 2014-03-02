@@ -1,0 +1,21 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="row-fluid">
+    <div class="span6">
+        <h3>History/Report Management</h3>
+        <p>This page is for managing/viewing history/reports.</p>
+        <p>The items you have permission to manage are listed below.</p>
+        <ul>
+        {% if can_view_feedback %}
+            <li><a href="{% url 'member_resources:view_meeting_feedback' %}">View Meeting Feedback</a></li>
+        {% endif %}
+        {% if can_access_project_reports %}
+            <li><a href="{% url 'member_resources:project_reports_list' %}">View Project Reports</a></li>
+        {% endif %}
+            <li><a href="{% url 'member_resources:main_meeting_minutes' %}">View Meeting Minutes</a></li>
+        </ul>
+    </div>
+</div>
+{% endblock content %}

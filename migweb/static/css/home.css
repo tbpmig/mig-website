@@ -1,0 +1,25 @@
+#homeSlideshow {
+	float:left;
+}
+#news-list {
+	margin-left:51em;
+    list-style:none;
+}
+#news-list a:link {
+	text-decoration:none;
+	color:#333333;
+}
+@media (max-width:1400px){
+	#news-list  {
+		margin-left:0;
+	}
+	#homeSlideshow {
+		float:none;
+	}
+	.row-fluid {
+		width: 979px;
+		margin-left:auto;
+		margin-right:auto;
+	}
+}
+

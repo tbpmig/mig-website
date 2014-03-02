@@ -1,0 +1,17 @@
+{% extends "corporate/base_corporate.html" %}
+{% block subnavOverview %}active{% endblock %} 
+{% block content %}
+<div class="row-fluid">
+    <div class="span6">
+        <a class="btn" href="{% url 'corporate:index' %}"><i class="icon-chevron-left"></i> Back to Corporate Page</a>
+        <h4>Update Corporate Resource Guide</h4>
+<form enctype="multipart/form-data" method="post" action="{% url 'corporate:update_resource_guide' %}">
+    {% csrf_token %}
+    <table class="table table-striped table-bordered">
+        {% include 'form_template.html' %}
+    </table>
+    <input type="submit" value="Update Corporate Resource Guide" name = "submit"/>
+</form>
+    </div>
+</div>
+{% endblock content %}

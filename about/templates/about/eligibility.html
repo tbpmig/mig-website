@@ -1,0 +1,51 @@
+{% extends "about/base_about.html" %}
+{% load staticfiles %}
+{% load my_markdown %}
+{% block subnavEligibility %}active{% endblock %} 
+{% block content %}
+{% if can_edit_page %}
+        <p><a class="btn" href="{% url 'about:update_joining_page' %}">Update Joining Page Text</a></p>
+{% endif %}
+<div class="row-fluid">
+	<div class="span2">
+		<aside>
+            <h3> Eligibility Requirements</h3>
+            {% for elig in eligibility_text %}
+            {{elig.text|my_markdown}}
+            {% endfor %}
+		</aside>
+    </div>
+	<div class ="span8">
+    <div id="joiningSlideshow" class="carousel slide" data-interval=10000>
+        <ol class="carousel-indicators">
+            <li data-target="#joiningSlideshow" data-slide-to="0" class="active"></li>
+        </ol>
+        <div class="carousel-inner">
+            <div class="item active">
+                <img src="{% static 'electee_trophy.jpg' %}" alt="Electee Trophy" />
+                
+                <div class="carousel-caption">
+                    <h4>New Initiate Competition</h4>
+                    <p class="text-justify">Each semester, teams of electees (people in the process of joining) participate in a semester-long competition. The victors get to hold on to the trophy among other prizes.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+			<h2>Why Join TBP</h2>
+            {% for why in why_join_text %}
+            {{why.text|my_markdown}}
+            {% endfor %}
+	</div>
+	<div class="span2">
+		<aside>
+            <h3>Requirements to Join</h3>
+            {% for ugrad in ugrad_text %}
+            {{ugrad.text|my_markdown}}
+            {% endfor %}
+            {% for grad in grad_text %}
+            {{grad.text|my_markdown}}
+            {% endfor %}
+		</aside>
+	</div>
+</div>
+{% endblock content %}

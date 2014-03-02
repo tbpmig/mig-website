@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load my_markdown %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/home.css' %}" />
+{% endblock %}
+
+{% block content %}
+{% if current_meetings %}
+{% for current_meeting in current_meetings %}
+<div class="alert alert-info">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <div class="text-center"><a href="{% url 'event_cal:event_detail' current_meeting.id %}"><strong>{{current_meeting.name}}</strong></a> is going on. {% if user.is_authenticated %}{% if user.userprofile and user.userprofile.is_member %}{% for shift in current_meeting.eventshift_set.all %}Click <a href="{% url 'event_cal:meeting_sign_in' current_meeting.id shift.id %}">here</a> to sign in.{%endfor%} {% else %}You must make a profile to sign in.{% endif %}{% else %}You
+        must <a href="{% url 'login_view' %}?next={{request.path}}">log in</a> to sign-in{% endif %}</div>
+</div>
+{% endfor %}
+{% endif %}
+<div class="row-fluid">
+<div class="span9">
+    <article>
+    {% if slideshow_photos %}
+    <div id="homeSlideshow" class="carousel slide" data-interval="10000">
+        <ol class="carousel-indicators">
+        {% for slide in slideshow_photos %}
+            <li data-target="#homeSlideshow" data-slide-to="{{forloop.counter0}}" {%if forloop.first %}class="active"{%endif %}></li>
+        {% endfor %}
+        </ol>
+        <div class="carousel-inner">
+            {% for slide in slideshow_photos %}
+            <div class="item {%if forloop.first%}active{%endif%}">
+                <a href="{{slide.link}}" title="{{slide.title}}">
+                    <img src="{% static slide.photo.thumbnail.url %}" alt="{{slide.title}}" />
+                
+                <div class="carousel-caption">
+                    <h4>{{slide.title}}</h4>
+                    <p class="text-justify">{{slide.text}}</p>
+                </div>
+            </a>
+            </div>
+            {% endfor %}
+        </div>
+    {% if slideshow_photos|length > 1 %}
+	<a class="left carousel-control" href="#homeSlideshow" data-slide="prev">&lsaquo;</a>
+    <a class="right carousel-control" href="#homeSlideshow" data-slide="next">&rsaquo;</a>
+    {% endif %}
+    </div>
+    {% endif %}
+
+{% if web_articles %}
+<h1 id="news-header">Recent Chapter News</h1>
+<ul id="news-list">
+{% for news_article in web_articles %}
+<li>
+<a href="{% url 'history:article_view' news_article.id %}"><h2>{{news_article.title}}</h2></a>
+<p>{{news_article.body|my_markdown}} 
+</p>
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+</article>
+</div>
+<!--Left Column-->
+<div class="span3">
+    {% if quick_links %}
+        <aside>
+        <h3>Quick Links</h3>
+        {% for link in quick_links %}
+        <p><a href="{{ link.link }}">{{link.link_name}}</a></p>
+        {% endfor %}
+        </aside>
+    {% endif %}
+<aside>
+{% if upcoming_events %}
+<h1>Upcoming Events</h1>
+<ul id="event-list">
+{% for event in upcoming_events %}
+<li>
+<a href="{% url 'event_cal:event_detail' event.id %}"><h2 id="event-name">{{event.name}}</h2></a>
+	<p id="event-description">{{event.announce_text|my_markdown}}</p>
+	{% if event.eventshift_set.all|length > 1%}
+	<p>Shifts:<p>
+	{% endif %}
+	{% for shift in event.eventshift_set.all|dictsort:"start_time" %}
+		{% if shift.start_time > current_time %}
+			{% if event.eventshift_set.all|length > 1%}
+				<div id="event-shift">
+			{% endif %}
+			<p id="event-when"><b>When:</b> {{shift.start_date}}, {{shift.start_time}}&ndash;
+			{% if shift.start_date != shift.end_date %}
+				{{shift.end_date}},
+			{% endif %}
+			{{shift.end_time}}
+			</p>
+			<p id="event-where"><b>Where:</b> {{shift.location}}</p>
+            {% if event.eventshift_set.all|length > 1%}
+                <hr/>
+				</div>
+			{% endif %}
+		{% endif %}
+	{% endfor %}
+	
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+</aside>
+</div>
+</div>
+
+{% endblock %}
+{% block js_bottom %}
+<script>
+	$(document).ready(function() {
+		$('.carousel').carousel({
+	interval: 8000
+    })
+    });
+</script>
+{% endblock %}

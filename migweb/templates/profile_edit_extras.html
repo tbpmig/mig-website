@@ -1,0 +1,41 @@
+<script>
+    $(function() {
+        console.log('thing');
+        var standing = document.getElementById("id_standing");
+        var val = standing.options[standing.selectedIndex].value;
+        var mail_freq = $("#id_alum_mail_freq"); 
+        var job_field = $("#id_job_field"); 
+        var employer = $("#id_employer");
+        var meeting_speak = $("#id_meeting_speak");
+        console.log(mail_freq)
+        if(val =="3"){
+        }
+        else{
+            mail_freq.parent().parent().hide();
+            job_field.parent().parent().hide();
+            employer.parent().parent().hide();
+            meeting_speak.parent().parent().hide();
+        }
+        standing.onchange = function(){
+            var val = this.options[this.selectedIndex].value;
+            var mail_freq = $("#id_alum_mail_freq"); 
+            var job_field = $("#id_job_field"); 
+            var employer = $("#id_employer");
+            var meeting_speak = $("#id_meeting_speak");
+            if(val =="3"){
+                mail_freq.parent().parent().show();
+                job_field.parent().parent().show();
+                employer.parent().parent().show();
+                meeting_speak.parent().parent().show();
+            }
+            else{
+                mail_freq.parent().parent().hide();
+                job_field.parent().parent().hide();
+                employer.parent().parent().hide();
+                meeting_speak.parent().parent().hide();
+            }
+        };
+    });
+    $("#id_expect_grad_date").attr("data-date-viewmode","months");
+    $("#id_expect_grad_date").attr("data-date-minviewmode","months");
+</script>

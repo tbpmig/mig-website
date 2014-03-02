@@ -1,0 +1,124 @@
+{% extends "electees/base_electees.html" %}
+{% load static %}
+{% block subnavEditMembership %}active{%endblock%}
+{% block content %}
+<div class="row-fluid">
+    <div class="span6">
+        <h4>Update Electee Group Membership </h4>
+        <p>Click and drag electees into the desired group and click save to update.</p>
+            <h5>Unassigned Electees</h5>
+        <div class="DragContainer" id="AllElectees" overclass="OverDragContainer">
+            {% for electee in unassigned_electees %}
+            <div class="DragBox" id="{{electee.uniqname}}" overclass="OverDragBox" dragclass="DragDragBox">{{electee}}, {% for major in electee.major.all %}{{major.acronym}} {%endfor %}, {{electee.standing}}</div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="span6">
+        {% for group in electee_groups %}
+        <div>
+            <h5>{{group.group_name}}</h5>
+            <div class="DragContainer" id="DragContainer{{group.id}}" overclass="OverDragContainer">
+                {% for member in group.members.all %}
+                <div class="DragBox" id="{{member.uniqname}}" overclass="OverDragBox" dragclass="DragDragBox">{{member}},  {% for major in member.major.all %}{{major.acronym}} {%endfor %}, {{member.standing}}</div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<form action="{% url 'electees:edit_electee_group_membership' %}" method="post" name="electeeGroupMembership">
+    {% csrf_token %}
+    <p><input type="submit" value="Save Changes" name="submit" id="submitchanges" /></p>
+</form>
+{% endblock content %}
+
+{% block js %}
+<script src="{% static 'js/click_and_drag.js' %}"></script>
+<script type="text/javascript">
+window.onload = function(){
+	// Create our helper object that will show the item while dragging
+	dragHelper = document.createElement('DIV');
+	dragHelper.style.cssText = 'position:absolute;display:none;';
+    CreateDragContainer(
+            document.getElementById('AllElectees'),{% for group in electee_groups %}
+            document.getElementById('DragContainer{{group.id}}'){% if not forloop.last %},{% endif %}{% endfor %}
+	);
+	document.body.appendChild(dragHelper);
+}
+</script>
+<script>
+    function addHidden(theForm,key,value){
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        theForm.appendChild(input);
+    }
+</script>
+{% endblock js %}
+{% block js_bottom %}
+<script type="text/javascript">
+    function get_nextsibling(n)
+    {
+        x = n.nextSibling;
+        while (x.nodeType!=1)
+        {
+            x=x.nextSibling;
+        }
+        return x
+    }
+    var theForm = document.forms['electeeGroupMembership'];
+    $("#submitchanges").click(function(){
+            var datas = {};
+            var group_array = [];
+            var group_container;
+            var electees;
+            {% for group in electee_groups %}
+            group_array = [];
+            group_container = document.getElementById('DragContainer{{group.id}}');
+            electees = group_container.childNodes;
+            electee = group_container.firstChild;
+            do{
+                if (electee.nodeType == 1){
+                    group_array.push(electee.getAttribute('id'));
+                }
+            }while(electee = electee.nextSibling)
+            datas[{{group.id}}]=group_array;
+            {% endfor %}
+            addHidden(theForm,'electee_groups',JSON.stringify(datas));
+            });
+</script>
+{% endblock %}
+{% block css %}
+<style type="text/css">
+    <!--
+    .DragContainer, .OverDragContainer {
+
+        margin: 3px;
+        min-width:100px;
+        min-height:100px;
+        border: #669999 2px solid;
+        padding: 5px;
+    }
+    .DragBox, .OverDragBox, .DragDragBox, .miniDragBox {
+        border: #000 1px solid;
+        padding: 2px;
+        min-width:94px;
+        min-height:10px;
+        cursor:pointer;
+        background-color:#eee;
+        margin-bottom:5px;
+    }
+    .OverDragContainer {
+        background-color:#eee;
+    }
+    .OverDragBox, .DragDragBox {
+        background-color:#ffff99;
+    }
+    .DragDragBox {
+        filter: alpha(opacity=50);
+        background-color:#ff99cc;
+    }
+    -->
+</style>
+{% endblock %}

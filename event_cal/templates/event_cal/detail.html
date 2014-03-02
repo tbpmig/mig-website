@@ -1,0 +1,35 @@
+{% extends "event_cal/base_event_cal.html" %}
+{% load staticfiles %}
+{% block subnavEventList %}active{% endblock %} 
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/datepicker.css' %}" />
+{% endblock css %}
+{% block js %}
+<script src="{% static 'js/bootstrap-datepicker.js' %}"></script>
+{% include 'datepicker.html' %}
+{% endblock js %}
+{% block cal_content %}
+{% if not edit %}
+    {% with full_view=True %}
+        {% include 'event_cal/event.html' %}
+    {% endwith %}
+    {% if can_add_sign_in %}
+        <a class="btn btn-large" href={% url 'event_cal:create_meeting_signin' event.id %}>Add meeting sign-in</a>
+    {% endif %}
+    {% if can_complete %}
+        <a class="btn btn-large" href="{% url 'event_cal:complete_event' event.id %}">Complete Event and Assign Hours</a>
+    {% endif %}
+    {% if event.completed %}
+    <a class="btn btn-large" href="{% url 'event_cal:project_report' %}">Add/Update Project Report</a>
+    <a class="btn btn-large" href="{% url 'event_cal:update_completed_event' event.id %}">Update Event Progress</a>
+    <a class="btn btn-large" href="{% url 'event_cal:add_project_report_to_event' event.id %}">Add/Swap Existing Project Report</a>
+    {% endif %}
+{% else %}
+<h3>{{event.name}}</h3>
+<form action="{% url 'event_cal:edit_event' event.id %}" method="post">{% csrf_token %}
+    {% include 'event_cal/event_form.html' %}
+</form>
+{% endif %}
+
+{% endblock cal_content %}

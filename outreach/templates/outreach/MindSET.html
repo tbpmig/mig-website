@@ -1,0 +1,199 @@
+{% extends "outreach/base_outreach.html" %}
+{% load staticfiles %}
+{% block subnavMindSET %}active{% endblock %} 
+
+{% block content %}
+<div class="row-fluid">
+    <div class="span9">
+        {% if can_edit_mindset %}
+        <div class="btn-group">
+            <a class="btn btn-info" href="{% url 'outreach:update_mindset_modules' %}">Update MindSET Module Materials</a>
+            <a class="btn btn-info" href="{% url 'outreach:update_mindset_photos' %}">Update MindSET Photos</a>
+        </div>
+        {% endif %}
+<div class="tabbable tabs-left">
+	<ul class="nav nav-tabs">
+        <li class="active"><a href="#general" data-toggle="tab">General</a></li>
+        <li><a href="#leadership" data-toggle="tab">Leadership</a></li>
+		<li><a href="#modules" data-toggle="tab">Modules</a></li>
+		<li><a href="#feedback" data-toggle="tab">Give Feedback</a></li>
+		<li><a href="#faq" data-toggle="tab">FAQs</a></li>
+	</ul>
+	<div class="tab-content">
+        <div class="tab-pane active" id="general">
+    {% if slideshow_photos %}
+    <div id="MindSETSlideshow" class="carousel slide" data-interval="10000">
+        <ol class="carousel-indicators">
+        {% for slide in slideshow_photos %}
+            <li data-target="#MindSETSlideshow" data-slide-to="{{forloop.counter0}}" {%if forloop.first %}class="active"{%endif %}></li>
+        {% endfor %}
+        </ol>
+        <div class="carousel-inner">
+            {% for slide in slideshow_photos %}
+            <div class="item {%if forloop.first%}active{%endif%}">
+                {% if slide.link %}
+                <a href="{{slide.link}}" title="{{slide.title}}">
+                {% endif %}
+                    <img src="{% static slide.photo.thumbnail.url %}" alt="{{slide.title}}" />
+                {% if slide.text %}
+                <div class="carousel-caption">
+                    {% if slide.title %}
+                    <h4>{{slide.title}}</h4>
+                    {% endif %}
+                    <p class="text-justify">{{slide.text}}</p>
+                </div>
+                {% endif %}
+                {% if slide.link %}
+            </a>
+            {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% if slideshow_photos|length > 1 %}
+	<a class="left carousel-control" href="#MindSETSlideshow" data-slide="prev">&lsaquo;</a>
+    <a class="right carousel-control" href="#MindSETSlideshow" data-slide="next">&rsaquo;</a>
+    {% endif %}
+    </div>
+    {% endif %}
+            <h3>Why is K-12 STEM education important?</h3>
+                    <p class="text-justify">Increasing access to, and improving the quality of science, technology, engineering, and mathematics (STEM) education have been widely reckoned as being one of the most important investments to ensure a promising future for our country's youth, as well as the country's leadership in innovation.  Labor statistics show that obtaining education in a STEM field is correlated with higher incomes and lower unemployment rates.  With jobs in STEM fields anticipated to grow at twice the rate of non-STEM jobs over the next few decades, there appears to be a market for students with STEM degrees in the foreseeable future.</p>
+                    <p class="text-justify">Concurrent to the promising growth in jobs, we are also faced by the challenges of high dropout rates, and very low proficiency rates among our school students.  In Michigan for instance, the mathematics and science proficiency rates among elementary and middle school students in 2012 were below 40% and 20% respectively.  A critical aspect of bridging the STEM achievement gap, thus, is engagement of students in science and mathematics from early stages of their education. The government, education institutions, corporations, and non-profits have invested several million dollars in K-12 STEM education initiatives, research, and teacher training. <p>
+                    <h3>What is MindSET?</h3>
+            <div class="text-center">
+                <img src="{{main_photo.photo.thumbnail.url}}" alt="{{main_photo.title}} image" style="max-width:50em;" />
+            </div>
+                    <p class="text-justify">MindSET is a STEM education initiative started by TBP.  It is an outreach program put on by a number of TBP chapters around the country, and is aimed at engaging K-12 students in science and mathematics through hands-on, design-based learning activities, and mentoring from current engineering undergraduate and graduate students.  The MindSET program at the TBP MI-Gamma chapter started in 2010.  Since then, we have partnered with half a dozen Ann Arbor and Ypsilanti schools to work with over a hundred students every year.<p>
+                    <p class="text-justify">The program is designed around learn-design-build-test modules.  Each semester, we do three to four modules. The modules cover topics in physics, chemistry, and mathematics, along with their engineering applications such as bridges, circuits, and water rockets.  The design-build activities involve groups of 4&ndash;5 school students working together with 2&ndash;3 college students.  This structure provides a fun-filled and creative learning experience for school students, and also creates opportunities for college students to share their experience with learning engineering.</p> 
+                    <p class="text-justify">MindSET modules are organized three to four times a semester on Saturday morning from 9:00 am to 12:00 pm. Each module is different in a given semester, but we may do the same module across semesters.</p>
+                </div>
+        <div class="tab-pane" id="leadership">
+                    <h3>K-12 Outreach Team</h3>
+                    <p class="text-justify">Our awesome K-12 outreach team leader{{current_officers|pluralize}} this semester {% if current_officers|length > 1 %} are {% for officer in current_officers %}{{officer.user.first_name}}{% if not forloop.last %} and {%endif%}{%endfor%}{%else%} is {%for officer in current_officers %}{{officer.user.first_name}}{%endfor%}{% endif %}! Please send an email to <a href="mailto:{{position.email}}">{{position.email}}</a> if you have any questions about MindSET, or suggestions about how we can improve our program.</p>
+							{% for officer in current_officers %}
+							{% if forloop.counter0|divisibleby:"4" %}
+							<div class="row-fluid">
+							{% endif %}
+                            <div class="span5 offset1" id="officer-profile">
+                                    {% with mindset_profile=officer.user.mindsetprofileadditions %}
+									<p><strong>{{officer.user.get_firstlast_name}}</strong></p>
+                                    <img  class="img-rounded" src="{{officer.website_photo.thumbnail.url}}"></img>
+                                    <p><strong>Favorite Ice Cream Flavor: </strong>{{mindset_profile.favorite_ice_cream}}</p>
+                                    <p><strong>Favorite City: </strong>{{mindset_profile.favorite_city}}</p>
+                                    <p><strong>Fun Fact About Me: </strong>{{mindset_profile.fun_fact}}</p>
+                                    {% endwith %}
+								</div>
+							{% if forloop.counter|divisibleby:"4" or forloop.last %}
+							</div>
+                            {% endif %}
+                            {% endfor %}
+                            <hr>
+                    <p>Over the years, we've had some pretty cool people lead our K-12 outreach efforts. Here's a list of these awesome people, and what they did for MindSET and fun facts about them!</p>
+							{% for officer in k_12_officers %}
+							{% if forloop.counter0|divisibleby:"4" %}
+							<div class="row-fluid">
+							{% endif %}
+								<div class="span4" id="officer-profile">
+									<p><strong>{{officer.user.get_firstlast_name}}</strong></p>
+									<img  class="img-rounded" src="{{officer.website_photo.thumbnail.url}}"></img>
+                                    {% with mindset_profile=officer.user.mindsetprofileadditions %}
+                                    <p class="text-justify">{{mindset_profile.mindset_bio}}</p>
+                                    {% endwith %}
+								</div>
+							{% if forloop.counter|divisibleby:"4" or forloop.last %}
+							</div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+		<div class="tab-pane" id="modules">
+                    <h3>Modules</h3>
+                    {% for module in modules %}
+                    <h4>{{module.title}}</h4>
+                    <p><strong>Concepts covered: </strong>{{module.concepts}}</p>
+                    <p>{% if module.presentation %}<a href="{{module.presentation.url}}">Presentation</a>{% if module.worksheet %} | {% endif %}{% endif %}{%if module.worksheet %}<a href="{{module.worksheet.url}}">Workshee</a>{%endif%}</p>
+                    <hr>
+                    {% endfor %}
+		</div>
+        <div class="tab-pane" id="feedback">
+            <h3>Feedback</h3>
+            <p>We would really like to hear from parents, teachers, students, and volunteers about how we're doing at MindSET. Please take a moment to provide us your valuable feedback using this form.</p>
+            <p><a href="">Form Coming Soon</a></p>
+        </div>
+        <div class="tab-pane" id="faq">
+            <h3>FAQs</h3>
+            <h4>How do I get my child enrolled in MindSET?</h4>
+            <p class="text-justify">The program is open to anyone who is interested in, and/or needs additional help with science or math. If your child is interested in participating in MindSET, please contact your child's class teacher or the school's MindSET teacher representative, and ask about filling out a MindSET permission slip.  If your school doesn't have a MindSET representative, please email us and we will work towards partnering with your school.</p>
+            <h4>How much does MindSET cost?</h4>
+            <p class="text-justify">MindSET is absolutely <em>free</em> for school students!  All the module costs are covered through TBP's funds.</p>
+            <h4>When and where is MindSET organized?</h4>
+            <p class="text-justify">MindSET modules are organized three to four times a semester on Saturday morning from 8:30 am to 12:00 pm on the University of Michigan's North Campus. Specific room numbers are conveyed to the schools at the beginning of each term.  </p>
+            <h4>How do I bring my child to the University of Michigan campus?</h4>
+            <p class="text-justify">Parents can drive their child to the specified North Campus location before 9:00 am, and sign them in at the desk manned by a student volunteer.  At the end of the module around noon, parents need to sign their child out, before driving him/her home. Some schools provide a school bus to pick-up and drop-off children from their own school. Please ask your school MindSET representative if the school provides bus service for MindSET.</p>
+            <h4>Where do I park?</h4>
+            <p class="text-justify">Since MindSET happens on Saturdays, parents can park for free in the areas shown in the map below.</p>
+            <img src="{{parking_photo.photo.thumbnail.url}}" alt="{{parking_photo.title}} image" style="max-width:50em;" />
+            <h4>Do I send my child with food and/or water?</h4>
+            <p class="text-justify">We provide the school children and our college student volunteers with light snacks and fruit juice at around 10:30 am during the module. There are also water fountains in the buildings in which we organize our modules. However, if you wish to send your child with snacks and water, you are welcome to do so. Additionally, if your child has any food allergies that we should be aware if, please be sure to mention them on the permission slips that you will fill out at the beginning of the term in order to sign up for MindSET.</p>
+            <h4>What if my child misses a Saturday session?</h4>
+            <p class="text-justify">We understand that attending all the sessions may not possible for students. We encourage attending as many as possible, but it is not mandatory to attend all of them.</p>
+        </div>
+	</div>
+</div>
+</div>
+<div class="span3">
+    <h3>Modules this Semester</h3>
+    <ul id="event-list">
+    {% for event in events %}
+    {% with can_edit_event=False %}
+        <li>
+        {% include 'event_cal/event.html' %}
+        </li>
+        {% endwith %}
+        {%empty %}
+        <li>
+        <p>We are still working on scheduling this semester's modules. Please check back soon for the {{term}} schedule.</p>
+        </li>
+        {% endfor %}
+    </ul>
+    {% if volunteer_files %}
+    <h4>Resources for Volunteers</h4>
+    {% for resource in volunteer_files %}
+    <a href="{{ resource.the_file.url }}"><strong>{{resource.name}}</strong></a>
+    <p>{{resource.description}}</p>
+    <hr>
+    {% endfor %}
+    {% endif %}
+</div>
+</div>
+
+{% endblock content %}
+
+{% block js %}
+<script>
+$(function() {
+//for bootstrap 3 use 'shown.bs.tab' instead of 'shown' in the next line
+    $('a[data-toggle="tab"]').on('shown', function (e) {
+        //save the latest tab; use cookies if you like 'em better:
+        sessionStorage.setItem('lastMindSETTab', $(this).attr('href'));
+    });
+    //go to the latest tab, if it exists:
+    var lastTab = sessionStorage.getItem('lastMindSETTab');
+    if (lastTab) {
+        $('a[href=' +lastTab+']').tab('show');
+    }
+    else
+    {                                                
+        // Set the first tab if cookie do not exist
+        $('a[data-toggle="tab"]:first').tab('show');
+    }
+});
+	$(document).ready(function() {
+		$('.carousel').carousel({
+	interval: false
+    })
+    $('.carousel').carousel(Math.floor((Math.random()*{{slideshow_photos|length}})));
+    setInterval(function() {
+        $('.carousel').carousel(Math.floor((Math.random()*{{slideshow_photos|length}})));
+        },6000);
+    });
+</script>
+{% endblock js %}

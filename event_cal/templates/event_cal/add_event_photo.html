@@ -1,0 +1,16 @@
+{% extends "event_cal/base_event_cal.html" %}
+{% load staticfiles %}
+{% block subnavAddEventPhoto %}active{% endblock %} 
+
+{% block cal_content %}
+<h3>Add Event Photo</h3>
+<p>You may optionally associate the photo with a particular event or project report</p>
+{% if error %}
+<p class="text-error">{{error}}</p>
+{% endif %}
+<form enctype="multipart/form-data" method="post" action="{% url 'event_cal:add_event_photo' %}">
+    {% csrf_token %}
+    {% include 'form_template.html' %}
+    <input type="submit" value="Add Photo" name = "submit"/>
+</form>
+{% endblock cal_content %}

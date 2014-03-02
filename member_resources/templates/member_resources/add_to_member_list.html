@@ -1,0 +1,51 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="row-fluid">
+    <div class="span6">
+        <a class="btn" href="{% url 'member_resources:manage_membership' %}"><i class="icon-chevron-left"></i> Back to Membership Management</a>
+        <h4>Current {{list_name}}</h4>
+        <p>These are the members who currently are listed as {{list_name|lower}}, will be able to log-in and (if they haven't done so already) create profiles</p>
+        <hr>
+        {% for  member in current_list %}
+        <p>{{member}}</p>
+        {% endfor %}
+    </div>
+    <div class="span6">
+        <form method="post" action="{{link}}">
+            {% csrf_token %}
+            <h4>Add New {{list_name}}</h4>
+        {% if error_lists.bad_uniqnames or error_lists.current_actives or error_list.current_electees %}
+        <p class="text-error">There were errors in processing the list of uniqnames</p>
+        {% if error_lists.bad_uniqnames %}
+        <p class="text-error">The following uniqnames are invalid:</p>
+        <ul class="text-error">
+        {% for error in error_lists.bad_uniqnames %}
+            <li>{{error}}</li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+        {% if error_lists.current_actives %}
+        <p class="text-error">The following uniqnames are listed as actives already:</p>
+        <ul class="text-error">
+        {% for error in error_lists.current_actives %}
+            <li>{{error}}</li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+        {% if error_lists.current_electees %}
+        <p class="text-error">The following uniqnames are listed as electees. {% if is_active_list %}If you wish to make them actives, please do so through the appropriate method (<a href="{% url 'member_resources:move_electees_to_active' %}">here</a>){% endif%}:</p>
+        <ul class="text-error">
+        {% for error in error_lists.current_electees %}
+            <li>{{error}}</li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+        {% endif %}
+    {{mass_form.as_p}}
+    <input type="submit" value="Add New {{list_name}}" name = "mass-add"/>
+</form>
+</div>
+</div>
+{% endblock content %}

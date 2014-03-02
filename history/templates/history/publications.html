@@ -1,0 +1,52 @@
+{% extends "history/base_history.html" %}
+{% load staticfiles %}
+{% load my_markdown %}
+{% block subnavChapterNews %}active{% endblock %} 
+
+{% block content %}
+{% if can_post %}
+<div class="accordion" id="newArticleAccordion">
+    <div class="accordion-group">
+        <div class = "accordion-heading">
+            <a class="accordion-toggle" data-toggle="collapse" data-parent="#newArticleAccordion" href="#collapseBody">
+                <h3>Post New Story</h3>
+            </a>
+        </div>
+        <div id="collapseBody" class="accordion-body collapse">
+            <div class="accordion-inner">
+                <form action="{% url 'history:index' %}" method="post">{% csrf_token %}
+                    {% include 'form_template.html' %}
+                    <input type="submit" value="Post Story"/>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% if web_articles %}
+<div class="tabbable tabs-left">
+	<ul class="nav nav-tabs">
+		{% for news_article in web_articles %}
+		<li class="{% if main_id == 0 and  forloop.counter == 1 or main_id == news_article.id %}active{% endif %}"><a href="{% url 'history:article_view' news_article.id %}">{{news_article.title}}</a></li>
+		{% endfor %}
+	</ul>
+	<div class="tab-content">
+		{% for news_article in web_articles %}
+		<div class="tab-pane {% if main_id == 0 and  forloop.counter == 1 or main_id == news_article.id %}active{% endif %}" id="{{news_article.id}}">
+			<div class="row-fluid">
+				<div class="span9">
+					<h2>{{news_article.title}}</h2>
+					<p>{{news_article.date_posted}}</p>
+					<p class="text-justify">{{news_article.body|my_markdown}} 
+                    </p>
+                    <p>Tagged: {% for member in news_article.tagged_members.all %} 
+                            <a href="{% url 'member_resources:profile' member.uniqname %}">{{member}}</a>{% if news_article.tagged_members.count > 2 and not forloop.last %}, {% endif %}{% if news_article.tagged_members.count > 1 and forloop.revcounter == 2 %} and {% endif %}
+                        {% endfor %}</p>
+				</div>
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+</div>
+{% endif %}
+{% endblock content %}

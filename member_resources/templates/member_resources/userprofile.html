@@ -1,0 +1,84 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+{% load my_markdown %}
+
+{% block content %}
+{% if profile %}
+<div class="row-fluid">
+    <div class="span6">
+        <div class="btn-group">
+            <a class="btn" href="{% url 'member_resources:member_profiles' %}"><i class="icon-chevron-left"></i> Back to Member List</a>
+        {% if is_user %}
+            <a class="btn btn-warning" href={% url 'member_resources:profile_edit' profile.uniqname %}>Edit Profile</a>
+            <a class="btn btn-info" href={% url 'member_resources:update_preferences' %}>Edit Account Preferences</a>
+        {% endif %}
+    </div>
+        <h3>{{profile.get_full_name}}</h3>
+        <div class="row-fluid">
+            <div class="span6">    
+                <img class="img-rounded" src="{{profile.photo.thumbnail.url}}"/>
+            </div>
+            <div class="span6">
+                <p><b>Goes by:</b> {{profile.get_casual_name}}</p>
+                <p><b>Uniqname:</b> {{profile.uniqname}}</p>
+                <p><b> Preferred email address:</b> <a href="mailto:{{profile.get_email}}">{{profile.get_email}}</a></p>
+                <p><b>Status and standing:</b> {{profile.standing.name}}, {{profile.status.name}}</p>
+                <p><b>Initiated at:</b> {{profile.init_chapter}} in {{profile.init_term}}</p>
+                <p><b>Major{{profile.major.all|length|pluralize}}:</b> {% for major in profile.major.all %}
+                    {{major.name}}{% if profile.major.all|length > 2 and not forloop.last %},{% endif %}{% if profile.major.all|length > 1 and forloop.revcounter == 2 %} and {% endif %}
+                    {% endfor %}</p>
+
+
+                <p class="text-justify"><b>Bio: </b>{{profile.short_bio|my_markdown}}</p>
+                {% if is_user %}
+                <h4>Your info (only visible to you and to admins):</h4>
+                <p><b>UMID:</b> {{profile.UMID}}</p>
+                <p><b>Expected Graduation Date:</b> {{profile.expect_grad_date|date:"N j, Y"}}</p>
+                {% if profile.edu_bckgrd_form %}
+                <p><b>Educational Background Form:</b> <a href="{{profile.edu_bckgrd_form.url}}">Link</a>
+                {% endif %}
+                <p><b>Alternate email address:</b> <a href="mailto:{{profile.alt_email}}">{{profile.alt_email}}</a></p>
+                <p><b>Phone number:</b>: {{profile.phone}} </p>
+                <p><b>Receive Corporate/Job Emails?</b>: {{profile.jobs_email|yesno:"Yes,No"}} </p>
+                {% if profile.resume %}
+                <p><b>Resume</b>: <a href="{{profile.resume.url}}">Link</a> </p>
+                {% endif %}
+                <p><b>Gender</b>: {{profile.get_gender_display}}</p>
+                <p><b>Shirt Size</b>: {{profile.shirt_size.name}} </p>
+                {% if profile.standing.name == "Alumni" %}
+                <p><b>Desired email frequency </b>:{{profile.get_alum_mail_freq_display}} </p>
+                <p><b>Job Field</b>: {{profile.job_field|default:"Not specified"}}</p>
+                <p><b>Employer</b>: {{profile.employer|default:"Not specified"}}</p>
+                <p><b>Interested in speaking at a meeting?</b>: {{profile.meeting_speak|yesno:"Yes,No"}}</p>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="span3">
+        {% if officer_positions %}
+        <h4>Officer Positions Held</h4>
+        {% for position in officer_positions %}
+        <p>{{position.name}} in {{position.term}}</p>
+        {% endfor %}
+        <hr>
+        {% endif %}
+        {% if awards %}
+        <h4>Awards Received</h4>
+        {% for award in awards %}
+        <p>{{award.award_type}} in {{award.term}}</p>
+        {% endfor %}
+        <hr>
+        {% endif %}
+        {% if has_distinctions %}
+        <h4>Distinctions</h4>
+        {%for distinction in distinction_terms %}
+        <p><b>{{distinction.name}}: </b> {{distinction.terms}} term{{distinction.terms|pluralize}}.</p>
+        {% endfor %}
+        <hr>
+        {% endif %}
+
+    </div>
+</div>
+{% endif %}
+{% endblock content %}

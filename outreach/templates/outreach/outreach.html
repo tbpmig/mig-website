@@ -1,0 +1,31 @@
+{% extends "outreach/base_outreach.html" %}
+{% load staticfiles %}
+{% block subnavOverview %}active{% endblock %} 
+
+{% block content %}
+<div class="row-fluid">
+			<div class="span8 offset2">
+				<h2> TBP Outreach Activities</h2>
+				<p> TBP is committed to giving back to the college and community. We have a number of outreach activities both on and off campus.</p>  
+				<h3>Tutoring</h3>
+				<p>If you're looking for some extra assistance in the core engineering courses like Math, Physics, Chem, or ENGR 101, TBP offers free one-on-one tuturing.
+                We also coordinate with <a href="https://hkn.eecs.umich.edu/">HKN</a> to offer tutoring for 200-level EECS Courses. Visit the <a href="{% url 'outreach:tutoring' %}">Tutoring page</a> for more infromation, and email <a href="mailto:tbp.campusoutreach@umich.edu">tbp.campusoutreach@umich.edu</a> with your name and course number to get set up.</p>
+
+				<h3>MindSET</h3>
+				<p class="text-justify">MindSET is a program run by TBP to support math and science programs in K-12 schools. Each semester we host about 3 modules aimed at teaching and getting 
+				students excited about a number of math and science concepts.We're always looking for more volunteers, and you don't need to be a member to help out&#8211;it's 
+				a great way to help promote engineering either way. You can get more information on the <a href="{% url 'outreach:mindset' %}">MindSET page</a>.</p>
+
+				<h3>TBP Book Swap</h3>
+				<p class="text-justify">Looking to buy course books for cheaper than you can at the book store? Looking to sell some of your old books without the hassle of finding a buyer?
+				We can help with that. Each semester, TBP hosts a Book Swap aimed at helping students looking to buy and sell books. As a seller, you name the price and drop the book
+				off and we'll do our best to sell it, you either get the money or the book back. As a buyer you can buy cheaper books for a number of different engineering courses.
+				More information is available on the <a href="http://tbpbookswap.org">TBP Book Swap website</a></p>
+
+				<h3>SWE/TBP Career Fair</h3>
+				<p class="text-justify">Each Fall, TBP joins <a href="http://swe.engin.umich.edu">SWE</a> to co-host the SWE/TBP Career Fair. Close to 300 companies are usually in attendance over the three-day 
+				event. For more information, visit  the <a href="http://umcareerfair.org">SWE/TBP Career Fair website</a>.</p>
+			</div>
+		</div>
+
+{% endblock content %}

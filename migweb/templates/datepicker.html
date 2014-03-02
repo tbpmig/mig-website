@@ -1,0 +1,9 @@
+<script>
+    $(function() {
+        {% for dp_id in dp_ids %}
+        $( "#{{dp_id}}").datepicker().on('changeDate',function(){
+            $("#{{dp_id}}").datepicker('hide');
+        });
+        {% endfor %}
+    });
+</script>

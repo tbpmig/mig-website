@@ -1,0 +1,15 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="row-fluid">
+    <div class="span6">
+        <h3>Project Report Management</h3>
+        <ul>
+            {%for report in project_reports %}
+            <li><a href="{% url 'event_cal:project_report_by_id' report.id %}">{{report.name}}</a></li>
+            {%endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,13 @@
+{% extends "event_cal/base_event_cal.html" %}
+{% load staticfiles %}
+{% block subnavGcal %}active{% endblock %} 
+
+{% block cal_content %}
+
+<iframe src="https://www.google.com/calendar/embed?title=TBP%20Events%20Calendars&amp;height=600&amp;wkst=1&amp;bgcolor=%23FFFFFF{% for calendar in google_cals %}&amp;src={{calendar.calendar_id}}&amp;color=%23{% cycle '2F6213' '875509' '754916' '2952A3' 'A32929' '6E6E41'%}{% endfor %}&amp;ctz=America%2FNew_York" style=" border-width:0 " width="800" height="600" frameborder="0" scrolling="no"></iframe>
+{% if office_hours_cal %}
+<p><a href="https://www.google.com/calendar/embed?title=TBP%20Office%20Hours%20Calendars&amp;height=600&amp;wkst=1&amp;bgcolor=%23FFFFFF{% for calendar in office_hours_cal %}&amp;src={{calendar.calendar_id}}&amp;color=%23{% cycle '2F6213' '875509' '754916' '2952A3' 'A32929' '6E6E41'%}{% endfor %}&amp;ctz=America%2FNew_York">Click here to view the calendar of Officer Office Hours</a></p>
+{% endif %}
+
+
+{% endblock cal_content %}

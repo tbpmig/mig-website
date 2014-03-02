@@ -1,0 +1,63 @@
+{% extends "event_cal/base_event_cal.html" %}
+{% load staticfiles %}
+{% block subnavEventList %}active{% endblock %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/datepicker.css' %}" />
+{% endblock css %}
+{% block js %}
+<script src="{% static 'js/bootstrap-datepicker.js' %}"></script>
+{% include 'datepicker.html' %}
+{% endblock js %}
+{% block cal_content %}
+<div class="row-fluid">
+    <div class="span6">
+        <h3>Filter Events</h3>
+        <p> Find events that</p>
+<form action="{% url 'event_cal:list' %}" method="post">
+    {% csrf_token %}
+    {{form.non_field_errors }}
+    <div class="fieldWrapper">
+        <div class="text-error">{{form.after_date.errors}}</div>
+        <label for="id_after_date">End after:</label>
+        {{form.after_date}}
+    </div>
+    <p>and that</p>
+    <div class="fieldWrapper">
+        <div class="text-error">{{form.before_date.errors}}</div>
+        <label for="id_after_date">Start before:</label>
+        {{form.before_date}}
+    </div>
+    <div class="fieldWrapper">
+        <div class="text-error">{{form.on_campus.errors}}</div>
+        <label for="id_on_campus">Only events that are on campus? {{form.on_campus}}</label>
+    </div>
+    <p>And that will fulfill one of the following requirements</p>
+    <div class="fieldWrapper">
+        {{form.event_reqs.errors}}
+        <p><ul style="list-style-type:none;">
+        {% for category in sorted_event_categories %}
+        <li style="padding-left:{{category.depth}}em;"><label for="id_event_reqs_{{forloop.counter0}}"><input id="id_event_reqs_{{forloop.counter0}}" name="event_reqs" type="checkbox" value="{{category.category.id}}" {% if category.category.id in selected_boxes %}checked="checked"{%endif%}/> {{category.category.name}}</label></li>
+        {% endfor %}
+    </ul></p>
+    </div>
+    <input type="submit" value="Filter Events" name = "submit"/>
+</form>
+</div>
+<div class="span6">
+<h2>Event List</h2>
+<ul id="event-list">
+    {% for packed_event in events %}
+    {% with event=packed_event.event can_edit_event=packed_event.can_edit %}
+<li>
+{% include 'event_cal/event.html' %}
+</li>
+{% endwith %}
+{% empty %}
+<li>
+<p>There are no events posted matching the provided query (you may need to login to see all events).</p>
+</li>
+{% endfor %}
+</ul>
+</div>
+</div>
+{% endblock cal_content %}

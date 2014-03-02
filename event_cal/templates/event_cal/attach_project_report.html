@@ -1,0 +1,12 @@
+{% extends "event_cal/base_event_cal.html" %}
+{% load staticfiles %}
+{% block subnavEventList %}active{% endblock %} 
+
+{% block cal_content %}
+<h3>Attach project Report to {{event}}</h3>
+<form action="{% url 'event_cal:add_project_report_to_event' event.id %}" method="post">{% csrf_token %}
+    {% include 'form_template.html' %}
+    <input type="submit" value="Submit Attached Report" name = "submit"/>
+    
+</form>
+{% endblock cal_content %}

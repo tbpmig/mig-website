@@ -1,0 +1,54 @@
+{% extends "fora/base_fora.html" %}
+
+
+{% block content  %}
+<div class="row-fluid">
+    {% if fora|length > 1 %}
+    <div class="span3">
+        <ul class="nav nav-list nav-stacked">
+        {% for forum in fora %}
+            <li {% if forloop.first %}class="active"{% endif %}>
+                <a href="#forum{{forum.id}}" data-toggle="tab">{{forum.name}}</a>
+            </li>
+        {% endfor %}
+        </ul>
+    </div>
+    <div class="span9">
+    {% elif fora|length == 1 %}
+    <div class="span12">
+        {% for forum in fora %}
+        <h3>{{forum.name}}</h3>
+        {% endfor %}
+    {% else %}
+        <div class="span12">
+    {% endif %}
+    <div class="row-fluid">
+        <div class="span4">
+            {% if fora|length > 1 %}
+            <div class="tab-content">
+            {% endif %}
+                {% for forum in fora %}
+                <div class="tab-pane {% if forloop.first %}active{% endif %}" id="forum{{forum.id}}">
+                    <ul class="nav nav-list nav-stacked">
+                    {% for thread in forum.forumthread_set.all|dictsort:"hidden" %}
+                    {% if not thread.hidden %}
+                        <li {% if forloop.fist %}class="active"{%endif%}>
+                        <a href="#thread{{thread.id}}" data-toggle="tab">{{thread.title}}</a>
+                        </li>
+                    {% endif%}
+                    {% endfor %}
+                </ul>
+                </div>
+                {% endfor %}
+            {% if fora|length > 1 %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+                
+
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "outreach/base_outreach.html" %}
+{% block subnavMindSET %}active{% endblock %} 
+{% block content %}
+<div class="row-fluid">
+    <div class="span6">
+        <a class="btn" href="{% url 'outreach:mindset' %}"><i class="icon-chevron-left"></i> Back to MindSET Page</a>
+        <h4>Edit MindSET Module Resources</h4>
+<form enctype="multipart/form-data" method="post" action="{% url 'outreach:update_mindset_modules' %}">
+    {% csrf_token %}
+    {{ formset.management_form }}
+    <table class="table table-striped table-bordered">
+        {% include 'formset_template.html' %}
+    </table>
+    <p><a class="btn add-row"  href="javascript:void(0)"/>Add Another Module</a></p>
+    <input type="submit" value="Update Modules" name = "submit"/>
+</form>
+    </div>
+</div>
+{% endblock content %}

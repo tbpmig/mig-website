@@ -1,0 +1,36 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="row-fluid">
+    <div class="span6">
+        <a class="btn" href="{% url 'member_resources:manage_membership' %}"><i class="icon-chevron-left"></i> Back to Membership Management</a>
+        <h4>Add/Remove Members as Project Leaders</h4>
+<form method="post" action="{% url 'member_resources:manage_project_leaders' %}">
+    {% csrf_token %}
+    {{formset.management_form}}
+    <table class="table table-striped">
+        {% include 'formset_template.html' %}
+    </table>
+    <p><a class="btn add-row"  href="javascript:void(0)"/>Add another project leader</a></p>
+    <input type="submit" value="Update Project Leaders" name = "submit"/>
+</form>
+    </div>
+    <div class="span6">
+        <h4>Bulk Add Members as Project Leaders</h4>
+        {% if error_list %}
+        <p class="text-error">The following uniqnames are not members</p>
+        <ul>
+        {% for error in error_list %}
+            <li>{{error}}</li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+<form method="post" action="{% url 'member_resources:manage_project_leaders' %}">
+    {% csrf_token %}
+    {{mass_form.as_p}}
+    <input type="submit" value="Add Project Leaders" name = "mass-add"/>
+</form>
+</div>
+</div>
+{% endblock content %}

@@ -1,0 +1,47 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="row-fluid">
+    <div class="span12">
+        <h3>Grad Student Educational Background Forms</h3>
+        {% for form in forms %}
+            <h4>{{form.member}}</h4>
+            <p><strong>Goes by: </strong>{{form.member.get_casual_name}}</p>
+            <h5>Degrees:</h5>
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Degree:</th>
+                        <th>Institution:</th>
+                        <th>Degree Type:</th>
+                        <th>Major:</th>
+                        <th>Start Date:</th>
+                        <th>End Date:</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Current</td>
+                        <td>University of Michigan</td>
+                        <td>{{form.degree_type}}</td>
+                        <td>{% for major in form.member.major.all %}{{major}}{%if form.member.major.all|length > 1 %},{% endif %}{% endfor %}</td>
+                        <td> </td>
+                        <td>{{form.member.expect_grad_date}}</td>
+                    </tr>
+                    {% for prev in form.backgroundinstitution_set.all|dictsortreversed:"degree_end_date" %}
+                        <tr>
+                            <td>Previous {{forloop.counter}}</td>
+                            <td>{{prev.name}}</td>
+                            <td>{{prev.degree_type}}</td>
+                            <td>{{prev.major}}</td>
+                            <td>{{prev.degree_start_date}}</td>
+                            <td>{{prev.degree_end_date}}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+    </div>
+</div>
+{% endblock content %}

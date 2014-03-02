@@ -1,0 +1,28 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="row-fluid">
+    <div class="span4">
+        <h4>Manage Website Settings</h4>
+        {% if can_change_term %}
+        <a class="btn" href="{% url 'member_resources:advance_term' %}">Change Website Term from {{term}} to {{next_term}}</a>{% if warn_about_change %}
+        <p class ="text-warning">Note, it is not currently the usual time to change the website term. Proceed with caution as this will have effects on user progress, officer permissions, and interactability</p>
+        {% endif %}
+        {% endif %}
+    </div>
+    <div class="span8">
+        <h3>Manage Homepage Slideshow</h3>
+        <p>For local links, do not include the domain. For external links http/https <b>must</b> be included.</p>
+<form enctype="multipart/form-data" method="post" action="{% url 'member_resources:manage_website'%}">
+    {% csrf_token %}
+    {{ formset.management_form }}
+    <table class="table table-striped">
+        {% include 'formset_template.html' %}
+    </table>
+    <p><a class="btn add-row"  href="javascript:void(0)"/>Add another photo</a></p>
+    <input type="submit" value="Update Slideshow Photos" name = "submit"/>
+</div>
+</form>
+</div>
+{% endblock content %}

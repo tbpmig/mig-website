@@ -1,0 +1,8 @@
+    {% include 'form_template.html' %}
+    {{ formset.management_form }}
+    <h4>Event Shifts</h4>
+    <table class="table table-striped table-bordered">
+        {% include 'formset_template.html' %}
+    </table>
+    <p><a class="btn add-row"  href="javascript:void(0)"/>Add Shift</a></p>
+    <input type="submit" value="Post event" name = "submit"/>

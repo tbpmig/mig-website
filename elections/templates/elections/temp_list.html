@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% block navMembers %}active{% endblock %}
+
+{% block content %}
+{% regroup nominees|dictsort:"position.id" by position.name as nominee_list %}
+
+<p>An explanation of the responsibilities of each position can be found <a href={%static "TBP_Officer_Position_Descriptions.pdf"%}>here</a></p>
+<a href="{% url 'elections:temp_nominate' term %}">Make a nomination</a> 
+{% for position in nominee_list %}
+	<h4>{{position.grouper}}</h4>
+	<ul>
+		{% for nomination in position.list %}
+			<li><strong>{{nomination.name}}</strong>
+			<p>Accepted: 
+			{% if nomination.accepted %}
+				Yes
+			{% else %}
+				Awaiting Response.
+			{% endif %}</p>
+			</li>
+		{% endfor %}
+	</ul>
+{% endfor %}
+
+{% endblock %}

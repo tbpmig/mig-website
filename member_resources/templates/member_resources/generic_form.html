@@ -1,0 +1,38 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+{% if dp_ids %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/datepicker.css' %}" />
+{% endblock css %}
+{% block js %}
+<script src="{% static 'js/bootstrap-datepicker.js' %}"></script>
+{% include 'datepicker.html' %}
+{% endblock %}
+{% endif %}
+{% block content %}
+{% if back_button %}
+<div class = "row-fluid">
+    <div class="span4">
+        <p><a class="btn" href="{{back_button.link}}"><i class="icon-chevron-left"></i> {{back_button.text}}</a></p>
+    </div>
+</div>
+{% endif %}
+<div class="row-fluid">
+    <div class="span6">
+        <h4>{{form_title}}</h4>
+        <p>{{help_text}}</p>
+        <form {% if has_files %}enctype="multipart/form-data"{% endif %} action="{{request.path}}" method="post">{% csrf_token %}
+            {% include 'form_template.html' %}
+            <input type="submit" value="{{submit_name}}"/>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% if extra_js %}
+{% block js_bottom %}
+{% for html_file in extra_js %}
+{% include html_file %}
+{% endfor %}
+{% endblock %}
+{% endif %}

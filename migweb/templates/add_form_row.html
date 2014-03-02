@@ -1,0 +1,8 @@
+<script src="{% static 'js/addForm.js' %}"></script>
+<script type="text/javascript">
+    $(function() {
+         $('.add-row').click(function() {
+             return addForm(this, '{{prefix}}');
+        });
+    })
+</script>

@@ -1,0 +1,19 @@
+{% extends "about/base_about.html" %}
+{% load staticfiles %}
+{% block subnavBylaws %}active{% endblock %} 
+
+{% block content %}
+<div class="row-fluid">
+    <div class="span6">
+        <h3>Chapter Governing Documents</h3>
+        <p>In addition to the <a href="http://www.tbp.org/off/COnstBylaw.pdf">TBP National Constitution and Bylaws</a>, and the rules and regulations of the University of Michigan, the Michigan Gamma chapter of TBP is governed by the following governing documents.</p>
+    </div>
+    <div class="span6">
+        {% for doc in documents %}
+        <h3>Chapter {{doc.document_type.name}}</h3>
+        <p><a href="{{doc.pdf_file.url}}">Available here</a></p>
+        {% endfor %}
+	</div>
+</div>
+
+{% endblock content %}

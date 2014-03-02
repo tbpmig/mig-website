@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load my_markdown %}
+{% block navCalendar %}active{% endblock %}
+{% block subnav %}
+<li class="{% block subnavGcal %}{% endblock %}"><a href="{% url 'event_cal:index' %}">Google Calendar</a></li>
+<li class="{% block subnavEventList %}{% endblock %}"><a href="{% url 'event_cal:list' %}">Event List</a></li>
+<li class="{% block subnavMyEvents %}{% endblock %}"><a href="{% url 'event_cal:my_events' %}">My Events</a></li>
+{% if can_submit_tutoring_form %}
+<li class="{% block subnavTutoring %}{% endblock %}"><a href="{% url 'event_cal:submit_tutoring_form' %}">Submit Tutoring Form</a></li>
+{% endif %}
+{% if can_add_event_photo %}
+<li class="{% block subnavAddEventPhoto %}{% endblock %}"><a href="{% url 'event_cal:add_event_photo' %}">Add Event Photo</a></li>
+{% endif %}
+{% if can_add_event %}
+<li class="{% block subnavCreateEvent %}{% endblock %}"><a href="{% url 'event_cal:create_event' %}">Add Event</a></li>
+{% endif %}
+{% if can_add_announcements %}
+<li class="{% block subnavAddAnnouncement %}{% endblock %}"><a href="{% url 'event_cal:add_announcement' %}">Add Announcement</a></li>
+{% endif %}
+{% if can_generate_announcements %}
+<li class="{% block subnavAnnouncementDraft %}{% endblock %}"><a href="{% url 'event_cal:generate_announcements' %}">Generate Announcements</a></li>
+{% endif %}
+{% endblock %}
+
+{% block content%}
+<div class="row-fluid" style="min-width:88em;">
+	<div class="span9">
+		{% block cal_content %}
+		{% endblock cal_content %}
+	</div> 
+	<div class="span3">
+		<aside>
+			{% if upcoming_events  and not edit%}
+				<h1>Upcoming Events</h1>
+				<ul id="event-list">
+				{% for event in upcoming_events %}
+				<li>
+                <a href="{% url 'event_cal:event_detail' event.id %}"><h2 id="event-name">{{event.name}}</h2></a>
+					<p id="event-description">{{event.announce_text|my_markdown}}</p>
+					{% if event.eventshift_set.all|length > 1%}
+					<p>Shifts:<p>
+					{% endif %}
+                    {% for shift in event.eventshift_set.all|dictsort:"start_time" %}
+						{% if shift.start_time > now %}
+							{% if event.eventshift_set.all|length > 1%}
+								<div id="event-shift">
+							{% endif %}
+							<p id="event-when"><b>When:</b> {{shift.start_date}}, {{shift.start_time}}&ndash;
+							{% if shift.start_date != shift.end_date %}
+								{{shift.end_date}},
+							{% endif %}
+							{{shift.end_time}}
+							</p>
+							<p id="event-where"><b>Where:</b> {{shift.location}}</p>
+                            {% if event.eventshift_set.all|length > 1%}
+                                <hr/>
+								</div>
+							{% endif %}
+						{% endif %}
+					{% endfor %}
+					
+				</li>
+				{% endfor %}
+				</ul>
+				{% endif %}
+		</aside>
+	</div>
+</div>
+
+
+
+{% endblock content %}

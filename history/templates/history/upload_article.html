@@ -1,0 +1,17 @@
+{% extends "history/base_history.html" %}
+{% load staticfiles %}
+{% block subnavChapterNews %}active{% endblock %} 
+
+{% block content %}
+
+<div class="row-fluid">
+    <div class="span6">
+        <h3>Upload Printed Publication</h3>
+        <form enctype="multipart/form-data" action="{% url 'history:upload_article' %}" method="post">{% csrf_token %}
+            {% include 'form_template.html' %}
+            <input type="submit" value="Upload Article"/>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+
+{% block content %}
+{% if profiles|length > 0 %}
+<div class="row-fluid">
+    <div class="span12">
+        <h3>Member Profiles</h3>
+        <hr/>
+        <div class="row-fluid">
+        {% regroup profiles|dictsort:"status.id" by status as profiles_by_status %}
+        {% for status in profiles_by_status %}
+            <div class="span3">
+            <h4>{{status.grouper}}</h4>
+            {% regroup status.list|dictsort:"standing.id" by standing as profiles_by_standing %}
+            {% for standing in profiles_by_standing %}
+                <h5>{{standing.grouper}}</h5>
+                {% for profile in standing.list|dictsort:"last_name" %}
+                    <p><a href="{% url 'member_resources:profile' profile.uniqname %}">{{profile.get_full_name}}</a></p>
+                {% endfor %}
+                <hr/>
+            {% endfor %}
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock content %}

@@ -1,0 +1,29 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+
+{% block content %}
+{% if back_button %}
+<div class="row-fluid">
+    <div class="span6">
+        <a class="btn" href="{{back_button.link}}"><i class="icon-chevron-left"></i> {{back_button.text}}</a>
+    </div>
+</div>
+{% endif %}
+<div class="row-fluid">
+    <div class="span6">
+        <h4>{{form_title}}</h4>
+        <p>{{help_text}}</p>
+        <form method="post" action="{{request.path}}">
+    {% csrf_token %}
+    {{formset.management_form}}
+    <table class="table table-striped table-bordered">
+        {% include 'formset_template.html' %}
+    </table>
+    {% if can_add_row %}
+        <p><a class="btn add-row"  href="javascript:void(0)"/>Add another row</a></p>
+    {% endif %}
+    <input type="submit" value="{{submit_name}}"/>
+</form>
+    </div>
+</div>
+{% endblock content %}
