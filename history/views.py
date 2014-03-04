@@ -48,6 +48,7 @@ def get_article_view(request,article_id):
         'web_articles':web_articles,
         'main_id':int(article_id),
         'form':form,
+        'subnav':'news',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -65,11 +66,14 @@ def get_printed_documents(request,document_type,document_name):
     request.session['current_page']=request.path
     today = date.today()
     documents   =Publication.objects.filter(type=document_type).order_by('date_published').exclude(date_published__gt=today)
-    
+    subnav='cornerstone'
+    if document_type == 'AN':
+        subnav='alumni_news'
     template = loader.get_template('history/printed_publications.html')
     context_dict = {
         'articles':documents,
         'page_title':document_name,
+        'subnav':subnav,
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -89,9 +93,15 @@ def upload_article(request):
             request.session['error_message']='There were errors in your submission. Please correct the noted errors.'
     else:
         form = ArticleForm()
-    template = loader.get_template('history/upload_article.html')
+    template = loader.get_template('generic_form.html')
     context_dict = {
         'form':form,
+        'subnav':'cornerstone',
+        'has_files':True,
+        'submit_name':'Upload Printed Publication',
+        'form_title':'Upload Article',
+        'help_text':'Make sure to specify the type of publication.',
+        'base':'history/base_history.html',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))

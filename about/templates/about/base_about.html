@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block navAboutTBP %}active{% endblock %}
 {% block subnav %}
-<li class="{% block subnavAbout %}{% endblock %}"><a href="{% url 'about:index' %}">Overview</a></li>
-<li class="{% block subnavEligibility %}{% endblock %}"><a href="{% url 'about:eligibility' %}">Joining</a></li>
-<li class="{% block subnavLeadership %}{% endblock %}"><a href="{% url 'about:leadership' %}">Leadership</a></li>
-<li class="{% block subnavBylaws %}{% endblock %}"><a href="{% url 'about:bylaws' %}">Bylaws</a></li>
+<li {%if subnav and subnav == 'about' %}class="active"{% endif %}><a href="{% url 'about:index' %}">Overview</a></li>
+<li  {%if subnav and subnav == 'joining' %}class="active"{% endif %}><a href="{% url 'about:eligibility' %}">Joining</a></li>
+<li  {%if subnav and subnav == 'leadership' %}class="active"{% endif %}><a href="{% url 'about:leadership' %}">Leadership</a></li>
+<li  {%if subnav and subnav == 'bylaws' %}class="active"{% endif %}><a href="{% url 'about:bylaws' %}">Bylaws</a></li>
 {% endblock %}

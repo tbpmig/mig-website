@@ -3,6 +3,7 @@ import zipfile
 import shutil
 import time
 
+from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.forms.models import modelformset_factory,modelform_factory
 from django.http import HttpResponse#, Http404, HttpResponseRedirect
@@ -100,7 +101,10 @@ def index(request):
     request.session['current_page']=request.path
     template = loader.get_template('corporate/corporate.html')
     involvement_text = CorporateTextField.objects.filter(section='OP')
-    context_dict = {'involvement_text':involvement_text}
+    context_dict = {
+        'involvement_text':involvement_text,
+        'subnav':'index',
+    }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
@@ -112,6 +116,7 @@ def resumes(request):
     context_dict = {
         'by_major_zip':'TBP_resumes_by_major.zip',
         'by_year_zip':'TBP_resumes_by_year.zip',
+        'subnav':'resumes',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -134,12 +139,20 @@ def update_corporate_page(request):
     else:
        formset=CorporateTextForm()
     context_dict = {
-            'formset':formset,
+        'formset':formset,
+        'subnav':'index',
+        'has_files':False,
+        'submit_name':'Update Corporate Page',
+        'back_button':{'link':reverse('corporate:index'),'text':'To Corporate Page'},
+        'form_title':'Edit Corporate Page Text',
+        'help_text':'The text shown on the corporate main page. This text uses markdown syntax.',
+        'can_add_row':False,
+        'base':'corporate/base_corporate.html',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
-    template = loader.get_template('corporate/corporate_page_edit.html')
+    template = loader.get_template('generic_formset.html')
     return HttpResponse(template.render(context))
 
 def update_resource_guide(request):
@@ -165,10 +178,17 @@ def update_resource_guide(request):
     else:
        form=ResourceGuideForm()
     context_dict = {
-            'form':form,
+        'form':form,
+        'subnav':'index',
+        'has_files':True,
+        'submit_name':'Update Corporate Resource Guide',
+        'back_button':{'link':reverse('corporate:index'),'text':'To Corporate Page'},
+        'form_title':'Edit Corporate Resource Guide',
+        'help_text':'This guide is inluded in the resume zip files. Update it when the information (or the officer) changes.',
+        'base':'corporate/base_corporate.html',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
-    template = loader.get_template('corporate/corporate_guide_edit.html')
+    template = loader.get_template('generic_form.html')
     return HttpResponse(template.render(context))

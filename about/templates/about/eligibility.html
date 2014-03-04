@@ -1,7 +1,6 @@
 {% extends "about/base_about.html" %}
 {% load staticfiles %}
 {% load my_markdown %}
-{% block subnavEligibility %}active{% endblock %} 
 {% block content %}
 {% if can_edit_page %}
         <p><a class="btn" href="{% url 'about:update_joining_page' %}">Update Joining Page Text</a></p>

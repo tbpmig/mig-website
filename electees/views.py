@@ -31,7 +31,10 @@ def get_permissions(user):
     return permission_dict
 def get_common_context(request):
     context_dict=get_message_dict(request)
-    context_dict.update({'request':request})
+    context_dict.update({
+        'request':request,
+        'subnav':'electees',
+    })
     return context_dict
 def view_electee_groups(request):
     e_groups = ElecteeGroup.objects.filter(term=get_current_term()).order_by('points')
@@ -73,10 +76,17 @@ def edit_electee_groups(request):
             request.session['error_message']='Form is invalid. Please correct the noted errors'
     else:
         formset = ElecteeGroupFormSet(queryset=e_groups,prefix='groups')
-    template = loader.get_template('electees/edit_electee_groups.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
-            'formset':formset,
-            'prefix':'groups',
+        'formset':formset,
+        'prefix':'groups',
+        'subsubnav':'groups',
+        'has_files':False,
+        'submit_name':'Update Electee Groups',
+        'form_title':'Update/Add/Remove Electee Groups',
+        'help_text':'Create the electee groups for this semester, and specify the leaders nd officers. You can also remove or edit here.',
+        'can_add_row':True,
+        'base':'electees/base_electees.html',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -102,8 +112,9 @@ def edit_electee_group_membership(request):
     e_groups = ElecteeGroup.objects.filter(term=get_current_term())
     template = loader.get_template('electees/edit_electee_group_membership.html')
     context_dict = {
-            'electee_groups':e_groups,
-            'unassigned_electees':get_unassigned_electees(),
+        'electee_groups':e_groups,
+        'unassigned_electees':get_unassigned_electees(),
+        'subsubnav':'members',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -126,10 +137,17 @@ def edit_electee_group_points(request):
             request.session['error_message']='Form is invalid. Please correct the noted errors.'
     else:
         formset = GroupPointsFormSet(prefix='group_points',queryset=ElecteeGroupEvent.objects.filter(related_event_id=None,electee_group__term=term))
-    template = loader.get_template('electees/edit_electee_group_points.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
         'prefix':'group_points',
+        'subsubnav':'points',
+        'has_files':False,
+        'submit_name':'Update Electee Group Points',
+        'form_title':'Update/Add Remove Electee Group Points',
+        'help_text':'Track the electee group points. You should not note any points from threshold participation at service or social events here. Those are tabulated automatically.',
+        'can_add_row':True,
+        'base':'electees/base_electees.html',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -191,11 +209,16 @@ def edit_electee_resources(request):
             request.session['error_message']='Form is invalid. Please correct the noted errors.'
     else:
         formset = ResourceFormSet(prefix='resources',queryset=ElecteeResource.objects.filter(term=term))
-    template = loader.get_template('electees/edit_electee_resources.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
-        'term':term,
         'prefix':'resources',
+        'has_files':True,
+        'submit_name':'Update Electee Resources',
+        'form_title':'Update/Add/Remove Electee Resources for %s'%(unicode(term)),
+        'help_text':'These are the full packets and their constituent parts. If you need a part that isn\'t listed here, contact the web chair.',
+        'can_add_row':True,
+        'base':'electees/base_electees.html',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))

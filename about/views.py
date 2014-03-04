@@ -1,5 +1,7 @@
 from datetime import date
 # Create your views here.
+
+from django.core.urlresolvers import reverse
 from django.http import HttpResponse#, Http404, HttpResponseRedirect
 from django.shortcuts import  get_object_or_404,redirect
 from django.forms.models import modelformset_factory
@@ -53,7 +55,10 @@ def pack_officers_for_term(term):
 def index(request):
     slideshow_photos = AboutSlideShowPhoto.objects.filter(active=True)
     template = loader.get_template('about/about.html')
-    context_dict = {'slideshow_photos':slideshow_photos,}
+    context_dict = {
+        'slideshow_photos':slideshow_photos,
+        'subnav':'about',
+    }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
@@ -71,6 +76,7 @@ def eligibility(request):
             'grad_text':grad_reqs_text,
             'why_join_text':why_join_text,
             'can_edit_page':Permissions.can_manage_electee_progress(request.user),
+            'subnav':'joining',
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -93,13 +99,21 @@ def update_about_photos(request):
     else:
        formset=AboutPhotoForm(prefix='about_photo')
     context_dict = {
-            'formset':formset,
-            'prefix':'about_photo',
+        'formset':formset,
+        'prefix':'about_photo',
+        'subnav':'about',
+        'has_files':True,
+        'submit_name':'Update About Page Photos',
+        'back_button':{'link':reverse('about:index'),'text':'To About Page'},
+        'form_title':'Edit About Page Photos',
+        'help_text':'These are the photos shown in the about page photo slideshow. You can omit a photo from being displayed by unchecking the \"Active\" option.',
+        'can_add_row':True,
+        'base':'about/base_about.html',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
-    template = loader.get_template('about/update_about_photos.html')
+    template = loader.get_template('generic_formset.html')
     return HttpResponse(template.render(context))
 
 def update_joining_page(request):
@@ -118,12 +132,20 @@ def update_joining_page(request):
     else:
        formset=JoiningTextForm()
     context_dict = {
-            'formset':formset,
-        }
+        'formset':formset,
+        'subnav':'joining',
+        'has_files':False,
+        'submit_name':'Update Joining Page',
+        'back_button':{'link':reverse('about:eligibility'),'text':'To Joining Page'},
+        'form_title':'Edit Joining Page Text',
+        'help_text':'These sections use markdown syntax. You can change the content and how it is displayed here.',
+        'can_add_row':False,
+        'base':'about/base_about.html',
+    }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
-    template = loader.get_template('about/joining_page_edit.html')
+    template = loader.get_template('generic_formset.html')
     return HttpResponse(template.render(context))
 def leadership(request):
     return leadership_for_term(request,get_current_term().id)
@@ -141,6 +163,7 @@ def leadership_for_term(request,term_id):
         'requested_term':term,
         'is_current':(term_id==get_current_term().id),
         'has_teams':has_teams,
+        'subnav':'leadership',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -152,6 +175,7 @@ def bylaws(request):
 
     context_dict = {
         'documents':GoverningDocument.objects.filter(active=True),
+        'subnav':'bylaws',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))

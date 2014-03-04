@@ -2,8 +2,8 @@
 {% load my_markdown %}
 {% block navCorporate %}active{% endblock %}
 {% block subnav %}
-<li class="{% block subnavOverview %}{% endblock %}"><a href="{% url 'corporate:index' %}">Overview</a></li>
-<li class="{% block subnavResumeBook %}{% endblock %}"><a href="{% url 'corporate:resumes' %}">Resume Book</a></li>
+<li {% if subnav and subnav == 'index' %}class="active"{%endif%}><a href="{% url 'corporate:index' %}">Overview</a></li>
+<li {% if subnav and subnav == 'resumes' %}class="active"{%endif%}><a href="{% url 'corporate:resumes' %}">Resume Book</a></li>
 {% endblock %}
 
 {% block content %}

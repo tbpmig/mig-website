@@ -2,23 +2,23 @@
 {% load my_markdown %}
 {% block navCalendar %}active{% endblock %}
 {% block subnav %}
-<li class="{% block subnavGcal %}{% endblock %}"><a href="{% url 'event_cal:index' %}">Google Calendar</a></li>
-<li class="{% block subnavEventList %}{% endblock %}"><a href="{% url 'event_cal:list' %}">Event List</a></li>
-<li class="{% block subnavMyEvents %}{% endblock %}"><a href="{% url 'event_cal:my_events' %}">My Events</a></li>
+<li {% if subnav and subnav == 'gcal' %}class="active"{% endif %}><a href="{% url 'event_cal:index' %}">Google Calendar</a></li>
+<li  {% if subnav and subnav == 'list' %}class="active"{% endif %}><a href="{% url 'event_cal:list' %}">Event List</a></li>
+<li  {% if subnav and subnav == 'my_events' %}class="active"{% endif %}><a href="{% url 'event_cal:my_events' %}">My Events</a></li>
 {% if can_submit_tutoring_form %}
-<li class="{% block subnavTutoring %}{% endblock %}"><a href="{% url 'event_cal:submit_tutoring_form' %}">Submit Tutoring Form</a></li>
+<li {% if subnav and subnav == 'tutoring_form' %}class="active"{% endif %}><a href="{% url 'event_cal:submit_tutoring_form' %}">Submit Tutoring Form</a></li>
 {% endif %}
 {% if can_add_event_photo %}
-<li class="{% block subnavAddEventPhoto %}{% endblock %}"><a href="{% url 'event_cal:add_event_photo' %}">Add Event Photo</a></li>
+<li  {% if subnav and subnav == 'photo' %}class="active"{% endif %}><a href="{% url 'event_cal:add_event_photo' %}">Add Event Photo</a></li>
 {% endif %}
 {% if can_add_event %}
-<li class="{% block subnavCreateEvent %}{% endblock %}"><a href="{% url 'event_cal:create_event' %}">Add Event</a></li>
+<li  {% if subnav and subnav == 'add_event' %}class="active"{% endif %}><a href="{% url 'event_cal:create_event' %}">Add Event</a></li>
 {% endif %}
 {% if can_add_announcements %}
-<li class="{% block subnavAddAnnouncement %}{% endblock %}"><a href="{% url 'event_cal:add_announcement' %}">Add Announcement</a></li>
+<li {% if subnav and subnav == 'add_announcement' %}class="active"{% endif %}i><a href="{% url 'event_cal:add_announcement' %}">Add Announcement</a></li>
 {% endif %}
 {% if can_generate_announcements %}
-<li class="{% block subnavAnnouncementDraft %}{% endblock %}"><a href="{% url 'event_cal:generate_announcements' %}">Generate Announcements</a></li>
+<li {% if subnav and subnav == 'generate_announcements' %}class="active"{% endif %}><a href="{% url 'event_cal:generate_announcements' %}">Generate Announcements</a></li>
 {% endif %}
 {% endblock %}
 

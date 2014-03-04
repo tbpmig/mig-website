@@ -375,12 +375,13 @@ def profile_edit(request,uniqname):
             form = MemberProfileForm(instance=MemberProfile.objects.get(uniqname__exact=uniqname))
         else:
             form = ElecteeProfileForm(instance=MemberProfile.objects.get(uniqname__exact=uniqname))
-    template = loader.get_template('member_resources/generic_form.html')
+    template = loader.get_template('generic_form.html')
     context_dict = {
         'form':form,
         'dp_ids':['id_expect_grad_date'],
         'subnav':'member_profiles',
         'has_files':True,
+        'base':'member_resources/base_member_resources.html',
         'submit_name':'Update Profile',
         'back_button':{'link':reverse('member_resources:profile',args=[uniqname]),'text':'To %s\'s Profile'%(profile.get_firstlast_name())},
         'form_title':'Edit %s\'s Profile'%(unicode(profile)),
@@ -454,12 +455,13 @@ def profile_create(request):
                 logger.warning(request.FILES)
         else:
             form = NonMemberProfileForm()
-    template = loader.get_template('member_resources/generic_form.html')
+    template = loader.get_template('generic_form.html')
     context_dict = {
         'form':form,
         'dp_ids':['id_expect_grad_date'],
         'subnav':'member_profiles',
         'has_files':True,
+        'base':'member_resources/base_member_resources.html',
         'submit_name':'Create Profile',
         'form_title':'Create Your Profile',
         'help_text':'Make your profile here. Of special note, resumes must be submitted in pdf format.',
@@ -495,12 +497,13 @@ def edit_progress(request,uniqname):
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
         formset = progress_formset(prefix='edit_progress',queryset=ProgressItem.objects.filter(term=term,member=profile))
-    template = loader.get_template('member_resources/generic_formset.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
         'prefix':'edit_progress',
         'subnav':'view_others_progress',
         'has_files':False,
+        'base':'member_resources/base_member_resources.html',
         'submit_name':'Submit Progress Items',
         'back_button':{'link':reverse('member_resources:view_progress',args=[uniqname]),'text':'To %s\'s Progress'%(profile.get_firstlast_name())},
         'form_title':'Edit Progress for %s'%(unicode(profile)),
@@ -1021,11 +1024,12 @@ def upload_minutes(request):
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
         form = MeetingMinutesForm()
-    template = loader.get_template('member_resources/generic_form.html')
+    template = loader.get_template('generic_form.html')
     context_dict = {
         'form':form,
         'subnav':'history',
         'has_files':True,
+        'base':'member_resources/base_member_resources.html',
         'submit_name':'Upload Minutes',
         'back_button':{'link':reverse('member_resources:main_meeting_minutes'),'text':'To Meeting Minutes'},
         'form_title':'Upload Meeting Minutes',
@@ -1205,13 +1209,14 @@ def manage_officers(request,term_id):
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
         formset = ManageOfficersFormSet(prefix='officers',queryset=Officer.objects.filter(term=term))
-    template = loader.get_template('member_resources/generic_formset.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
         'prefix':'officers',
         'subnav':'manage_members',
         'can_add_row':True,
         'has_files':True,
+        'base':'member_resources/base_member_resources.html',
         'submit_name':'Update Officers',
         'form_title':'Add/Remove Members as Officers for %s'%(unicode(term)),
         'back_button':{'link':reverse('member_resources:manage_membership'),'text':'To Membership Management'},
@@ -1258,13 +1263,14 @@ def add_active_statuses(request):
         ManageActiveCurrentStatusFormSet.form.base_fields['member'].queryset=get_actives()
         ManageActiveCurrentStatusFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Active')
         formset = ManageActiveCurrentStatusFormSet(queryset=Distinction.objects.none(),initial=initial,prefix='current_status')
-    template = loader.get_template('member_resources/generic_formset.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
         'prefix':'current_status',
         'subnav':'manage_members',
         'can_add_row':True,
         'has_files':False,
+        'base':'member_resources/base_member_resources.html',
         'submit_name':'Update Statuses',
         'form_title':'Add Active Distinctions for  %s'%(unicode(term)),
         'back_button':{'link':reverse('member_resources:manage_membership'),'text':'To Membership Management'},
@@ -1292,13 +1298,14 @@ def manage_active_statuses(request):
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
         formset = ManageActiveCurrentStatusFormSet(prefix='active_status')
-    template = loader.get_template('member_resources/generic_formset.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
         'prefix':'active_status',
         'subnav':'manage_members',
         'can_add_row':True,
         'has_files':False,
+        'base':'member_resources/base_member_resources.html',
         'submit_name':'Update Statuses',
         'form_title':'Edit Active Distinctions',
         'back_button':{'link':reverse('member_resources:manage_membership'),'text':'To Membership Management'},
@@ -1499,12 +1506,13 @@ def handle_electees_stopping_electing(request):
             initial_data.append({'electee':electee.get_full_name(),'uniqname':electee.uniqname,'still_electing':electee.still_electing})
         formset = ManageElecteeStillElecting(initial=initial_data)
     
-    template = loader.get_template('member_resources/generic_formset.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
         'subnav':'manage_members',
         'can_add_row':False,
         'has_files':False,
+        'base':'member_resources/base_member_resources.html',
         'submit_name':'Update Electees Still Electing',
         'form_title':'Manage Electees Still Electing',
         'back_button':{'link':reverse('member_resources:manage_membership'),'text':'To Membership Management'},
@@ -1686,7 +1694,7 @@ def add_external_service(request):
     else:
         formset=ExternalServiceFormSet(queryset=ProgressItem.objects.filter(term=get_current_term(),event_type__name='External Service Hours'),prefix='external_service')
     
-    template = loader.get_template('member_resources/generic_formset.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
         'prefix':'external_service',
@@ -1694,6 +1702,7 @@ def add_external_service(request):
         'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Miscellaneous Requirements'},
         'submit_name':'Update External Service Hours',
         'has_files':False,
+        'base':'member_resources/base_member_resources.html',
         'form_title':'Add/Update External Service Hours',
         'help_text':'Note that external service hours only count for electees and that a maximum of 5 may be submitted. Any hours over 5 for a given electee will be saturated at 5.',
         'can_add_row':True,
@@ -1748,13 +1757,14 @@ def manage_dues(request):
             initial_data.append({'electee':electee.get_full_name(),'uniqname':electee.uniqname,'dues_paid':has_paid_dues})
         formset = ManageDuesFormSet(initial=initial_data)
     
-    template = loader.get_template('member_resources/generic_formset.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
         'subnav':'misc_reqs',
         'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Miscellaneous Requirements'},
         'submit_name':'Update Dues Payment',
         'has_files':False,
+        'base':'member_resources/base_member_resources.html',
         'form_title':'Manage Dues Payment',
         'help_text':'When electees pay their initition dues click the checkbox and click submit.',
         'can_add_row':False,
@@ -1870,7 +1880,7 @@ def manage_interview_credit(request):
                 if hours:
                     initial_data.append({'member':member,'interview_type':interview_type,'number_of_interviews':hours})
         formset=ManageInterviewsFormSet(initial=initial_data,prefix='active_interview')
-    template = loader.get_template('member_resources/generic_formset.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
         'prefix':'active_interview',
@@ -1878,6 +1888,7 @@ def manage_interview_credit(request):
         'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Miscellaneous Requirements'},
         'submit_name':'Update Active\'s Interview Credit',
         'has_files':False,
+        'base':'member_resources/base_member_resources.html',
         'form_title':'Manage Active\'s Interview Credit',
         'help_text':'For each active member that participated in electee interviews, please select the type and number of interviews. You should select the number of interviews completed, *not* the number of hours.',
         'can_add_row':True,
@@ -1950,7 +1961,7 @@ def manage_active_group_meetings(request):
             initial_data.append({'member':member,'group_meetings':group_meetings})
         formset = ManageActiveGroupMeetingsFormSet(initial=initial_data,prefix='active_group')
     
-    template = loader.get_template('member_resources/generic_formset.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
         'prefix':'active_group',
@@ -1958,6 +1969,7 @@ def manage_active_group_meetings(request):
         'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Miscellaneous Requirements'},
         'submit_name':'Update Active\'s Group Meeting Credit',
         'has_files':False,
+        'base':'member_resources/base_member_resources.html',
         'form_title':'Manage Active\'s Group Meeting Credit',
         'help_text':'Give credit for each group meeting that each group leader hosts/attends. Any above the minimum required will count as social events.',
         'can_add_row':True,
@@ -2083,13 +2095,14 @@ def manage_ugrad_paperwork(request):
             initial_data.append({'electee':electee.get_full_name(),'uniqname':electee.uniqname,'electee_exam_completed':exam,'peer_interviews_completed':interviews,'character_essays_completed':essays,'interviews_completed':char_interviews,'group_meetings':group_meetings})
         formset = ManageUgradPaperWorkFormSet(initial=initial_data)
     
-    template = loader.get_template('member_resources/generic_formset.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
         'subnav':'misc_reqs',
         'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Miscellaneous Requirements'},
         'submit_name':'Update Electee Progress',
         'has_files':False,
+        'base':'member_resources/base_member_resources.html',
         'form_title':'Manage Undergraduate Electee Paperwork Progress',
         'help_text':'For managing undergraduate electee progress toward the more miscellaneous of the requirements.',
         'can_add_row':False,
@@ -2157,13 +2170,14 @@ def manage_grad_paperwork(request):
             initial_data.append({'electee':electee.get_full_name(),'uniqname':electee.uniqname,'advisor_form_completed':advisor_form,'educational_background_form_completed':background_form,'interviews_completed':char_interviews})
         formset = ManageGradPaperWorkFormSet(initial=initial_data)
     
-    template = loader.get_template('member_resources/generic_formset.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
         'subnav':'misc_reqs',
         'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Miscellaneous Requirements'},
         'submit_name':'Update Electee Progress',
         'has_files':False,
+        'base':'member_resources/base_member_resources.html',
         'form_title':'Manage Graduate Electee Paperwork Progress',
         'help_text':'For managing graduate electee progress toward the more miscellaneous of the requirements.',
         'can_add_row':False,
@@ -2206,7 +2220,7 @@ def change_requirements(request,distinction_id):
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
         formset = RequirementFormSet(prefix='requirements',queryset=Requirement.objects.filter(distinction_type=distinction))
-    template = loader.get_template('member_resources/generic_formset.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
         'prefix':'requirements',
@@ -2214,6 +2228,7 @@ def change_requirements(request,distinction_id):
         'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Miscellaneous Requirements'},
         'submit_name':'Update Requirements',
         'has_files':False,
+        'base':'member_resources/base_member_resources.html',
         'form_title':'Manage %s Requirements'%(unicode(distinction)),
         'help_text':'For adding, changing, or removing requirements.',
         'can_add_row':True,
@@ -2241,7 +2256,7 @@ def change_event_categories(request):
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
         formset = EventCategoryFormSet(prefix='categories')
-    template = loader.get_template('member_resources/generic_formset.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
         'prefix':'categories',
@@ -2249,6 +2264,7 @@ def change_event_categories(request):
         'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Miscellaneous Requirements'},
         'submit_name':'Update Event Categories',
         'has_files':False,
+        'base':'member_resources/base_member_resources.html',
         'form_title':'Add or Change Event Categories',
         'help_text':'For adding, changing, or removing event categories. Note that removing an event category will remove any requirements, progress items, or events that use that event. Really don\'t do it.',
         'can_add_row':True,
@@ -2304,13 +2320,14 @@ def approve_tutoring_forms(request):
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
         formset = TutoringFormFormSet(queryset=TutoringRecord.objects.filter(approved=False))
-    template = loader.get_template('member_resources/generic_formset.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
         'subnav':'misc_reqs',
         'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Miscellaneous Requirements'},
         'submit_name':'Approve Tutoring Forms',
         'has_files':False,
+        'base':'member_resources/base_member_resources.html',
         'form_title':'Approve or Delete Tutoring Forms',
         'help_text':'These forms are submitted by members after tutoring sessions. They must be approved for credit to be issued.',
         'can_add_row':False,
@@ -2348,13 +2365,14 @@ def update_preferences(request):
                 initial[preference['name']]=preference['values'].index(preference['default'])
 
         form = PreferenceForm(PREFERENCES,initial=initial)
-    template = loader.get_template('member_resources/generic_form.html')
+    template = loader.get_template('generic_form.html')
     context_dict = {
         'form':form,
         'subnav':'member_profiles',
         'back_button':{'link':reverse('member_resources:profile',args=[request.user.username]),'text':'To Your Profile'},
         'submit_name':'Update Preferences',
         'has_files':False,
+        'base':'member_resources/base_member_resources.html',
         'form_title':'Update Your Account Preferences',
         'help_text':'These preferences affect how your interactions with the website, your calendar integration and others.',
         }

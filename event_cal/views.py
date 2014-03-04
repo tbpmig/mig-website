@@ -206,6 +206,7 @@ def index(request):
     context_dict = {
         "google_cals":gcals,
         'office_hours_cal':GoogleCalendar.objects.filter(name='Office Hours Calendar'),
+        'subnav':'gcal',
     }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -285,11 +286,17 @@ def meeting_sign_in(request,event_id,shift_id):
             else:
                 sign_in_sheet = sign_in_sheets[0]
                 form = MeetingSignInForm(question_text=sign_in_sheet.quick_question)
-    template = loader.get_template('event_cal/meeting_signin.html')
+    template = loader.get_template('generic_form.html')
     context_dict = {
-        'event':event,
-        'shift':shift,
         'form':form,
+        'subnav':'list',
+        'has_files':False,
+        'submit_name':'Sign into Meeting',
+#        'back_button':{'link':reverse('member_resources:view_progress',args=[uniqname]),'text':'To %s\'s Progress'%(profile.get_firstlast_name())},
+        'form_title':'Sign into %s'%(event.name),
+        'help_text':'Please enter the meeting sign-in code and answer the following quick survey questions',
+#        'can_add_row':False,
+        'base':'event_cal/base_event_cal.html',
     }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -323,6 +330,7 @@ def event_detail(request,event_id):
         'can_edit_event':can_edit_event(request.user,event),
         'can_add_sign_in':(Permissions.can_create_events(request.user) and not MeetingSignIn.objects.filter(event=event).exists() and event.use_sign_in),
         'can_complete':(can_complete_event(event) and can_edit_event(request.user,event)),
+        'subnav':'list',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -423,10 +431,15 @@ def carpool_sign_up(request,event_id):
             request.session['warning_message']='There were errors in your submission'
     else:
         form = CarpoolForm()
-    template = loader.get_template('event_cal/carpool_sign_up.html')
+    template = loader.get_template('generic_form.html')
     context_dict = {
-        'event':event,
         'form':form,
+        'subnav':'list',
+        'has_files':False,
+        'submit_name':'Sign up for Carpool',
+        'form_title':'Sign up for carpool for  %s'%(event.name),
+        'help_text':'If you need a ride or can drive people, please sign up to participate in the carpool',
+        'base':'event_cal/base_event_cal.html',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -453,9 +466,15 @@ def add_event_photo(request):
             request.session['warning_message']='There were errors in your submission'
     else:
         form = EventPhotoForm()
-    template = loader.get_template('event_cal/add_event_photo.html')
+    template = loader.get_template('generic_form.html')
     context_dict = {
         'form':form,
+        'subnav':'photo',
+        'has_files':True,
+        'submit_name':'Add Event Photo',
+        'form_title':'Add Event Photo',
+        'help_text':'You may optionally associate the photo with a particular event and/or project report.',
+        'base':'event_cal/base_event_cal.html',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -520,6 +539,7 @@ def list(request):
         'dp_ids':['dp_before','dp_after'],
         'sorted_event_categories':flatten_category_tree(None,0),
         'selected_boxes':selected_boxes,
+        'subnav':'list',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -547,6 +567,7 @@ def my_events(request):
         "events_im_leading":events_im_leading,
         'has_profile':has_profile,
         'event_signed_up':event_signed_up,
+        'subnav':'my_events',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -598,6 +619,7 @@ def create_event(request):
         'formset':formset,
         'dp_ids':dp_ids,
         'prefix':'shift',
+        'subnav':'add_event',
 #        'date_prefixes':[{'id_shift':['start_time_0','end_time_0']}],
         }
     context_dict.update(get_permissions(request.user))
@@ -627,10 +649,17 @@ def create_meeting_signin(request, event_id):
             request.session['error_message']='There were errors in the submitted meeting sign_in, please correct the errors noted below.'
     else:
         form = MeetingSignInForm()
-    template = loader.get_template('event_cal/create_meeting_signin.html')
+    template = loader.get_template('generic_form.html')
     context_dict = {
         'form':form,
-        'event':e,
+        'subnav':'list',
+        'has_files':False,
+        'submit_name':'Create  Sign-in',
+        'back_button':{'link':reverse('event_cal:event_detail',args=[event_id]),'text':'To %s Page'%(e.name)},
+        'form_title':'Add Sign in for %s'%(e.name),
+        'help_text':'In order to use the sign-in feature, please create a sign-in form. Note that the form will automatically have an optional \"Free Response\" question in addition to the quick question you provide.',
+#        'can_add_row':False,
+        'base':'event_cal/base_event_cal.html',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -706,6 +735,7 @@ def edit_event(request, event_id):
         'event':e,
         'dp_ids':dp_ids,
         'prefix':'shift',
+        'subnav':'list',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -760,11 +790,18 @@ def update_completed_event(request, event_id):
             request.session['error_message']='There were errors in your submission. Progress was not updated. Please correct the errors and try again.'
     else:
         formset = form_type(prefix='update_event',queryset=ProgressItem.objects.filter(related_event=e))
-    template = loader.get_template('event_cal/update_event.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
-        'event':e,
         'prefix':form_prefix,
+        'subnav':'list',
+        'has_files':False,
+        'submit_name':'Update Event',
+        'back_button':{'link':reverse('event_cal:event_detail',args=[event_id]),'text':'To  %s Page'%(e.name)},
+        'form_title':'Update Completion Report for  %s'%(e.name),
+        'help_text':'Note that this is *not* the project report. Use this to update the progress of an event that has already been completed. Those with progress are listed below.',
+        'can_add_row':True,
+        'base':'event_cal/base_event_cal.html',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -844,97 +881,27 @@ def complete_event(request, event_id):
             if is_fixed:
                 initial.append({'member':attendee})
             else:
-                initial.append({'member':attendee,'hours':user_hours[attendee]})
+                initial.append({'member':attendee,'amount_completed':round(user_hours[attendee],2)})
         form_type.extra=len(initial)+1
         formset = form_type(prefix=form_prefix,queryset=ProgressItem.objects.none(),initial=initial)
-    template = loader.get_template('event_cal/complete_event.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
-        'event':e,
         'prefix':form_prefix,
+        'subnav':'list',
+        'has_files':False,
+        'submit_name':'Complete Event',
+        'back_button':{'link':reverse('event_cal:event_detail',args=[event_id]),'text':'To  %s Page'%(e.name)},
+        'form_title':'Completion Report for  %s'%(e.name),
+        'help_text':'Note that this is *not* the project report. Use this to assign progress for those who attended the event. The list of those who signed up for the event, as well as the number of hours they signed up for, is included below. Please make any changes necessary and then click the complete event button. If the event uses a sign-in feature, only those who signed up in advance but did not sign in are included below. Those who signed in have already had their progress assigned.',
+        'can_add_row':True,
+        'base':'event_cal/base_event_cal.html',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
 
-def complete_event_old(request, event_id):
-    e = get_object_or_404(CalendarEvent,id=event_id)
-    error_message= None
-    if not can_edit_event(request.user,e):
-        request.session['error_message']='You are not authorized to edit this event'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
-    if e.is_fixed_progress():
-        form_type = CompleteFixedProgressEventFormSet
-        is_fixed = True
-    else:
-        form_type = CompleteEventFormSet
-        is_fixed = False
-    if not can_complete_event(e):
-        request.session['error_message'] = 'You cannot complete this event. It is either already completed, or there are shifts in the future.'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
-    if request.method == 'POST':
-        formset = form_type(request.POST,prefix='complete_event')
-        if formset.is_valid():
-            first_shift=e.eventshift_set.all()[0]
-            for form in formset:
-                if not 'attendee' in form.cleaned_data.keys():
-                    continue
-                attendee = form.cleaned_data['attendee']
-                if 'DELETE' in form.cleaned_data.keys() and form.cleaned_data['DELETE']:
-                    for shift in e.eventshift_set.all():
-                        if attendee in shift.attendees.all():
-                            shift.attendees.remove(attendee)
-                            shift.save()
-                    continue
-                if not attendee.is_member():
-                    continue
-                if is_fixed:
-                    hours = 1;
-                else:
-                    hours = form.cleaned_data['hours']
-                p=ProgressItem(member=attendee.memberprofile,term=get_current_term(),event_type=e.event_type,amount_completed=hours,date_completed=date.today())
-                p.name = e.name
-                p.related_event=e
-                p.save()
-                if not e.eventshift_set.filter(attendees=attendee).exists():
-                    first_shift.attendees.add(attendee)
-                    first_shift.save()
-            e.completed=True
-            e.save()
-            request.session['success_message']='Event completed and progress issued successfully'
-            request.session['project_report_event']=event_id
-            return redirect('event_cal:project_report')
-        else:
-            request.session['error_message']='There were errors in your submission. The event was not completed and progress was not issued. Please correct the errors and try again.'
-    else:
-
-        user_hours ={}
-        for shift in e.eventshift_set.all():
-            hours = (shift.end_time-shift.start_time).seconds/3600.0
-            for attendee in shift.attendees.all():
-                if attendee in user_hours.keys():
-                    user_hours[attendee]+=hours
-                else:
-                    user_hours[attendee]=hours
-        initial = []                    
-        for attendee in user_hours.keys():
-            if is_fixed:
-                initial.append({'attendee':attendee})
-            else:
-                initial.append({'attendee':attendee,'hours':user_hours[attendee]})
-        formset = form_type(initial=initial,prefix='complete_event')
-    template = loader.get_template('event_cal/complete_event.html')
-    context_dict = {
-        'error':error_message,
-        'formset':formset,
-        'event':e,
-        'prefix':'complete_event',
-        }
-    context_dict.update(get_permissions(request.user))
-    context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
-    return HttpResponse(template.render(context))
 
 def generate_announcements(request):
     if not Permissions.can_generate_announcements(request.user):
@@ -946,6 +913,7 @@ def generate_announcements(request):
     template = loader.get_template('event_cal/announcements.html')
     context_dict = {
         'announcement_parts':announcement_parts,
+        'subnav':'generate_announcements',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -969,10 +937,16 @@ def add_announcement(request):
     else:
         form = AnnouncementForm()
     dp_ids=['id_start_date','id_end_date']
-    template = loader.get_template('event_cal/add_announcement.html')
+    template = loader.get_template('generic_form.html')
     context_dict = {
         'form':form,
         'dp_ids':dp_ids,
+        'subnav':'add_announcement',
+        'has_files':False,
+        'submit_name':'Submit Announcement',
+        'form_title':'Add an Announcement Section',
+        'help_text':'Add an announcement to be included in the weekly email summary. Do not submit announcements for events. Those are automatically included using the information provided in the event details.',
+        'base':'event_cal/base_event_cal.html',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -1056,12 +1030,17 @@ def project_report(request):
             form = ProjectReportForm(instance=report)
         else:
             form = ProjectReportForm()
-    template = loader.get_template('event_cal/project_report.html')
+    template = loader.get_template('generic_form.html')
     dp_ids=['id_planning_start_date']
     context_dict ={
-            'form':form,
-            'event':event_name,
-            'dp_ids':dp_ids,
+        'form':form,
+        'dp_ids':dp_ids,
+        'subnav':'list',
+        'has_files':False,
+        'submit_name':'Create/update project report',
+        'form_title':'Create project report for %s'%(event_name),
+        'help_text':'These are reports sent to the national organization to determine eligibility for certain chapter awards. They are also used for transition material to help future project leaders perform a similar event. Please be descriptive in your responses.',
+        'base':'event_cal/base_event_cal.html',
         }
     if related_event:
         request.session['project_report_event']=related_event
@@ -1128,10 +1107,16 @@ Note: This is an automated email. Please do not reply to it as responses are not
     else:
         form = TutoringForm()
     dp_ids=['id_date_tutored']
-    template = loader.get_template('event_cal/submit_tutoring_form.html')
+    template = loader.get_template('generic_form.html')
     context_dict = {
         'form':form,
         'dp_ids':dp_ids,
+        'subnav':'tutoring_form',
+        'has_files':False,
+        'submit_name':'Submit Tutoring Form',
+        'form_title':'Tutoring Summary Form',
+        'help_text':'Please log your tutoring here. By submitting this form, you attest that you tutored the student for the claimed number of hours. Note that the student will be emailed and given the opportunity to provide anonymous feedback.',
+        'base':'event_cal/base_event_cal.html',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -1161,10 +1146,15 @@ def add_project_report_to_event(request,event_id):
         initial={'report':event.project_report}
         form = AddProjectReportForm(initial=initial)
         form.fields['report'].queryset = Permissions.project_reports_you_can_view(request.user)
-    template = loader.get_template('event_cal/attach_project_report.html')
+    template = loader.get_template('generic_form.html')
     context_dict = {
         'form':form,
-        'event':event,
+        'subnav':'list',
+        'has_files':False,
+        'submit_name':'Add/Update Attached Report',
+        'form_title':'Attach project report to %s'%(event.name),
+        'help_text':'You may have several events that share a common project report. Use this form to attach an existing project report to this event.',
+        'base':'event_cal/base_event_cal.html',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))

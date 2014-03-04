@@ -1,13 +1,12 @@
 {% extends "member_resources/base_member_resources.html" %}
 
 {% load staticfiles %}
-{% block subnavElecteesTab %}active{%endblock %}
 
 {% block subnavElectees %}
 {% if can_create_groups %}
-<li class="subtab {% block subnavCreateGroups%}{% endblock %}"><a href="{% url 'electees:edit_electee_groups'%}">Manage Electee Groups</a></li>
-<li class="subtab {% block subnavEditMembership%}{% endblock %}"><a href="{% url 'electees:edit_electee_group_membership'%}">Edit Electee Group Members</a></li>
-<li class="subtab {% block subnavGroupPoints%}{% endblock %}"><a href="{% url 'electees:edit_electee_group_points'%}">Edit Electee Group Points</a></li>
+<li class="subtab {%if subsubnav and subsubnav == 'groups' %}active{% endif %}"><a href="{% url 'electees:edit_electee_groups'%}">Manage Electee Groups</a></li>
+<li class="subtab  {%if subsubnav and subsubnav == 'members' %}active{% endif %}"><a href="{% url 'electees:edit_electee_group_membership'%}">Edit Electee Group Members</a></li>
+<li class="subtab {%if subsubnav and subsubnav == 'points' %}active{% endif %}"><a href="{% url 'electees:edit_electee_group_points'%}">Edit Electee Group Points</a></li>
 {% endif%}
 {% endblock %}
 
