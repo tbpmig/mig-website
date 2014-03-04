@@ -12,7 +12,8 @@
 
 <!-- CSS Files -->
 {% load staticfiles %}
-<link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
+
+<link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
 <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
 <link rel="stylesheet" type="text/css" href="{% static 'css/tbp.css' %}" />
 {% block css %}
@@ -67,84 +68,83 @@ ga('send', 'pageview');
 </head>
  
 <body>
+<div class="container-fluid">
     <div class="foot-wrapper">
-<!--Header-->
-<div class="navbar">
-      <div class="navbar-inner">
-        <div class="container">
-		<button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+        <!--Header-->
+<nav class="navbar navbar-default" role="navigation">
+    <div class="navbar-header">
+        <a class="navbar-brand" href="{% url 'home' %}">Tau Beta Pi: Michigan Gamma</a>
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
-          </button>
-          <a class="brand" href="{% url 'home' %}">Tau Beta Pi: Michigan Gamma</a>
-		  <div class="nav-collapse collapse">
-            <ul class="nav">
-				<li class="divider-vertical"></li>
-                <li class="dropdown {% block navAboutTBP %}{% endblock %}">
-                    <a id="Nav:AboutTBP" href="{% url 'about:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">About TBP <b class="caret"></b></a>
-                    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                        <li><a href="{% url 'about:index' %}">About</a></li>
-                        <li><a href="{% url 'about:eligibility' %}">Joining</a></li>
-                        <li><a href="{% url 'about:leadership' %}">Leadership</a></li>
-                        <li><a href="{% url 'about:bylaws' %}">Chapter Bylaws</a></li>
-                    </ul>
-                </li>
-				<li class="divider-vertical"></li>
-                <li class="dropdown {% block navCalendar %}{% endblock %}"><a id="Nav:Calendar" href="{% url 'event_cal:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">Calendar<b class="caret"></b></a>
-                    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                        <li><a href="{% url 'event_cal:index' %}">Google Calendar</a></li>
-                        <li><a href="{% url 'event_cal:list' %}">Event List</a></li>
-                        <li><a href="{% url 'event_cal:my_events' %}">My Events</a></li>
-                    </ul>
-                </li>
-				<li class="divider-vertical"></li>
-				<li class="dropdown {% block navOutreach %}{% endblock %}"><a id="Nav:Outreach" href="{% url 'outreach:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">Outreach Activities<b class="caret"></b></a>
-                    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                        <li><a href="{% url 'outreach:index' %}">Outreach</a></li>
-                        <li><a href="{% url 'outreach:mindset' %}">MindSET</a></li>
-                        <li><a href="{% url 'outreach:tutoring' %}">Tutoring</a></li>
-                        <li><a href="{% url 'outreach:townhalls' %}">Town Halls</a></li>
-                    </ul>
-                </li>
-				<li class="divider-vertical"></li>
-                <li class="dropdown {% block navMembers %}{% endblock %}"><a id="Nav:MemberResources" href="{% url 'member_resources:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">Member Resources<b class="caret"></b></a>           
-                    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                        <li><a href="{% url 'member_resources:member_profiles' %}">Members</a></li>
-                        <li><a href="{% url 'member_resources:main_meeting_minutes' %}">Meeting Minutes</a></li>
-                        <li><a href="{% url 'electees:view_electee_groups' %}">Electee Resources</a></li>
-                    </ul>
-                </li>
-				<li class="divider-vertical"></li>
-                <li class="dropdown {% block navCorporate %}{% endblock %}"><a id="Nav:Corporate" href="{% url 'corporate:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">Corporate Resources<b class="caret"></b></a>
-                    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                        <li><a href="{% url 'corporate:index' %}">For Companies</a></li>
-                        <li><a href="{% url 'corporate:resumes' %}">Member R&eacute;sum&eacute;s</a></li>
-                    </ul>
-                
-                </li>
-				<li class="divider-vertical"></li>
-                <li class="dropdown {% block navPublications %}{% endblock %}"><a id="Nav:Publications" href="{% url 'history:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">Publications<b class="caret"></b></a>
-                    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                        <li><a href="{% url 'history:index' %}">Website Posts</a></li>
-                        <li><a href="{% url 'history:cornerstone_view' %}">The Cornerstone</a></li>
-                        <li><a href="{% url 'history:alumninews_view' %}">Alumni Newsletters</a></li>
-                    </ul>
-                
-                </li>
-				<li class="divider-vertical"></li>
-				{% if user.is_authenticated %}
-                <li><p><a href="{% url 'member_resources:profile' user.username %}">{{user.username}}</a> is currently logged in. <a id="Nav:Logout" href="{% url 'logout' %}">Logout?</a></p></li>
-				{% else %}
-				<li><a id="Nav:Login" href="{% url 'login_view' %}?next={{request.path}}">Login</a></li>
-				{% endif %}
-                <li class="divider-vertical"></li>
-                <li><a href="http://bit.ly/13NlSSv">Report a bug.</a></li>
-			</ul>
-          </div><!--/.nav-collapse -->
-	 </div>
-      </div>
+        </button>
     </div>
+    <div class="navbar-collapse collapse">
+        <ul class="nav navbar-nav">
+            <li class="divider-vertical"></li>
+            <li class="dropdown {% if main_nav and main_nav == 'about' %}active{% endif%}">
+                <a id="Nav:AboutTBP" href="{% url 'about:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">About TBP <b class="caret"></b></a>
+                <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                    <li><a href="{% url 'about:index' %}">About</a></li>
+                    <li><a href="{% url 'about:eligibility' %}">Joining</a></li>
+                    <li><a href="{% url 'about:leadership' %}">Leadership</a></li>
+                    <li><a href="{% url 'about:bylaws' %}">Chapter Bylaws</a></li>
+                </ul>
+            </li>
+            <li class="divider-vertical"></li>
+            <li class="dropdown {% if main_nav and main_nav == 'cal' %}active{% endif %}"><a id="Nav:Calendar" href="{% url 'event_cal:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">Calendar <b class="caret"></b></a>
+                <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                    <li><a href="{% url 'event_cal:index' %}">Google Calendar</a></li>
+                    <li><a href="{% url 'event_cal:list' %}">Event List</a></li>
+                    <li><a href="{% url 'event_cal:my_events' %}">My Events</a></li>
+                </ul>
+            </li>
+            <li class="divider-vertical"></li>
+            <li class="dropdown  {% if main_nav and main_nav == 'outreach' %}active{% endif %}"><a id="Nav:Outreach" href="{% url 'outreach:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">Outreach Activities <b class="caret"></b></a>
+                <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                    <li><a href="{% url 'outreach:index' %}">Outreach</a></li>
+                    <li><a href="{% url 'outreach:mindset' %}">MindSET</a></li>
+                    <li><a href="{% url 'outreach:tutoring' %}">Tutoring</a></li>
+                    <li><a href="{% url 'outreach:townhalls' %}">Town Halls</a></li>
+                </ul>
+            </li>
+            <li class="divider-vertical"></li>
+            <li class="dropdown  {% if main_nav and main_nav == 'members' %}active{% endif %}"><a id="Nav:MemberResources" href="{% url 'member_resources:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">Member Resources <b class="caret"></b></a>           
+                <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                    <li><a href="{% url 'member_resources:member_profiles' %}">Members</a></li>
+                    <li><a href="{% url 'member_resources:main_meeting_minutes' %}">Meeting Minutes</a></li>
+                    <li><a href="{% url 'electees:view_electee_groups' %}">Electee Resources</a></li>
+                </ul>
+            </li>
+            <li class="divider-vertical"></li>
+            <li class="dropdown  {% if main_nav and main_nav == 'corporate' %}active{% endif %}"><a id="Nav:Corporate" href="{% url 'corporate:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">Corporate Resources <b class="caret"></b></a>
+                <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                    <li><a href="{% url 'corporate:index' %}">For Companies</a></li>
+                    <li><a href="{% url 'corporate:resumes' %}">Member R&eacute;sum&eacute;s</a></li>
+                </ul>
+            
+            </li>
+            <li class="divider-vertical"></li>
+            <li class="dropdown  {% if main_nav and main_nav == 'publications' %}active{% endif %}"><a id="Nav:Publications" href="{% url 'history:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">Publications<b class="caret"></b></a>
+                <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                    <li><a href="{% url 'history:index' %}">Website Posts</a></li>
+                    <li><a href="{% url 'history:cornerstone_view' %}">The Cornerstone</a></li>
+                    <li><a href="{% url 'history:alumninews_view' %}">Alumni Newsletters</a></li>
+                </ul>
+            
+            </li>
+            <li class="divider-vertical"></li>
+            {% if user.is_authenticated %}
+            <li><p><a href="{% url 'member_resources:profile' user.username %}">{{user.username}}</a> is currently logged in. <a id="Nav:Logout" href="{% url 'logout' %}">Logout?</a></p></li>
+            {% else %}
+            <li><a id="Nav:Login" href="{% url 'login_view' %}?next={{request.path}}">Login</a></li>
+            {% endif %}
+            <li class="divider-vertical"></li>
+            <li><a href="http://bit.ly/13NlSSv">Report a bug.</a></li>
+        </ul>
+    </div><!--/.nav-collapse -->
+</nav>
 <div id="page-header">
 <img src="{% static 'TBP_Logo.png' %}" id="logo" alt="TBP Logo"> 
 <h1>Tau Beta Pi&#8211;Michigan Gamma</h1>
@@ -188,63 +188,64 @@ ga('send', 'pageview');
 </div>
 <footer class="footer">
 <hr>
-    <div class="row">
-        <div class="span1 offset2">
-            <a href="http://tbp.org"><img src="{% static 'TBP_Logo.png' %}" id="logo" alt="TBP Logo"></a>
-        </div>
-        <div class="span2">
-            <address class="text-smaller">
-                <strong>Tau Beta Pi: Michigan Gamma</strong><br>
-                1226 EECS Building<br>
-                1301 Beal Ave.<br>
-                Ann Arbor, MI 48105<br>
-                <i class="fa fa-phone"></i> <a href="tel://1-734-615-4187">(734) 615-4187</a><br>
-                <i class="fa fa-envelope"></i> <a href="mailto:tbp.officers@umich.edu">tbp.officers@umich.edu</a><br> 
-            </address>
-        </div>
-        <div class="span3">
-            <ul class="footer-links">
-                <li>
-                    <a href="http://tbpbookswap.org" title="TBP Book Swap">
-                        <i class="fa fa-book fa-2x"></i>
-                    </a>
-                </li>
-                <li>
-                    <a href="http://umcareerfair.org" title="SWE/TBP Career Fair">
-                        <i class="fa fa-briefcase fa-2x"></i>
-                    </a>
-                </li>
-                <li>
-                    <a href="https://www.facebook.com/groups/174096225957916/" title="TBP Facebook Group">
-                        <i class="fa fa-facebook fa-2x"></i>
-                    </a>
-                </li>
-                <li>
-                    <a href="http://www.linkedin.com/groups?home=&gid=3836030&trk=anet_ug_hm&goback=%2Egna_3836030" title="TBP LinkedIn Group">
-                        <i class="fa fa-linkedin fa-2x"></i>
-                    </a>
-                </li>
-                <li>
-                    <a href="http://twitter.com/tbpmig" title="TBP Twitter Account">
-                        <i class="fa fa-twitter fa-2x"></i>
-                    </a>
-                </li>
-                <li>
-                    <a href="https://www.facebook.com/TBPMiG" title="TBP Facebook Page">
-                        <i class="fa fa-facebook-square fa-2x"></i>
-                    </a>
-                </li>
-            <ul>
-        </div>
-        <div class="span2">
-            <a href="http://www.engin.umich.edu"><img src="{% static 'coe_block_m.png' %}" id="logo" alt="UM Engineering Logo"></a> 
-        </div>
+<div class="row">
+    <div class="col-md-1 col-md-offset-2">
+        <a href="http://tbp.org"><img src="{% static 'TBP_Logo.png' %}" id="logo" alt="TBP Logo"></a>
     </div>
+    <div class="col-md-2">
+        <address class="text-smaller">
+            <strong>Tau Beta Pi: Michigan Gamma</strong><br>
+            1226 EECS Building<br>
+            1301 Beal Ave.<br>
+            Ann Arbor, MI 48105<br>
+            <i class="fa fa-phone"></i> <a href="tel://1-734-615-4187">(734) 615-4187</a><br>
+            <i class="fa fa-envelope"></i> <a href="mailto:tbp.officers@umich.edu">tbp.officers@umich.edu</a><br> 
+        </address>
+    </div>
+    <div class="col-md-3">
+        <ul class="footer-links">
+            <li>
+                <a href="http://tbpbookswap.org" title="TBP Book Swap">
+                    <i class="fa fa-book fa-2x"></i>
+                </a>
+            </li>
+            <li>
+                <a href="http://umcareerfair.org" title="SWE/TBP Career Fair">
+                    <i class="fa fa-briefcase fa-2x"></i>
+                </a>
+            </li>
+            <li>
+                <a href="https://www.facebook.com/groups/174096225957916/" title="TBP Facebook Group">
+                    <i class="fa fa-facebook fa-2x"></i>
+                </a>
+            </li>
+            <li>
+                <a href="http://www.linkedin.com/groups?home=&gid=3836030&trk=anet_ug_hm&goback=%2Egna_3836030" title="TBP LinkedIn Group">
+                    <i class="fa fa-linkedin fa-2x"></i>
+                </a>
+            </li>
+            <li>
+                <a href="http://twitter.com/tbpmig" title="TBP Twitter Account">
+                    <i class="fa fa-twitter fa-2x"></i>
+                </a>
+            </li>
+            <li>
+                <a href="https://www.facebook.com/TBPMiG" title="TBP Facebook Page">
+                    <i class="fa fa-facebook-square fa-2x"></i>
+                </a>
+            </li>
+        <ul>
+    </div>
+    <div class="col-md-2">
+        <a href="http://www.engin.umich.edu"><img src="{% static 'coe_block_m.png' %}" id="logo" alt="UM Engineering Logo"></a> 
+    </div>
+</div>
 </footer>
+</div>
 </body>
 </html>
-    <script src="//code.jquery.com/jquery-1.10.1.min.js"></script>
-    <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js" defer></script>
+<script src="//code.jquery.com/jquery-1.10.1.min.js"></script>
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js" defer></script>
 <script>
             jQuery(function($){
                 $('.navbar .dropdown').hover(function(){

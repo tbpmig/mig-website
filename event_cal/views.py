@@ -164,6 +164,8 @@ def get_common_context(request):
         'before_grace':before_grace,
         'after_grace':after_grace,
         'edit_page':False,
+        'main_nav':'cal',
+        'new_bootstrap':True,
         })
     return context_dict
 

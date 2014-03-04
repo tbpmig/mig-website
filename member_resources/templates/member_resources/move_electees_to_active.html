@@ -2,10 +2,10 @@
 {% load staticfiles %}
 
 {% block content %}
-<div class="row-fluid">
-        <a class="btn" href="{% url 'member_resources:manage_membership' %}"><i class="icon-chevron-left"></i> Back to Membership Management</a>
+<div class="row">
+        <a class="btn btn-default" href="{% url 'member_resources:manage_membership' %}"><i class="glyphicon glyphicon-chevron-left"></i> Back to Membership Management</a>
 <form method="post" action="{% url 'member_resources:move_electees_to_active' %}">
-    <div class="span6">
+    <div class="col-md-6">
         <h4>Move Electees To Active</h4>
         <p>The following electees have sufficient progress to have completed their requirements, you may add more using the form, or make a form blank to remove someone from the list </p>
     {% csrf_token %}
@@ -13,10 +13,10 @@
     <table class="table table-striped">
         {% include 'formset_template.html' %}
     </table>
-    <p><a class="btn add-row"  href="javascript:void(0)"/>Add another completed electee</a></p>
+    <p><a class="btn btn-default add-row"  href="javascript:void(0)"/>Add another completed electee</a></p>
     <input type="submit" value="Update Completed Electees" name = "submit"/>
     </div>
-    <div class="span6">
+    <div class="col-md-6">
         <h4>Bulk Move Electees To Actives</h4>
         {% if error_list %}
         <p class="text-error">The following uniqnames are not current electees.</p>

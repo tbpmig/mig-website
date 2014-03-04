@@ -3,14 +3,14 @@
 
 {% block content %}
 {% if profiles|length > 0 %}
-<div class="row-fluid">
-    <div class="span12">
+<div class="row">
+    <div class="col-md-12">
         <h3>Member Profiles</h3>
         <hr/>
-        <div class="row-fluid">
+        <div class="row">
         {% regroup profiles|dictsort:"status.id" by status as profiles_by_status %}
         {% for status in profiles_by_status %}
-            <div class="span3">
+            <div class="col-md-3">
             <h4>{{status.grouper}}</h4>
             {% regroup status.list|dictsort:"standing.id" by standing as profiles_by_standing %}
             {% for standing in profiles_by_standing %}

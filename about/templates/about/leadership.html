@@ -6,101 +6,105 @@
 {% with term_id=requested_term.id %}
 <h2 class="text-center"> Tau Beta Pi Officers and Committee Members</h2>
 <p class="text-center"> For {{requested_term}}</p>
-<div class="tabbable tabs-left">
-    <ul class="nav nav-tabs">
+<div class="row">
+    <div class="col-md-2">
+    <ul class="nav nav-pills nav-stacked">
         {% for term in terms %}
         <li {% if term.id == term_id %}class="active"{% endif %}><a href="{% url 'about:leadership_for_term' term.id %}" >{{term}}</a></li>				
 		{% endfor %}
     </ul>
-	<div class="tab-content">
-        <div class="tab-pane active" id="{{term_id}}">
-            <div class="accordion" id="OfficerAccordian{{term_id}}">
-				<div class="accordion-group">
-					<div class="accordian-heading">
-                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#OfficerAccordion{{term_id}}" href="#officersCollapse{{term_id}}">
-							<h3 class="text-center">Officers</h3>
-						</a>
-					</div>
-                    <div id="officersCollapse{{term_id}}" class="accordion-body collapse in">
-						<div class="accordion-inner">
-							<p class="text-center"><a href="mailto:tbp.officers@umich.edu">tbp.officers@umich.edu</a></p>
-							{% if has_teams %}
-							{% for team_data in officers.officers|dictsort:"order" %}
-							<h3>{{team_data.name}}</h3>
-							{% if team_data.lead %}
-							<p>Team Lead: {{team_data.lead}}</p>
-                            {% endif %}
-							{% for officer in team_data.officers|dictsort:"position.id" %}
-							    {% if forloop.counter0|divisibleby:"4" %}
-							    <div class="row-fluid">
-							    {% endif %}
-								<div class="span3 officer-profile">
-									<h4>{{officer.position}}</h4>
-									<p><strong>{{officer.user.get_firstlast_name}}</strong></p>
-									{% if is_current %}
-									<a href="mailto:{{officer.position.email}}">{{officer.position.email}}</a>
-									{% endif %}
-									<img  class="img-rounded" src="{{officer.website_photo.thumbnail.url}}" ></img>
-                                    <p class="text-justify">{{officer.website_bio|my_markdown}}</p>
-                                </div>
-							{% if forloop.counter|divisibleby:"4" or forloop.last %}
-							</div>
-                            {% endif %}
-								{% endfor %}
-                            <hr/>
-							{% endfor %}
-                            {% else %}
-							{% for officer in officers.officers|dictsort:"position.id" %}
-							{% if forloop.counter0|divisibleby:"4" %}
-							<div class="row-fluid">
-							{% endif %}
-								<div class="span3 officer-profile">
-									<h4>{{officer.position}}</h4>
-									<p><strong>{{officer.user.get_firstlast_name}}</strong></p>
-									{% if is_current %}
-									<a href="mailto:{{officer.position.email}}">{{officer.position.email}}</a>
-									{% endif %}
-									<img  class="img-rounded" src="{{officer.website_photo.thumbnail.url}}"></img>
-									<p class="text-justify">{{officer.website_bio|my_markdown}}</p>
-								</div>
-							{% if forloop.counter|divisibleby:"4" or forloop.last %}
-							</div>
-                            {% endif %}
-                            {% endfor %}
-                            {% endif %}
-						</div>
-					</div>
+    </div>
+	<div class="col-md-10">
+        <div class="panel-group" id="OfficerAccordian{{term_id}}">
+			<div class="panel panel-default">
+        		<div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a data-toggle="collapse" data-parent="#OfficerAccordion{{term_id}}" href="#officersCollapse{{term_id}}">
+							Officers
+                        </a>
+                    </h4>
 				</div>
-				{% if officers.advisors %}
-				<div class="accordion-group">
-					<div class="accordian-heading">
-                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#OfficerAccordion{{term_id}}" href="#advisorsCollapse{{term_id}}">
-							<h3 class="text-center">Advisors</h3>
-						</a>
-					</div>
-                    <div id="advisorsCollapse{{term_id}}" class="accordion-body collapse in">
-						<div class="accordion-inner">
-							<p class="text-center"><a href="mailto:tbp-advisors@umich.edu">tbp-advisors@umich.edu</a></p>
-							
-							{% for advisor in officers.advisors %}
-							{% if forloop.counter0|divisibleby:"4" %}
-							<div class="row-fluid">
-							{% endif %}
-								<div class="span3 officer-profile">
-									<p><strong>{{advisor.user.get_firstlast_name}}</strong></p>
-									<img  class="img-rounded" src="{{advisor.website_photo.thumbnail.url}}"></img>
-									<p class="text-justify">{{advisor.website_bio|my_markdown}}</p>
-								</div>
-							{% if forloop.counter|divisibleby:"4" or forloop.last %}
-							</div>
+                <div id="officersCollapse{{term_id}}" class="panel-collapse collapse in">
+                    <div class="panel-body">
+                        <p class="text-center"><a href="mailto:tbp.officers@umich.edu">tbp.officers@umich.edu</a></p>
+                        {% if has_teams %}
+                        {% for team_data in officers.officers|dictsort:"order" %}
+                        <h3>{{team_data.name}}</h3>
+                        {% if team_data.lead %}
+                        <p>Team Lead: {{team_data.lead}}</p>
+                        {% endif %}
+                        {% for officer in team_data.officers|dictsort:"position.id" %}
+                            {% if forloop.counter0|divisibleby:"4" %}
+                            <div class="row">
                             {% endif %}
+                            <div class="col-md-3 officer-profile">
+                                <h4>{{officer.position}}</h4>
+                                <p><strong>{{officer.user.get_firstlast_name}}</strong></p>
+                                {% if is_current %}
+                                <a href="mailto:{{officer.position.email}}">{{officer.position.email}}</a>
+                                {% endif %}
+                                <img  class="img-responsive img-rounded" src="{{officer.website_photo.thumbnail.url}}" ></img>
+                                <p class="text-justify">{{officer.website_bio|my_markdown}}</p>
+                            </div>
+                        {% if forloop.counter|divisibleby:"4" or forloop.last %}
+                        </div>
+                        {% endif %}
                             {% endfor %}
-							<hr/>
-						</div>
-					</div>
+                        <hr/>
+                        {% endfor %}
+                        {% else %}
+                        {% for officer in officers.officers|dictsort:"position.id" %}
+                        {% if forloop.counter0|divisibleby:"4" %}
+                        <div class="row">
+                        {% endif %}
+                            <div class="col-md-3 officer-profile">
+                                <h4>{{officer.position}}</h4>
+                                <p><strong>{{officer.user.get_firstlast_name}}</strong></p>
+                                {% if is_current %}
+                                <a href="mailto:{{officer.position.email}}">{{officer.position.email}}</a>
+                                {% endif %}
+                                <img  class="img-responsive img-rounded" src="{{officer.website_photo.thumbnail.url}}"></img>
+                                <p class="text-justify">{{officer.website_bio|my_markdown}}</p>
+                            </div>
+                        {% if forloop.counter|divisibleby:"4" or forloop.last %}
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+		    {% if officers.advisors %}
+			<div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a data-toggle="collapse" data-parent="#OfficerAccordion{{term_id}}" href="#advisorsCollapse{{term_id}}">
+							Advisors
+                        </a>
+                    </h4>
 				</div>
-				{% endif %}
+                <div id="advisorsCollapse{{term_id}}" class="panel-collapse collapse in">
+                    <div class="panel-body">
+                        <p class="text-center"><a href="mailto:tbp-advisors@umich.edu">tbp-advisors@umich.edu</a></p>
+                        
+                        {% for advisor in officers.advisors %}
+                        {% if forloop.counter0|divisibleby:"4" %}
+                        <div class="row">
+                        {% endif %}
+                            <div class="col-md-3 officer-profile">
+                                <p><strong>{{advisor.user.get_firstlast_name}}</strong></p>
+                                <img  class="img-responsive img-rounded" src="{{advisor.website_photo.thumbnail.url}}"></img>
+                                <p class="text-justify">{{advisor.website_bio|my_markdown}}</p>
+                            </div>
+                        {% if forloop.counter|divisibleby:"4" or forloop.last %}
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                        <hr/>
+                    </div>
+                </div>
 			</div>
+			{% endif %}
 		</div>
 	</div>
 </div>

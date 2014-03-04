@@ -2,9 +2,9 @@
 {% load staticfiles %}
 
 {% block content %}
-<div class="row-fluid">
-    <div class="span6">
-        <a class="btn" href="{% url 'member_resources:manage_membership' %}"><i class="icon-chevron-left"></i> Back to Membership Management</a>
+<div class="row">
+    <div class="col-md-6">
+        <a class="btn btn-default" href="{% url 'member_resources:manage_membership' %}"><i class="glyphicon glyphicon-chevron-left"></i> Back to Membership Management</a>
         <h4>Current {{list_name}}</h4>
         <p>These are the members who currently are listed as {{list_name|lower}}, will be able to log-in and (if they haven't done so already) create profiles</p>
         <hr>
@@ -12,7 +12,7 @@
         <p>{{member}}</p>
         {% endfor %}
     </div>
-    <div class="span6">
+    <div class="col-md-6">
         <form method="post" action="{{link}}">
             {% csrf_token %}
             <h4>Add New {{list_name}}</h4>

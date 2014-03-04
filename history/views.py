@@ -15,7 +15,11 @@ def get_permissions(user):
     return permission_dict
 def get_common_context(request):
     context_dict=get_message_dict(request)
-    context_dict.update({'request':request})
+    context_dict.update({
+        'request':request,
+        'main_nav':'publications',
+        'new_bootstrap':True,
+    })
     return context_dict
 
 def get_article_view(request,article_id):

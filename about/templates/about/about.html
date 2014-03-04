@@ -2,10 +2,10 @@
 {% load staticfiles %}
 
 {% block content %}
-<div class="row-fluid">
-	<div class="span12">
+<div class="row">
+	<div class="col-md-12">
     {% if slideshow_photos %}
-    <div id="aboutSlideshow" class="carousel slide" data-interval=10000>
+    <div id="aboutSlideshow" class="carousel slide" data-ride="carousel" data-interval=10000>
         <ol class="carousel-indicators">
         {% for slide in slideshow_photos %}
             <li data-target="#aboutSlideshow" data-slide-to="{{forloop.counter0}}" {%if forloop.first %}class="active"{%endif %}></li>
@@ -30,13 +30,13 @@
             {% endfor %}
         </div>
     {% if slideshow_photos|length > 1 %}
-	<a class="left carousel-control" href="#aboutSlideshow" data-slide="prev">&lsaquo;</a>
-    <a class="right carousel-control" href="#aboutSlideshow" data-slide="next">&rsaquo;</a>
+    <a class="left carousel-control" href="#aboutSlideshow" data-slide="prev"><span class="glyphicon glyphicon-chevron-left"></span></a>
+    <a class="right carousel-control" href="#aboutSlideshow" data-slide="next"><span class="glyphicon glyphicon-chevron-right"></span></a>
     {% endif %}
     </div>
     {% endif %}
     {% if can_edit_about_photos %}
-    <p><a class="btn" href="{% url 'about:update_about_photos' %}">Update About Page Photos</a></p>
+    <p><a class="btn btn-warning" href="{% url 'about:update_about_photos' %}">Update About Page Photos</a></p>
     {% endif %}
 		<h2> What is Tau Beta Pi?</h2>
 		<p> Tau Beta Pi (TBP) is the only engineering honor society representing the entire 

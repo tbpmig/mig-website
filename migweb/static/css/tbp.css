@@ -1,9 +1,6 @@
 html,body {
     height:100%;
 }
-nav a{
-font-size:20pt;
-}
 [class^="location-"],
 [class*=" location-"]{
     position:absolute;
@@ -215,6 +212,9 @@ img#logo {
     width:40em;
     float:right;
 }
+/*#homeSlideshow .carousel-caption{
+    background-color:rgba(60,60,65,.6);
+}*/
 
 /* ==============================*/
 /* ======Nav Bar ================*/

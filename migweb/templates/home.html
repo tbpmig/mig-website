@@ -15,8 +15,8 @@
 </div>
 {% endfor %}
 {% endif %}
-<div class="row-fluid">
-<div class="span9">
+<div class="row">
+<div class="col-md-9">
     <article>
     {% if slideshow_photos %}
     <div id="homeSlideshow" class="carousel slide" data-interval="10000">
@@ -40,8 +40,8 @@
             {% endfor %}
         </div>
     {% if slideshow_photos|length > 1 %}
-	<a class="left carousel-control" href="#homeSlideshow" data-slide="prev">&lsaquo;</a>
-    <a class="right carousel-control" href="#homeSlideshow" data-slide="next">&rsaquo;</a>
+    <a class="left carousel-control" href="#homeSlideshow" data-slide="prev"><span class="glyphicon glyphicon-chevron-left"></span></a>
+    <a class="right carousel-control" href="#homeSlideshow" data-slide="next"><span class="glyphicon glyphicon-chevron-right"></span></a>
     {% endif %}
     </div>
     {% endif %}
@@ -61,18 +61,16 @@
 </article>
 </div>
 <!--Left Column-->
-<div class="span3">
+<div class="col-md-3">
     {% if quick_links %}
-        <aside>
         <h3>Quick Links</h3>
         {% for link in quick_links %}
         <p><a href="{{ link.link }}">{{link.link_name}}</a></p>
         {% endfor %}
-        </aside>
     {% endif %}
 <aside>
 {% if upcoming_events %}
-<h1>Upcoming Events</h1>
+<h3>Upcoming Events</h3>
 <ul id="event-list">
 {% for event in upcoming_events %}
 <li>
@@ -104,7 +102,6 @@
 {% endfor %}
 </ul>
 {% endif %}
-</aside>
 </div>
 </div>
 

@@ -3,41 +3,41 @@
 
 {% block content %}
 {% if can_upload_minutes %}
-<div class = "row-fluid">
-    <div class="span4">
-        <p><a class="btn" href="{% url 'member_resources:upload_minutes' %}">Upload Minutes</a></p>
+<div class = "row">
+    <div class="col-md-4">
+        <p><a class="btn btn-default" href="{% url 'member_resources:upload_minutes' %}">Upload Minutes</a></p>
     </div>
 </div>
 {% endif %}
-<div class="tabbable tabs-left">
-    <ul class = "nav nav-tabs">
-        {% if user_is_member %}
-        <li {% if minutes_name == 'Officer Meeting Minutes' %}class="active"{% endif%}><a href="{% url 'member_resources:officer_meeting_minutes' %}" >Officer Meeting Minutes</a></li>
-        {% endif %}
-        <li {% if minutes_name == 'Meeting Minutes' %}class="active"{% endif%}><a href="{% url 'member_resources:main_meeting_minutes' %}" >General Meeting Minutes</a></li>
-        {% if user_is_member %}
-        <li {% if minutes_name == 'Advisory Board Minutes' %}class="active"{% endif%}><a href="{% url 'member_resources:advisory_board_meeting_minutes' %}" >Advisory Board Meeting Minutes</a></li>
-        {% endif %}
-        <li {% if minutes_name == 'New Initiatives Meeting Minutes' %}class="active"{% endif%}><a href="{% url 'member_resources:new_initiatives_meeting_minutes' %}">New Initiatives Meeting Minutes</a></li>
-    </ul>
-    <div class="tab-content">
-        <div class="tab-pane active"> 
-                <h3>{{minutes_name}}</h3>
-            <div class="row-fluid">
-                {% if minutes %}
-                {% regroup minutes|dictsortreversed:"semester.id" by semester as minutes_by_term %}
-                {% for minutes_term in minutes_by_term %}
-                <div class="span3">
-                    <h5>{{minutes_term.grouper}}</h5>
-                    {% for minute in minutes_term.list %}
-                        <p><a href="{{minute.pdf_file.url}}">{{minute}}</a></p>
-                    {% endfor %}
-                </div>
-                {% cycle '' '' '' '</div><hr/><div class="row-fluid">' %}
+<div class="row">
+    <div class="col-md-3">
+        <ul class = "nav nav-pills nav-stacked">
+            {% if user_is_member %}
+            <li {% if minutes_name == 'Officer Meeting Minutes' %}class="active"{% endif%}><a href="{% url 'member_resources:officer_meeting_minutes' %}" >Officer Meeting Minutes</a></li>
+            {% endif %}
+            <li {% if minutes_name == 'Meeting Minutes' %}class="active"{% endif%}><a href="{% url 'member_resources:main_meeting_minutes' %}" >General Meeting Minutes</a></li>
+            {% if user_is_member %}
+            <li {% if minutes_name == 'Advisory Board Minutes' %}class="active"{% endif%}><a href="{% url 'member_resources:advisory_board_meeting_minutes' %}" >Advisory Board Meeting Minutes</a></li>
+            {% endif %}
+            <li {% if minutes_name == 'New Initiatives Meeting Minutes' %}class="active"{% endif%}><a href="{% url 'member_resources:new_initiatives_meeting_minutes' %}">New Initiatives Meeting Minutes</a></li>
+        </ul>
+    </div>
+    <div class="col-md-9">
+        <h3>{{minutes_name}}</h3>
+        <div class="row">
+            {% if minutes %}
+            {% regroup minutes|dictsortreversed:"semester.id" by semester as minutes_by_term %}
+            {% for minutes_term in minutes_by_term %}
+            <div class="col-md-3">
+                <h5>{{minutes_term.grouper}}</h5>
+                {% for minute in minutes_term.list %}
+                    <p><a href="{{minute.pdf_file.url}}">{{minute}}</a></p>
                 {% endfor %}
-                {% endif %}
             </div>
+            {% cycle '' '' '' '</div><hr/><div class="row">' %}
+            {% endfor %}
+            {% endif %}
         </div>
-    </div>      
+    </div>
 </div>
 {% endblock content %}

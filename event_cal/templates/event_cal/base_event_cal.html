@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% load my_markdown %}
-{% block navCalendar %}active{% endblock %}
 {% block subnav %}
 <li {% if subnav and subnav == 'gcal' %}class="active"{% endif %}><a href="{% url 'event_cal:index' %}">Google Calendar</a></li>
 <li  {% if subnav and subnav == 'list' %}class="active"{% endif %}><a href="{% url 'event_cal:list' %}">Event List</a></li>
@@ -23,12 +22,12 @@
 {% endblock %}
 
 {% block content%}
-<div class="row-fluid" style="min-width:88em;">
-	<div class="span9">
+<div class="row" style="min-width:88em;">
+	<div class="col-md-9">
 		{% block cal_content %}
 		{% endblock cal_content %}
 	</div> 
-	<div class="span3">
+	<div class="col-md-3">
 		<aside>
 			{% if upcoming_events  and not edit%}
 				<h1>Upcoming Events</h1>

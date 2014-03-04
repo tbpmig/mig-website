@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% block navMembers %}active{% endblock %}
 {% block subnav %}
 <li {% if subnav and subnav == 'member_profiles' %}class="active"{% endif %}><a href="{% url 'member_resources:member_profiles' %}">Member Profiles</a></li>
 {% if user.is_authenticated and not needs_profile and user.userprofile.is_member %}

@@ -1,3 +1,4 @@
+from django.core.urlresolvers import reverse
 from django.db.models import Min
 from django.http import HttpResponse#, Http404, HttpResponseRedirect
 from django.forms.models import modelformset_factory
@@ -30,7 +31,9 @@ def get_common_context(request):
         'user_is_member':user_is_member,
         'has_profile':has_profile,
         'event_signed_up':event_signed_up,
-        'now':timezone.localtime(timezone.now()),
+        'now':timezone.now(),
+        'main_nav':'outreach',
+        'new_bootstrap':True,
         })
     return context_dict
 
@@ -38,7 +41,8 @@ def index(request):
     request.session['current_page']=request.path
     template = loader.get_template('outreach/outreach.html')
     context_dict = {
-        }
+        'subnav':'index',
+    }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
@@ -87,6 +91,7 @@ def mindset(request):
             'current_officers':current_officers,
             'volunteer_files':VolunteerFile.objects.all(),
             'slideshow_photos':mindset_slideshow_photos,
+            'subnav':'mindset',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -108,13 +113,21 @@ def update_mindset_modules(request):
     else:
        formset=MindSETModuleForm(prefix='mindset')
     context_dict = {
-            'formset':formset,
-            'prefix':'mindset',
+        'formset':formset,
+        'prefix':'mindset',
+        'subnav':'mindset',
+        'has_files':True,
+        'submit_name':'Update Modules',
+        'back_button':{'link':reverse('outreach:mindset'),'text':'To MindSET Page'},
+        'form_title':'Edit MindSET Module Resources',
+        'help_text':'Keep track of the resources associated with MindSET modules here.',
+        'can_add_row':True,
+        'base':'outreach/base_outreach.html',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
-    template = loader.get_template('outreach/mindset_module_edit.html')
+    template = loader.get_template('generic_formset.html')
     return HttpResponse(template.render(context))
 
 def update_mindset_photos(request):
@@ -133,13 +146,21 @@ def update_mindset_photos(request):
     else:
        formset=MindSETPhotoForm(prefix='mindset')
     context_dict = {
-            'formset':formset,
-            'prefix':'mindset',
+        'formset':formset,
+        'prefix':'mindset',
+        'subnav':'mindset',
+        'has_files':True,
+        'submit_name':'Update MindSET Photos',
+        'back_button':{'link':reverse('outreach:mindset'),'text':'To MindSET Page'},
+        'form_title':'Edit MindSET Photos',
+        'help_text':'You can update the photos for the MindSET section of the website here.',
+        'can_add_row':True,
+        'base':'outreach/base_outreach.html',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
-    template = loader.get_template('outreach/mindset_photos_edit.html')
+    template = loader.get_template('generic_formset.html')
     return HttpResponse(template.render(context))
 
 def tutoring(request):
@@ -152,6 +173,7 @@ def tutoring(request):
         'events':events,
         'tutoring_officers':officers,
         'pages':tutoring_pages,
+        'subnav':'tutoring',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -165,6 +187,7 @@ def townhalls(request):
     template = loader.get_template('outreach/townhalls.html')
     context_dict = {
         'events':events,
+        'subnav':'townhalls',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))

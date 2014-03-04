@@ -2,8 +2,8 @@
 {% load staticfiles %}
 
 {% block content %}
-<div class="row-fluid">
-    <div class="span6">
+<div class="row">
+    <div class="col-md-6">
         <h3>Membership Management</h3>
         <p>This page is for managing the membership profiles/permissions.</p>
         <p>The items you have permission to manage are listed below.</p>
@@ -28,15 +28,17 @@
         <li><a href="{% url 'member_resources:manage_officers' current_term.id%}">Manage Officers for Current Term</a></li>
         <li><a href="{% url 'member_resources:manage_officers' next_term.id%}">Manage Officers for Next Term</a></li>
     </ul>
-        <div class="accordion" id="allterms">
-            <div class="accordion-group">
-                <div class="accordion-heading">
-                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#allterms" href="#allTermsOpen">
-                        Manage Officers for Other Terms
-                    </a>
+        <div class="panel-group" id="allterms">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#allterms" href="#allTermsOpen">
+                            Manage Officers for Other Terms
+                        </a>
+                    </h4>
                 </div>
-                <div id="allTermsOpen" class="accordion-body collapse">
-                    <div class="accordion-inner">
+                <div id="allTermsOpen" class="panel-collapse collapse">
+                    <div class="panel-body">
                         <ul>
         {% for term in terms %}
         <li><a href="{% url 'member_resources:manage_officers' term.id%}">Manage Officers for {{term}} Term</a></li>

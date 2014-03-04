@@ -2,10 +2,14 @@
 {% load staticfiles %}
 
 {% block content %}
-<div class="row-fluid">
-        <a class="btn" href="{% url 'member_resources:view_misc_reqs' %}"><i class="icon-chevron-left"></i> Back to Progress Management</a>
-<form method="post" action="{% url 'member_resources:add_leadership_credit' %}">
-    <div class="span6">
+<div class="row">
+    <div class="col-md-6">
+    <a class="btn btn-default" href="{% url 'member_resources:view_misc_reqs' %}"><i class="glyphicon glyphicon-chevron-left"></i> Back to Progress Management</a>
+    </div>
+</div>
+<div class="row">
+        <form method="post" action="{% url 'member_resources:add_leadership_credit' %}">
+    <div class="col-md-6">
         <h4>Add Leadership Credits</h4>
         <p>The following members are either current officers, current group leaders, or listed as a leader for a calendar event. The list does not include any members who already have a leadership credit for this semester. You may add more using the form, or make a form blank to remove someone from the list. </p>
     {% csrf_token %}
@@ -13,10 +17,10 @@
     <table class="table table-striped">
         {% include 'formset_template.html' %}
     </table>
-    <p><a class="btn add-row"  href="javascript:void(0)"/>Add another leadership credit</a></p>
+    <p><a class="btn btn-default add-row"  href="javascript:void(0)"/>Add another leadership credit</a></p>
     <input type="submit" value="Update Leadership Credits" name = "submit"/>
     </div>
-    <div class="span6">
+    <div class="col-md-6">
         <h4>Bulk Add Leadership Credit</h4>
         {% if error_list %}
         <p class="text-error">The following uniqnames are not current members.</p>

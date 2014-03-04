@@ -28,6 +28,8 @@ def get_common_context(request):
     context_dict.update({
         'request':request,
         'contact_text':contact_text,
+        'new_bootstrap':True,
+        'main_nav':'corporate',
         })
     return context_dict
 def zipdir(path,zipf):

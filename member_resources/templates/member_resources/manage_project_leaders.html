@@ -2,9 +2,9 @@
 {% load staticfiles %}
 
 {% block content %}
-<div class="row-fluid">
-    <div class="span6">
-        <a class="btn" href="{% url 'member_resources:manage_membership' %}"><i class="icon-chevron-left"></i> Back to Membership Management</a>
+<div class="row">
+    <div class="col-md-6">
+        <a class="btn btn-default" href="{% url 'member_resources:manage_membership' %}"><i class="glyphicon glyphicon-chevron-left"></i> Back to Membership Management</a>
         <h4>Add/Remove Members as Project Leaders</h4>
 <form method="post" action="{% url 'member_resources:manage_project_leaders' %}">
     {% csrf_token %}
@@ -12,11 +12,11 @@
     <table class="table table-striped">
         {% include 'formset_template.html' %}
     </table>
-    <p><a class="btn add-row"  href="javascript:void(0)"/>Add another project leader</a></p>
+    <p><a class="btn btn-default add-row"  href="javascript:void(0)"/>Add another project leader</a></p>
     <input type="submit" value="Update Project Leaders" name = "submit"/>
 </form>
     </div>
-    <div class="span6">
+    <div class="col-md-6">
         <h4>Bulk Add Members as Project Leaders</h4>
         {% if error_list %}
         <p class="text-error">The following uniqnames are not members</p>

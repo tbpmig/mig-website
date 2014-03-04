@@ -4,21 +4,21 @@
 
 {% block content %}
 {% if profile %}
-<div class="row-fluid">
-    <div class="span6">
+<div class="row">
+    <div class="col-md-6">
         <div class="btn-group">
-            <a class="btn" href="{% url 'member_resources:member_profiles' %}"><i class="icon-chevron-left"></i> Back to Member List</a>
+            <a class="btn btn-default" href="{% url 'member_resources:member_profiles' %}"><i class="glyphicon glyphicon-chevron-left"></i> Back to Member List</a>
         {% if is_user %}
             <a class="btn btn-warning" href={% url 'member_resources:profile_edit' profile.uniqname %}>Edit Profile</a>
             <a class="btn btn-info" href={% url 'member_resources:update_preferences' %}>Edit Account Preferences</a>
         {% endif %}
     </div>
         <h3>{{profile.get_full_name}}</h3>
-        <div class="row-fluid">
-            <div class="span6">    
-                <img class="img-rounded" src="{{profile.photo.thumbnail.url}}"/>
+        <div class="row">
+            <div class="col-md-6">    
+                <img class="img-responsive img-rounded" src="{{profile.photo.thumbnail.url}}"/>
             </div>
-            <div class="span6">
+            <div class="col-md-6">
                 <p><b>Goes by:</b> {{profile.get_casual_name}}</p>
                 <p><b>Uniqname:</b> {{profile.uniqname}}</p>
                 <p><b> Preferred email address:</b> <a href="mailto:{{profile.get_email}}">{{profile.get_email}}</a></p>
@@ -55,7 +55,7 @@
             </div>
         </div>
     </div>
-    <div class="span3">
+    <div class="col-md-3">
         {% if officer_positions %}
         <h4>Officer Positions Held</h4>
         {% for position in officer_positions %}

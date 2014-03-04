@@ -1,10 +1,10 @@
 {% extends "electees/base_electees.html" %}
 
 {% block content %}
-<div class="row-fluid">
-    <div class="span4">
+<div class="row">
+    <div class="col-md-4">
         {% if can_edit_resources %}
-            <a href="{% url 'electees:edit_electee_resources' %}" class="btn">Edit Electee Resources</a>
+            <a href="{% url 'electees:edit_electee_resources' %}" class="btn btn-warning">Edit Electee Resources</a>
         {% endif %}
         <h3>Electee Resources</h3>
         <h4>Full Packets</h4>
@@ -26,7 +26,7 @@
     {% endfor %}
     </div>
     {% if groups|length > 0 %}
-    <div class="span4">
+    <div class="col-md-4">
         <h3>Electee Groups</h3>
         {% for group in groups|dictsort:"group_name" %}
         <div>
@@ -47,7 +47,7 @@
         <hr/>
         {% endfor %}
     </div>
-    <div class="span4">
+    <div class="col-md-4">
         <h4>Electee Competition Standings</h4>
         <table class="table">
             <thead>

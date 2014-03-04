@@ -2,8 +2,8 @@
 {% load staticfiles %}
 
 {% block content %}
-<div class="row-fluid">
-    <div class-"span12">
+<div class="row">
+    <div class="col-md-12">
 {% if can_manage_electees %}
     <p>Click <a href="{% url 'member_resources:view_progress_table' %}">here</a> for a table summarizing electee progress</p>
 {% endif %}

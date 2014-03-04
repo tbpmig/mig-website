@@ -8,8 +8,8 @@
 {% include 'datepicker.html' %}
 {% endblock js %}
 {% block cal_content %}
-<div class="row-fluid">
-    <div class="span6">
+<div class="row">
+    <div class="col-md-6">
         <h3>Filter Events</h3>
         <p> Find events that</p>
 <form action="{% url 'event_cal:list' %}" method="post">
@@ -42,7 +42,7 @@
     <input type="submit" value="Filter Events" name = "submit"/>
 </form>
 </div>
-<div class="span6">
+<div class="col-md-6">
 <h2>Event List</h2>
 <ul id="event-list">
     {% for packed_event in events %}

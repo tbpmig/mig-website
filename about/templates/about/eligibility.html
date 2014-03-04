@@ -3,22 +3,17 @@
 {% load my_markdown %}
 {% block content %}
 {% if can_edit_page %}
-        <p><a class="btn" href="{% url 'about:update_joining_page' %}">Update Joining Page Text</a></p>
+        <p><a class="btn btn-warning" href="{% url 'about:update_joining_page' %}">Update Joining Page Text</a></p>
 {% endif %}
-<div class="row-fluid">
-	<div class="span2">
-		<aside>
-            <h3> Eligibility Requirements</h3>
-            {% for elig in eligibility_text %}
-            {{elig.text|my_markdown}}
-            {% endfor %}
-		</aside>
+<div class="row">
+	<div class="col-md-2">
+        <h3> Eligibility Requirements</h3>
+        {% for elig in eligibility_text %}
+        {{elig.text|my_markdown}}
+        {% endfor %}
     </div>
-	<div class ="span8">
-    <div id="joiningSlideshow" class="carousel slide" data-interval=10000>
-        <ol class="carousel-indicators">
-            <li data-target="#joiningSlideshow" data-slide-to="0" class="active"></li>
-        </ol>
+	<div class ="col-md-8">
+    <div id="joiningSlideshow" class="carousel slide" data-ride="slide" data-interval=10000>
         <div class="carousel-inner">
             <div class="item active">
                 <img src="{% static 'electee_trophy.jpg' %}" alt="Electee Trophy" />
@@ -35,16 +30,14 @@
             {{why.text|my_markdown}}
             {% endfor %}
 	</div>
-	<div class="span2">
-		<aside>
-            <h3>Requirements to Join</h3>
-            {% for ugrad in ugrad_text %}
-            {{ugrad.text|my_markdown}}
-            {% endfor %}
-            {% for grad in grad_text %}
-            {{grad.text|my_markdown}}
-            {% endfor %}
-		</aside>
+	<div class="col-md-2">
+        <h3>Requirements to Join</h3>
+        {% for ugrad in ugrad_text %}
+        {{ugrad.text|my_markdown}}
+        {% endfor %}
+        {% for grad in grad_text %}
+        {{grad.text|my_markdown}}
+        {% endfor %}
 	</div>
 </div>
 {% endblock content %}

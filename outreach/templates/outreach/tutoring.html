@@ -4,51 +4,51 @@
 {% block subnavTutoring %}active{% endblock %} 
 
 {% block content %}
-<div class="row-fluid">
-    <div class="span9">
-        <div class="tabbable tabs-left">
-            <ul class="nav nav-tabs">
-                {% for page in pages %}
-                {% if not page.members_only or user_is_member %}
-                <li {% if forloop.first%}class="active"{%endif%}><a href="#{{forloop.counter0}}" data-toggle="tab">{{page.page_title}}</a></li>
-                {% endif %}
-                {% endfor %}
-            </ul>
-            <div class="tab-content">
-                {% for page in pages %}
-                {% if not page.members_only or user_is_member %}
-                <div class="tab-pane {%if forloop.first %}active{%endif%}" id="{{forloop.counter0}}">
-                    <h2>{{page.page_title}}</h2>
-                    {{page.page_content|my_markdown}}
-                </div>
-                {% endif %}
-                {% endfor %}
+<div class="row">
+    <div class="col-md-2">
+        <ul class="nav nav-pills nav-stacked">
+            {% for page in pages %}
+            {% if not page.members_only or user_is_member %}
+            <li {% if forloop.first%}class="active"{%endif%}><a href="#{{forloop.counter0}}" data-toggle="tab">{{page.page_title}}</a></li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="col-md-7">
+        <div class="tab-content">
+            {% for page in pages %}
+            {% if not page.members_only or user_is_member %}
+            <div class="tab-pane {%if forloop.first %}active{%endif%}" id="{{forloop.counter0}}">
+                <h2>{{page.page_title}}</h2>
+                {{page.page_content|my_markdown}}
             </div>
+            {% endif %}
+            {% endfor %}
+        </div>
                 <!--<h2>Tutoring at Pioneer High School</h2>
                 <p>Tau Beta Pi is also providing tutoring service to students at Pioneer High School during their after-school study hall.  Tutors specialize in math and science but are willing to provide tutoring in all subjects.  We tutor at Pioneer once a week throughout the semester.  If you would like to join in the project or have your student organization tutor at Pioneer High School please feel free to contact us at <a
                     href="mailto:tbp.campusoutreach@umich.edu">tbp.campusoutreach@umich.edu</a>.</p>-->
     </div>
+    <div class="col-md-3">
+        <h3>Tutoring Events this Semester</h3>
+        <p>Events are added continually throughout the semester, so be sure to check back later.</p>
+        {% if user_is_member %}
+            <a href="{% url 'event_cal:submit_tutoring_form' %}"><h3>Submit Tutoring Form</h3></a>
+        {% endif %}
+        <ul id="event-list">
+            {% for event in events %}
+                {% with can_edit_event=False %}
+                <li>
+                    {% include 'event_cal/event.html' %}
+                </li>
+                {% endwith %}
+            {%empty %}
+                <li>
+                    <p>We are still working on scheduling this semester tutoring events. Please check back soon for the {{term}} schedule.</p>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 </div>
-<div class="span3">
-    <h3>Tutoring Events this Semester</h3>
-    <p>Events are added continually throughout the semester, so be sure to check back later.</p>
-    {% if user_is_member %}
-    <a href="{% url 'event_cal:submit_tutoring_form' %}"><h3>Submit Tutoring Form</h3></a>
-    {% endif %}
-    <ul id="event-list">
-    {% for event in events %}
-    {% with can_edit_event=False %}
-        <li>
-        {% include 'event_cal/event.html' %}
-        </li>
-        {% endwith %}
-        {%empty %}
-        <li>
-        <p>We are still working on scheduling this semester tutoring events. Please check back soon for the {{term}} schedule.</p>
-        </li>
-        {% endfor %}
-    </ul>
-</div>
-		</div>
 
 {% endblock content %}

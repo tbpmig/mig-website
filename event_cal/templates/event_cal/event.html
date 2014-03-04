@@ -8,8 +8,8 @@
 {% endif %}
 {% if can_edit_event %}
 <div class="location-upper-right">
-<a href="{% url 'event_cal:edit_event' event.id %}"><i class="icon-edit"></i> Edit</a>
-<a href="{% url 'event_cal:delete_event' event.id %}"><i class="icon-remove"></i> Delete</a>
+<a href="{% url 'event_cal:edit_event' event.id %}"><i class="glyphicon glyphicon-edit"></i> Edit</a>
+<a href="{% url 'event_cal:delete_event' event.id %}"><i class="glyphicon glyphicon-remove"></i> Delete</a>
 </div>
 {% endif %}
 {% if has_profile and user.userprofile.is_member %}
@@ -44,12 +44,12 @@
         {% endif %}
     {% elif user.userprofile in shift.attendees.all %}
         {% if shift.can_sign_in %}
-            <p><a class="btn btn-small" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="icon-ok"></i> Sign-in to {{event.name}}</a></p>
+            <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
             {% if shift.is_before_start %}
-                <p><a class="btn btn-small" href="{% url 'event_cal:unsign_up' event.id shift.id %}"><i class="icon-remove"></i> Unsign-up</a></p>
+                <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:unsign_up' event.id shift.id %}"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% endif %}
         {% elif shift.is_before_start %}
-            <p><a class="btn btn-small" href="{% url 'event_cal:unsign_up' event.id shift.id %}"><i class="icon-remove"></i> Unsign-up</a></p>
+            <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:unsign_up' event.id shift.id %}"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% if event.use_sign_in %}
                 <p>Event sign-in is not open until event starts.</p>
             {% endif %}
@@ -62,12 +62,12 @@
         {% endif %}
     {% else %}
         {% if shift.can_sign_in %}
-            <p><a class="btn btn-small" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="icon-ok"></i> Sign-in to {{event.name}}</a></p>
+            <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
             {% if shift.can_sign_up %} 
-                <p><a class="btn btn-small" href="{% url 'event_cal:sign_up' event.id shift.id %}"><i class="icon-ok"></i> Sign-up</a></p>
+                <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:sign_up' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
             {% endif %}
         {% elif shift.can_sign_up %}
-            <p><a class="btn btn-small" href="{% url 'event_cal:sign_up' event.id shift.id %}"><i class="icon-ok"></i> Sign-up</a></p>
+            <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:sign_up' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
             {% if event.use_sign_in %}
                 <p>Event sign-in is not open until event starts.</p>
             {% endif %}
@@ -117,15 +117,17 @@
 {% endwith %}
 {% endfor %}
 {% else %}
-<div class="accordion" id="shifts{{ event.id }}">
-    <div class="accordion-group">
-        <div class="accordion-heading">
-            <a class="accordion-toggle" data-toggle="collapse" data-parent="#shifts{{ event.id }}" href="#shiftscol{{ event.id }}">
-                <h5>Shifts</h5>
-            </a>
+<div class="panel-group" id="shifts{{ event.id }}">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h5 class="panel-title">
+                <a data-toggle="collapse" data-parent="#shifts{{ event.id }}" href="#shiftscol{{ event.id }}">
+                    Shifts
+                </a>
+            </h5>
         </div>
-        <div id="shiftscol{{ event.id }}" class="accordion-body collapse{% if event.id == event_signed_up %} in{% endif %}">
-            <div class="accordion-inner">
+        <div id="shiftscol{{ event.id }}" class="panel-collapse collapse{% if event.id == event_signed_up or full_view%} in{% endif %}">
+            <div class="panel-body">
                 <table class="table table-striped">
                     <tr>
                         <th>Start Time</th>
@@ -174,13 +176,13 @@
         {% endif %}
     {% elif user.userprofile in shift.attendees.all %}
         {% if shift.can_sign_in %}
-            <td><p><a class="btn btn-small" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="icon-ok"></i> Sign-in to {{event.name}}</a></p>
+            <td><p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
             {% if shift.is_before_start %}
-                <p><a class="btn btn-small" href="{% url 'event_cal:unsign_up' event.id shift.id %}"><i class="icon-remove"></i> Unsign-up</a></p>
+                <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:unsign_up' event.id shift.id %}"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% endif %}
             </td>
         {% elif shift.is_before_start %}
-            <td><p><a class="btn btn-small" href="{% url 'event_cal:unsign_up' event.id shift.id %}"><i class="icon-remove"></i> Unsign-up</a></p>
+            <td><p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:unsign_up' event.id shift.id %}"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% if event.use_sign_in %}
                 <p>Event sign-in is not open until event starts.</p>
             {% endif %}
@@ -194,13 +196,13 @@
         {% endif %}
     {% else %}
         {% if shift.can_sign_in %}
-            <td><p><a class="btn btn-small" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="icon-ok"></i> Sign-in to {{event.name}}</a></p>
+            <td><p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
             {% if shift.can_sign_up %} 
-                <p><a class="btn btn-small" href="{% url 'event_cal:sign_up' event.id shift.id %}"><i class="icon-ok"></i> Sign-up</a></p>
+                <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:sign_up' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
             {% endif %}
             </td>
         {% elif shift.can_sign_up %}
-            <td><p><a class="btn btn-small" href="{% url 'event_cal:sign_up' event.id shift.id %}"><i class="icon-ok"></i> Sign-up</a></p>
+            <td><p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:sign_up' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
             {% if event.use_sign_in %}
                 <p>Event sign-in is not open until event starts.</p>
             {% endif %}
@@ -225,7 +227,7 @@
                                 <td>You must login to sign-up
                             {% endif %}
                             {% if can_edit_event %}
-                                <td><a class="btn btn-small" href="{% url 'event_cal:delete_shift' event.id shift.id %}"><i class="icon-remove"></i> Delete shift</a></td>
+                                <td><a class="btn btn-primary btn-sm" href="{% url 'event_cal:delete_shift' event.id shift.id %}"><i class="glyphicon glyphicon-remove"></i> Delete shift</a></td>
                             {% endif %}
                         </tr>
                     {% endwith %}

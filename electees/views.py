@@ -34,6 +34,7 @@ def get_common_context(request):
     context_dict.update({
         'request':request,
         'subnav':'electees',
+        'new_bootstrap':True,
     })
     return context_dict
 def view_electee_groups(request):

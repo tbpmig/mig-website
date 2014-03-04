@@ -14,15 +14,15 @@
         {% include 'event_cal/event.html' %}
     {% endwith %}
     {% if can_add_sign_in %}
-        <a class="btn btn-large" href={% url 'event_cal:create_meeting_signin' event.id %}>Add meeting sign-in</a>
+        <a class="btn btn-primary btn-lg" href={% url 'event_cal:create_meeting_signin' event.id %}>Add meeting sign-in</a>
     {% endif %}
     {% if can_complete %}
-        <a class="btn btn-large" href="{% url 'event_cal:complete_event' event.id %}">Complete Event and Assign Hours</a>
+        <a class="btn btn-success btn-lg" href="{% url 'event_cal:complete_event' event.id %}">Complete Event and Assign Hours</a>
     {% endif %}
     {% if event.completed %}
-    <a class="btn btn-large" href="{% url 'event_cal:project_report' %}">Add/Update Project Report</a>
-    <a class="btn btn-large" href="{% url 'event_cal:update_completed_event' event.id %}">Update Event Progress</a>
-    <a class="btn btn-large" href="{% url 'event_cal:add_project_report_to_event' event.id %}">Add/Swap Existing Project Report</a>
+    <a class="btn btn-info btn-lg" href="{% url 'event_cal:project_report' %}">Add/Update Project Report</a>
+    <a class="btn btn-warning btn-lg" href="{% url 'event_cal:update_completed_event' event.id %}">Update Event Progress</a>
+    <a class="btn btn-info btn-lg" href="{% url 'event_cal:add_project_report_to_event' event.id %}">Add/Swap Existing Project Report</a>
     {% endif %}
 {% else %}
 <h3>{{event.name}}</h3>

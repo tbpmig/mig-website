@@ -1,13 +1,12 @@
 {% extends "corporate/base_corporate.html" %}
 {% load staticfiles %}
-{% block subnavResumeBook %}active{% endblock %} 
 
 {% block subcontent %}
 <h3 class="text-center">Member Resumes</h3>
 <p class="text-center">Members' Resumes are available for download.</p>
 <div class="text-center">
-<a class="btn" href="/media/{{by_major_zip}}"><i class="icon-file"></i> Resumes by Major</a> 
-<a class="btn" href="/media/{{by_year_zip}}"><i class="icon-file"></i> Resumes by Year</a> 
+<a class="btn btn-default" href="/media/{{by_major_zip}}"><i class="glyphicon glyphicon-file"></i> Resumes by Major</a> 
+<a class="btn btn-default" href="/media/{{by_year_zip}}"><i class="glyphicon glyphicon-file"></i> Resumes by Year</a> 
 </div>
 
 {% endblock subcontent %}

@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% block navPublications %}active{% endblock %}
 {% block subnav %}
 <li {% if subnav and subnav == 'news' %}class="active"{%endif%}><a href="{% url 'history:index' %}">Chapter News</a></li>
 <li {% if subnav and subnav == 'cornerstone' %}class="active"{% endif%}><a href="{% url 'history:cornerstone_view' %}">The Cornerstone</a></li>

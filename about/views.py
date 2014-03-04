@@ -24,7 +24,11 @@ def get_permissions(user):
     return permission_dict
 def get_common_context(request):
     context_dict=get_message_dict(request)
-    context_dict.update({'request':request})
+    context_dict.update({
+        'request':request,
+        'main_nav':'about',
+        'new_bootstrap':True,
+        })
     return context_dict
 def get_terms():
     current = get_current_term()

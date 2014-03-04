@@ -2,10 +2,10 @@
 {% load staticfiles %}
 {% load member_resources_extras %}
 {% block content %}
-<div class="row-fluid">
-    <div class="span6">
+<div class="row">
+    <div class="col-md-6">
         {% if not is_own_progress %}
-        <a class="btn" href="{%url 'member_resources:view_progress_list' %}"><i class="icon-chevron-left"></i> Member Progress</a>
+        <a class="btn btn-default" href="{%url 'member_resources:view_progress_list' %}"><i class="glyphicon glyphicon-chevron-left"></i> Member Progress</a>
         {% endif %}
         <h3>{{profile}}</h3>
         <h4>Progress to date</h4>
@@ -18,14 +18,14 @@
         {% endautoescape %}
 
     </div>
-    <div class="span6" style="text-align:center;">
+    <div class="col-md-6" style="text-align:center;">
     {% if can_edit_progress %}
-    <a class="btn" href="{% url 'member_resources:edit_progress' profile.uniqname %}">Edit Progress Items</a>
+    <a class="btn btn-default" href="{% url 'member_resources:edit_progress' profile.uniqname %}">Edit Progress Items</a>
     {% endif %}
     {% if progress_items %}
         <h4>Progress Items to Date</h4>
-        <div class="row-fluid">
-            <div class="span6" style="text-align:center;">
+        <div class="row">
+            <div class="col-md-6" style="text-align:center;">
                 <ul class="progress-list">
                 {% for item in progress_items|partition:"2"|first %}
                     <li> 
@@ -36,7 +36,7 @@
                 {% endfor %}
                 </ul>
             </div>
-            <div class="span6" style="text-align:center;">
+            <div class="col-md-6" style="text-align:center;">
                 <ul class="progress-list">
                 {% for item in progress_items|partition:"2"|last %}
                     <li> 

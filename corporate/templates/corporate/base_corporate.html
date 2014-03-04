@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% load my_markdown %}
-{% block navCorporate %}active{% endblock %}
 {% block subnav %}
 <li {% if subnav and subnav == 'index' %}class="active"{%endif%}><a href="{% url 'corporate:index' %}">Overview</a></li>
 <li {% if subnav and subnav == 'resumes' %}class="active"{%endif%}><a href="{% url 'corporate:resumes' %}">Resume Book</a></li>
@@ -8,8 +7,8 @@
 
 {% block content %}
 {% if can_edit_corporate %}
-<div class="row-fluid">
-    <div class="span12">
+<div class="row">
+    <div class="col-md-12">
         <div class="btn-group">
             <a class="btn btn-info" href="{% url 'corporate:update_corporate_page' %}">Update Corporate Page</a>
             <a class="btn btn-info" href="{% url 'corporate:update_resource_guide' %}">Update Corporate Resource Guide</a>
@@ -17,12 +16,12 @@
     </div>
 </div>
 {% endif %}
-<div class="row-fluid">
-	<div class="span8 offset1">
+<div class="row">
+	<div class="col-md-8 col-md-offset-1">
 		{% block subcontent %}
 		{% endblock subcontent %}
 	</div>
-	<div class="span3">
+	<div class="col-md-3">
         <h3>Who to contact</h3>
         {% for c_text in contact_text %}
             {{c_text.text|my_markdown}}

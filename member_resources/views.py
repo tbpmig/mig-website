@@ -100,7 +100,11 @@ def get_permissions(user):
     }
 def get_common_context(request):
     context_dict=get_message_dict(request)
-    context_dict.update({'request':request})
+    context_dict.update({
+        'request':request,
+        'main_nav':'members',
+        'new_bootstrap':True,
+    })
     return context_dict
 
 def saturate_hours(value):
@@ -211,7 +215,7 @@ def sorted_reqs2html_recursive(sorted_reqs,progress_items,distinctions,padding):
             html_string+='>'
             html_string+=str(amount_req)
             if amount>=amount_req:
-                html_string+=' <i class=\"icon-ok\"></i>'
+                html_string+=' <i class=\"glyphicon glyphicon-ok\"></i>'
             html_string+='</td>\n'
         html_string+='</tr>\n'
         html_string+=sorted_reqs2html_recursive(data["children"],progress_items,distinctions,padding+2)
