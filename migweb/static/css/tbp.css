@@ -26,108 +26,6 @@ html,body {
     border-width:2px;
     margin:auto;
 }
-	/* ---------------------------------------------------- */  
-/* SLIDESHOW 
-/* ---------------------------------------------------- */  
-#slideshow {  
-width: 50em;  
-background-color: #eee;  
-border: 1px solid #ddd;
-}  
-  
-#slideshow ul {  
-margin: 0;  
-padding: 0;  
-list-style-type: none;  
-height: 1%; /* IE fix */}  
-  
-#slideshow ul:after {  
-content: ".";  
-clear: both;  
-display: block;  
-height: 0;  
-visibility: hidden;}              
-  
-/* ---------------------------------------------------- */  
-/* SLIDESHOW > SLIDES 
-/* ---------------------------------------------------- */  
-#slideshow .slides {  
-overflow: hidden;  
-width: 100%;}  
-  
-#slideshow .slides ul {  
-
-width: 100%;}  
-  
-#slideshow .slides li {  
-width: 96%;  
-float: center;  
-height:36em;
-padding: 2%;
-}  
-  
-#slideshow .slides h3 {  
-margin-top: 0;}  
-  
-/* ---------------------------------------------------- */  
-/* SLIDESHOW > NAVIGATION 
-/* ---------------------------------------------------- */  
-#slideshow .slides-nav {  
-background-color: #ddd;  
-border-top: 2px solid #ccc;}  
-  
-#slideshow .slides-nav li {  
-float: left;}  
-  
-#slideshow .slides-nav li a {  
-display: block;  
-padding: 15px 20px;  
-outline: none;}  
-
-
-/*Slideshow overlays*/
-div.slideshow_overlay {
-	position: relative;
-    top: -6.5em;
-    left: 0px;
-    width: 100%;
-    height: 6.5em;
-    background-color: rgb(0,0,0);
-    filter: alpha(opacity=75);
-    -ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=75)";
-    -moz-opacity: 0.75;
-    -webkit-opacity: 0.75;
-    opacity: 0.75;
-    overflow: hidden;
-}
-
-p.overlay_title {
-    position: relative;
-    top: -11.5em;
-    margin-left: .8em;
-    color: #fff;
-    font-size: 1.1em;
-    z-index: 20;
-}
-
-p.overlay_blurb {
-    position: relative;
-    top: -15em;
-    padding: 1.6em .8em;
-    text-align: justify;
-    color: #fff;
-    width: 95%;
-}
-
-p.overlay_blurb a {
-    color: #85c2e1;
-}
-
-#slideshow .slides  img{
-	width:100%;
-	height:auto;
-}
-
 #event-list {
 	/*clear:left;*/
 	/*float:left;*/
@@ -137,7 +35,6 @@ p.overlay_blurb a {
 	padding:0;
 
 }
-
 #news-list h2{
 	margin-top:.3em;
 }
@@ -151,9 +48,14 @@ p.overlay_blurb a {
 #news-list p{
 	text-align:justify;
 }
-/*#news-list li,*/
+#news-list {
+    margin:0;
+    padding:0;
+}
+#news-list > li,
 #event-list > li {
 	display:block;
+    list-style:none;
 	margin:0 0 0 0;
 	padding:0;
 	border:1px solid #bdb;
@@ -172,11 +74,6 @@ p.overlay_blurb a {
 #news-header {
 	text-align:center;
 }
-.row-fluid {
-		width: 98%;
-		margin-left:auto;
-		margin-right:auto;
-	}
 img#logo {
 	margin-left:.4em;
 	float:left; 
@@ -197,7 +94,8 @@ img#logo {
 #homeSlideshow,
 #aboutSlideshow,
 #MindSETSlideshow{
-	width:50em;
+    width:50em;
+	max-width:100%;
 
 }
 #MindSETSlideshow {
@@ -212,9 +110,16 @@ img#logo {
     width:40em;
     float:right;
 }
-/*#homeSlideshow .carousel-caption{
+#homeSlideshow .carousel-caption{
     background-color:rgba(60,60,65,.6);
-}*/
+    moz-border-radius:15px;
+    border-radius:15px;
+}
+
+#homeSlideshow .carousel-caption p{
+    padding-left:5px;
+    padding-right:5px;
+}
 
 /* ==============================*/
 /* ======Nav Bar ================*/

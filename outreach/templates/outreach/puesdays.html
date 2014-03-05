@@ -1,0 +1,31 @@
+{% extends "outreach/base_outreach.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 col-md-offset-2">
+		<h2> Tuesday Breakfast Parties</h2>
+        <p>If you're looking for a quick bite to eat on Tuesday mornings, then TBP can help. Swing by the table in the Duderstadt Connector for coffee, a bagel, and cream cheese; all for free!  </p>
+        <hr>
+        <img class="img-responsive img-rounded" src="{% static 'puesdays_fb_event_header.png' %}" />
+    </div>
+    <div class="col-md-3 col-md-offset-1">
+        <h3>Tuesday Breakfast Parties this semester.</h3>
+        <p>Tuesday Breakfast Parties are added as scheduling permits throughout the semester, so be sure to check back later.</p>
+        <ul id="event-list">
+        {% for event in events %}
+        {% with can_edit_event=False %}
+            <li>
+            {% include 'event_cal/event.html' %}
+            </li>
+            {% endwith %}
+            {%empty %}
+            <li>
+            <p>We are still working on scheduling Tuesday Breakfast Parties. Please check back soon for the {{term}} schedule.</p>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+{% endblock content %}

@@ -33,7 +33,6 @@ def get_common_context(request):
         'event_signed_up':event_signed_up,
         'now':timezone.now(),
         'main_nav':'outreach',
-        'new_bootstrap':True,
         })
     return context_dict
 
@@ -188,6 +187,19 @@ def townhalls(request):
     context_dict = {
         'events':events,
         'subnav':'townhalls',
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
+
+def puesdays(request):
+    request.session['current_page']=request.path
+    events = CalendarEvent.objects.filter(term=get_current_term(),event_type__name='Breakfast Outreach').annotate(earliest_shift=Min('eventshift__start_time')).order_by('-earliest_shift')
+    template = loader.get_template('outreach/puesdays.html')
+    context_dict = {
+        'events':events,
+        'subnav':'puesdays',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))

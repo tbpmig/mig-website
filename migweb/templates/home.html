@@ -1,9 +1,6 @@
 {% extends "base.html" %}
 {% load staticfiles %}
 {% load my_markdown %}
-{% block css %}
-<link rel="stylesheet" type="text/css" href="{% static 'css/home.css' %}" />
-{% endblock %}
 
 {% block content %}
 {% if current_meetings %}
@@ -16,59 +13,60 @@
 {% endfor %}
 {% endif %}
 <div class="row">
-<div class="col-md-9">
-    <article>
-    {% if slideshow_photos %}
-    <div id="homeSlideshow" class="carousel slide" data-interval="10000">
-        <ol class="carousel-indicators">
-        {% for slide in slideshow_photos %}
-            <li data-target="#homeSlideshow" data-slide-to="{{forloop.counter0}}" {%if forloop.first %}class="active"{%endif %}></li>
-        {% endfor %}
-        </ol>
-        <div class="carousel-inner">
-            {% for slide in slideshow_photos %}
-            <div class="item {%if forloop.first%}active{%endif%}">
-                <a href="{{slide.link}}" title="{{slide.title}}">
-                    <img src="{% static slide.photo.thumbnail.url %}" alt="{{slide.title}}" />
-                
-                <div class="carousel-caption">
-                    <h4>{{slide.title}}</h4>
-                    <p class="text-justify">{{slide.text}}</p>
+    <div class="col-lg-9 col-md-8 col-sm-12">
+        <div class="row">
+            <div class="col-lg-7 col-md-12 col-sm-12">
+                {% if slideshow_photos %}
+                <div id="homeSlideshow" class="carousel slide" data-interval="10000">
+                    <ol class="carousel-indicators">
+                    {% for slide in slideshow_photos %}
+                        <li data-target="#homeSlideshow" data-slide-to="{{forloop.counter0}}" {%if forloop.first %}class="active"{%endif %}></li>
+                    {% endfor %}
+                    </ol>
+                    <div class="carousel-inner">
+                        {% for slide in slideshow_photos %}
+                        <div class="item {%if forloop.first%}active{%endif%}">
+                            <a href="{{slide.link}}" title="{{slide.title}}">
+                                <img src="{% static slide.photo.thumbnail.url %}" alt="{{slide.title}}" />
+                            
+                            <div class="carousel-caption">
+                                <h4>{{slide.title}}</h4>
+                                <p class="text-justify">{{slide.text}}</p>
+                            </div>
+                        </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% if slideshow_photos|length > 1 %}
+                <a class="left carousel-control" href="#homeSlideshow" data-slide="prev"><span class="glyphicon glyphicon-chevron-left"></span></a>
+                <a class="right carousel-control" href="#homeSlideshow" data-slide="next"><span class="glyphicon glyphicon-chevron-right"></span></a>
+                {% endif %}
                 </div>
-            </a>
+                {% endif %}
             </div>
-            {% endfor %}
+            <div class="col-md-12 col-lg-5 col-sm-12">
+                {% if web_articles %}
+                <h1 id="news-header">Recent Chapter News</h1>
+                <ul id="news-list">
+                {% for news_article in web_articles %}
+                    <li>
+                        <a href="{% url 'history:article_view' news_article.id %}"><h2>{{news_article.title}}</h2></a>
+                        <p>{{news_article.body|my_markdown}}</p>
+                    </li>
+                {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
         </div>
-    {% if slideshow_photos|length > 1 %}
-    <a class="left carousel-control" href="#homeSlideshow" data-slide="prev"><span class="glyphicon glyphicon-chevron-left"></span></a>
-    <a class="right carousel-control" href="#homeSlideshow" data-slide="next"><span class="glyphicon glyphicon-chevron-right"></span></a>
-    {% endif %}
     </div>
-    {% endif %}
-
-{% if web_articles %}
-<h1 id="news-header">Recent Chapter News</h1>
-<ul id="news-list">
-{% for news_article in web_articles %}
-<li>
-<a href="{% url 'history:article_view' news_article.id %}"><h2>{{news_article.title}}</h2></a>
-<p>{{news_article.body|my_markdown}} 
-</p>
-</li>
-{% endfor %}
-</ul>
-{% endif %}
-</article>
-</div>
 <!--Left Column-->
-<div class="col-md-3">
+<div class="col-md-4 col-lg-3 col-sm-12">
     {% if quick_links %}
         <h3>Quick Links</h3>
         {% for link in quick_links %}
         <p><a href="{{ link.link }}">{{link.link_name}}</a></p>
         {% endfor %}
     {% endif %}
-<aside>
 {% if upcoming_events %}
 <h3>Upcoming Events</h3>
 <ul id="event-list">
