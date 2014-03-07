@@ -23,7 +23,7 @@
     <div class="col-md-6">
         <h4>Bulk Add Leadership Credit</h4>
         {% if error_list %}
-        <p class="text-error">The following uniqnames are not current members.</p>
+        <p class="text-danger">The following uniqnames are not current members.</p>
         <ul>
         {% for error in error_list %}
             <li>{{error}}</li>

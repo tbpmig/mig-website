@@ -3,54 +3,60 @@
 
 {% block content %}
 <div class="row">
-	<div class="col-md-12">
-    {% if slideshow_photos %}
-    <div id="aboutSlideshow" class="carousel slide" data-ride="carousel" data-interval=10000>
-        <ol class="carousel-indicators">
-        {% for slide in slideshow_photos %}
-            <li data-target="#aboutSlideshow" data-slide-to="{{forloop.counter0}}" {%if forloop.first %}class="active"{%endif %}></li>
-        {% endfor %}
-        </ol>
-        <div class="carousel-inner">
-            {% for slide in slideshow_photos %}
-            <div class="item {%if forloop.first%}active{%endif%}">
-                {% if slide.link %}
-                <a href="{{slide.link}}" title="{{slide.title}}">
-                {% endif %}
-                    <img src="{% static slide.photo.thumbnail.url %}" alt="{{slide.title}}" />
-                
-                <div class="carousel-caption">
-                    <h4>{{slide.title}}</h4>
-                    <p class="text-justify">{{slide.text}}</p>
-                </div>
-            {% if slide.link %}
-            </a>
-            {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-    {% if slideshow_photos|length > 1 %}
-    <a class="left carousel-control" href="#aboutSlideshow" data-slide="prev"><span class="glyphicon glyphicon-chevron-left"></span></a>
-    <a class="right carousel-control" href="#aboutSlideshow" data-slide="next"><span class="glyphicon glyphicon-chevron-right"></span></a>
-    {% endif %}
+	<div class="col-lg-7 col-md-5 col-xs-12">
+        {% if can_edit_about_photos %}
+            <p><a class="btn btn-warning" href="{% url 'about:update_about_photos' %}">Update About Page Photos</a></p>
+        {% endif %}
+        <h2> What is Tau Beta Pi?</h2>
+        <p> Tau Beta Pi (TBP) is the only engineering honor society representing the entire 
+            engineering profession. It is the nation's second-oldest honor society, founded 
+            at Lehigh University in 1885. There are now collegiate chapters at 241 US 
+            colleges and universities, 28 active alumnus chapters in 16 districts across 
+            the country, and more than 500,000 total members.</p>  
+        <p>Additional information on TBP is available from the <a href="http://tbp.org/about.cfm">national website</a>.</p>
+        <h3>What is Michigan Gamma?</h3>
+        <p>Michigan Gamma is the TBP chapter at the University of Michigan, Ann Arbor.
+            It was established in 1906 and has since grown to be the second largest chapter
+            in TBP.</p>
+        <h3>What does TBP MI-G do?</h3>
+        <p>In addition to being one of the largest chapters, we have one of the most active as well. We co-run the <a href="http://umcareerfair.org">SWE/TBP Career Fair</a> with SWE each fall. We run the <a href="http://tbpbookswap.org">TBP Book Swap</a> every semester and  organize free one-on-one <a href="{% url 'outreach:tutoring' %}">tutoring</a>. We also have a number of awesome socials and intersociety activities.</p>
     </div>
+    <div class="col-lg-5 col-md-7 col-xs-12">
+        {% if slideshow_photos %}
+            <div id="aboutSlideshow" class="carousel slide centered" data-ride="carousel" data-interval=10000>
+                <ol class="carousel-indicators">
+                {% for slide in slideshow_photos %}
+                    <li data-target="#aboutSlideshow" data-slide-to="{{forloop.counter0}}" {%if forloop.first %}class="active"{%endif %}></li>
+                {% endfor %}
+                </ol>
+                <div class="carousel-inner">
+                    {% for slide in slideshow_photos %}
+                    <div class="item {%if forloop.first%}active{%endif%}">
+                        {% if slide.link %}
+                        <a href="{{slide.link}}" title="{{slide.title}}">
+                        {% endif %}
+                            <img src="{% static slide.photo.thumbnail.url %}" alt="{{slide.title}}" />
+                        
+                        <div class="carousel-caption hidden-xs">
+                            <h4>{{slide.title}}</h4>
+                            <p class="text-justify">{{slide.text}}</p>
+                        </div>
+                        <div class="carousel-caption visible-xs xsmall-text">
+                            <h4>{{slide.title}}</h4>
+                            <p class="text-justify">{{slide.text}}</p>
+                        </div>
+                    {% if slide.link %}
+                    </a>
+                    {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if slideshow_photos|length > 1 %}
+                <a class="left carousel-control" href="#aboutSlideshow" data-slide="prev"><span class="glyphicon glyphicon-chevron-left"></span></a>
+                <a class="right carousel-control" href="#aboutSlideshow" data-slide="next"><span class="glyphicon glyphicon-chevron-right"></span></a>
+                {% endif %}
+            </div>
     {% endif %}
-    {% if can_edit_about_photos %}
-    <p><a class="btn btn-warning" href="{% url 'about:update_about_photos' %}">Update About Page Photos</a></p>
-    {% endif %}
-		<h2> What is Tau Beta Pi?</h2>
-		<p> Tau Beta Pi (TBP) is the only engineering honor society representing the entire 
-		engineering profession. It is the nation's second-oldest honor society, founded 
-		at Lehigh University in 1885. There are now collegiate chapters at 241 US 
-		colleges and universities, 28 active alumnus chapters in 16 districts across 
-		the country, and more than 500,000 total members.</p>  
-		<p>Additional information on TBP is available from the <a href="http://tbp.org/about.cfm">national website</a>.</p>
-		<h3>What is Michigan Gamma?</h3>
-		<p>Michigan Gamma is the TBP chapter at the University of Michigan, Ann Arbor.
-		It was established in 1906 and has since grown to be the second largest chapter
-		in TBP.</p>
-		<h3>What does TBP MI-G do?</h3>
-		<p>In addition to being one of the largest chapters, we have one of the most active as well. We co-run the <a href="http://umcareerfair.org">SWE/TBP Career Fair</a> with SWE each fall. We run the <a href="http://tbpbookswap.org">TBP Book Swap</a> every semester and  organize free one-on-one <a href="{% url 'outreach:tutoring' %}">tutoring</a>. We also have a number of awesome socials and intersociety activities.</p>
 	</div>
 </div>
 

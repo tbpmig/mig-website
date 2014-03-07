@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-md-2">
+    <div class="col-md-3 col-lg-2">
         <ul class="nav nav-pills nav-stacked">
             {% for page in pages %}
             {% if not page.members_only or user_is_member %}
@@ -14,7 +14,8 @@
             {% endfor %}
         </ul>
     </div>
-    <div class="col-md-7">
+    <hr class="hidden-lg hidden-md" />
+    <div class="col-md-5 col-lg-6">
         <div class="tab-content">
             {% for page in pages %}
             {% if not page.members_only or user_is_member %}
@@ -29,7 +30,8 @@
                 <p>Tau Beta Pi is also providing tutoring service to students at Pioneer High School during their after-school study hall.  Tutors specialize in math and science but are willing to provide tutoring in all subjects.  We tutor at Pioneer once a week throughout the semester.  If you would like to join in the project or have your student organization tutor at Pioneer High School please feel free to contact us at <a
                     href="mailto:tbp.campusoutreach@umich.edu">tbp.campusoutreach@umich.edu</a>.</p>-->
     </div>
-    <div class="col-md-3">
+    <hr class="hidden-lg hidden-md" />
+    <div class="col-md-4">
         <h3>Tutoring Events this Semester</h3>
         <p>Events are added continually throughout the semester, so be sure to check back later.</p>
         {% if user_is_member %}

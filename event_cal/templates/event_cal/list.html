@@ -16,18 +16,18 @@
     {% csrf_token %}
     {{form.non_field_errors }}
     <div class="fieldWrapper">
-        <div class="text-error">{{form.after_date.errors}}</div>
+        <div class="text-danger">{{form.after_date.errors}}</div>
         <label for="id_after_date">End after:</label>
         {{form.after_date}}
     </div>
     <p>and that</p>
     <div class="fieldWrapper">
-        <div class="text-error">{{form.before_date.errors}}</div>
+        <div class="text-danger">{{form.before_date.errors}}</div>
         <label for="id_after_date">Start before:</label>
         {{form.before_date}}
     </div>
     <div class="fieldWrapper">
-        <div class="text-error">{{form.on_campus.errors}}</div>
+        <div class="text-danger">{{form.on_campus.errors}}</div>
         <label for="id_on_campus">Only events that are on campus? {{form.on_campus}}</label>
     </div>
     <p>And that will fulfill one of the following requirements</p>

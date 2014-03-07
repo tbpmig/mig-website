@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% block subnav_class %}subnav-small{%endblock%}
+
 {% block subnav %}
 <li {%if subnav and subnav == 'about' %}class="active"{% endif %}><a href="{% url 'about:index' %}">Overview</a></li>
 <li  {%if subnav and subnav == 'joining' %}class="active"{% endif %}><a href="{% url 'about:eligibility' %}">Joining</a></li>

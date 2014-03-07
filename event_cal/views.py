@@ -150,11 +150,10 @@ def flatten_category_tree(category,depth):
 
     
 def get_permissions(user):
-    return {'can_add_event':Permissions.can_create_events(user),
-        'can_add_announcements':Permissions.can_add_announcements(user),
-        'can_generate_announcements':Permissions.can_generate_announcements(user),
+    return {
         'can_submit_tutoring_form':(hasattr(user,'userprofile') and user.userprofile.is_member()),
-        'can_add_event_photo':(hasattr(user,'userprofile') and user.userprofile.is_member()),}
+        'can_view_calendar_admin':Permissions.can_view_calendar_admin(user),
+    }
 def get_common_context(request):
     context_dict=get_message_dict(request)
     context_dict.update({
@@ -612,16 +611,17 @@ def create_event(request):
         form = EventForm(prefix='event')
         formset= EventShiftFormset(prefix='shift',instance=CalendarEvent())
     dp_ids=['id_event-announce_start']
-#    for count in range(len(formset)):
-        #dp_ids.append('id_shift-%d-start_time_0'%(count))
-        #dp_ids.append('id_shift-%d-end_time_0'%(count))
+    for count in range(len(formset)):
+        dp_ids.append('id_shift-%d-start_time_0'%(count))
+        dp_ids.append('id_shift-%d-end_time_0'%(count))
     template = loader.get_template('event_cal/create_event.html')
     context_dict = {
         'form':form,
         'formset':formset,
         'dp_ids':dp_ids,
         'prefix':'shift',
-        'subnav':'add_event',
+        'subnav':'admin',
+        'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
 #        'date_prefixes':[{'id_shift':['start_time_0','end_time_0']}],
         }
     context_dict.update(get_permissions(request.user))
@@ -760,6 +760,7 @@ def update_completed_event(request, event_id):
         form_type = modelformset_factory(ProgressItem,exclude=('term','event_type','date_completed','related_event','name',),can_delete=True)
         is_fixed = False
     form_prefix='update_event'
+    form_type.form.base_fields['member'].queryset=MemberProfile.objects.all().order_by('last_name')
     if request.method == 'POST':
         formset = form_type(request.POST,prefix='update_event',queryset=ProgressItem.objects.filter(related_event=e))
         if formset.is_valid():
@@ -791,7 +792,7 @@ def update_completed_event(request, event_id):
         else:
             request.session['error_message']='There were errors in your submission. Progress was not updated. Please correct the errors and try again.'
     else:
-        formset = form_type(prefix='update_event',queryset=ProgressItem.objects.filter(related_event=e))
+        formset = form_type(prefix='update_event',queryset=ProgressItem.objects.filter(related_event=e).order_by('member__last_name'))
     template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
@@ -826,6 +827,7 @@ def complete_event(request, event_id):
         form_type = modelformset_factory(ProgressItem,exclude=('term','event_type','date_completed','related_event','name',),can_delete=True)
         is_fixed = False
     form_prefix='complete_event'
+    form_type.form.base_fields['member'].queryset=get_members().order_by('last_name')
     if request.method == 'POST':
         formset = form_type(request.POST,prefix=form_prefix,queryset=ProgressItem.objects.none())
         if formset.is_valid():
@@ -853,7 +855,8 @@ def complete_event(request, event_id):
             confirmed_attendees=MemberProfile.objects.filter(progressitem__related_event=e)
             for shift in e.eventshift_set.all():
                 for attendee in shift.attendees.exclude(pk__in=confirmed_attendees):
-                    shift.attendees.remove(attendee)
+                    if attendee.is_member():
+                        shift.attendees.remove(attendee)
                 shift.save()
             e.completed=True
             e.save()
@@ -910,12 +913,12 @@ def generate_announcements(request):
         request.session['error_message']='You are not authorized to generate the weekly announcements.'
         return get_previous_page(request,alternate='event_cal:index')
     request.session['current_page']=request.path
-    now = timezone.localtime(timezone.now())
+    now = timezone.now()
     announcement_parts = AnnouncementBlurb.objects.filter(start_date__lte=now.date).filter(end_date__gt=now.date)
     template = loader.get_template('event_cal/announcements.html')
     context_dict = {
         'announcement_parts':announcement_parts,
-        'subnav':'generate_announcements',
+        'subnav':'admin',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -943,12 +946,13 @@ def add_announcement(request):
     context_dict = {
         'form':form,
         'dp_ids':dp_ids,
-        'subnav':'add_announcement',
+        'subnav':'admin',
         'has_files':False,
         'submit_name':'Submit Announcement',
         'form_title':'Add an Announcement Section',
         'help_text':'Add an announcement to be included in the weekly email summary. Do not submit announcements for events. Those are automatically included using the information provided in the event details.',
         'base':'event_cal/base_event_cal.html',
+        'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -1157,6 +1161,67 @@ def add_project_report_to_event(request,event_id):
         'form_title':'Attach project report to %s'%(event.name),
         'help_text':'You may have several events that share a common project report. Use this form to attach an existing project report to this event.',
         'base':'event_cal/base_event_cal.html',
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))
+
+def calendar_admin(request):
+    if not Permissions.can_view_calendar_admin(request.user):
+        request.session['error_message']='You are not authorized to access calendar admin functionality.'
+        return get_previous_page(request,alternate='event_cal:index')
+    request.session['current_page']=request.path
+    template = loader.get_template('event_cal/calendar_admin.html')
+    links=[]
+    if Permissions.can_create_events(request.user):
+        links.append({'link':reverse('event_cal:create_event'),'name':'Add Event'})
+    if Permissions.can_add_announcements(request.user):
+        links.append({'link':reverse('event_cal:add_announcement'),'name':'Add Announcement'})
+    if Permissions.can_generate_announcements(request.user):
+        links.append({'link':reverse('event_cal:generate_announcements'),'name':'Generate Announcements'})
+        links.append({'link':reverse('event_cal:edit_announcements'),'name':'Edit Announcements'})
+    if Permissions.can_add_event_photo(request.user):
+        links.append({'link':reverse('event_cal:add_event_photo'),'name':'Add Event Photo'})
+    context_dict = {
+        'subnav':'admin',
+        'page_title':'Calendar Administrative Functions',
+        'links':links,
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))
+
+def edit_announcements(request):
+    if not Permissions.can_generate_announcements(request.user):
+        request.session['error_message']='You are not authorized to edit announcements.'
+        return get_previous_page(request,alternate='event_cal:index')
+    request.session['current_page']=request.path
+    now = timezone.now()
+    announcement_parts = AnnouncementBlurb.objects.filter(end_date__gt=now.date)
+    AnnouncementFormSet = modelformset_factory(AnnouncementBlurb)
+    if request.method == 'POST':
+        formset = AnnouncementFormSet(request.POST,prefix='announcements',queryset=announcement_parts)
+        if formset.is_valid():
+            formset.save()
+            request.session['success_message']='The announcements were successfully updated.'
+            return redirect('event_cal:calendar_admin')
+        else:
+            request.session['error_message']='There were errors in your submission. The changes were not saved. Please correct the errors and try again.'
+    else:
+        formset = AnnouncementFormSet(prefix='announcements',queryset=announcement_parts)
+    template = loader.get_template('generic_formset.html')
+    context_dict = {
+        'formset':formset,
+        'subnav':'admin',
+        'has_files':False,
+        'can_add_row':True,
+        'submit_name':'Update Announcements',
+        'form_title':'Edit Submitted Announcements',
+        'help_text':'Edit announcements for the current/future announcement cycles.',
+        'base':'event_cal/base_event_cal.html',
+        'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))

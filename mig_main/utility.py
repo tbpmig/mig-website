@@ -526,6 +526,21 @@ class Permissions:
             return True
         else:
             return False
+    @classmethod
+    def can_add_event_photo(cls,user):
+        if user.is_superuser:
+            return True
+        p=cls.get_profile(user)
+        if not p:
+            return False
+        if p.is_member():
+            return True
+        return False
+
+    @classmethod
+    def can_view_calendar_admin(cls,user):
+        return cls.can_add_event_photo(user) or cls.can_create_events(user) or cls.can_add_announcements(user) or cls.can_generate_announcements(user) 
+
 
 
 class UnicodeWriter:

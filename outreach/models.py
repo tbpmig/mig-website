@@ -76,3 +76,20 @@ class TutoringPageSection(models.Model):
     page_order = models.PositiveSmallIntegerField()
     members_only = models.BooleanField(default=False)
 
+class OutreachEventType(models.Model):
+    event_category = models.ForeignKey('requirements.EventCategory',unique=True)
+    title = models.CharField(max_length=256)
+    text=models.TextField()
+    url_stem = models.CharField(max_length=64,unique=True, validators=[RegexValidator(regex=r'^[a-z,_]+$',message="The url stem must use only the lowercase letters a-z and the underscore.")]) 
+    officers_can_edit = models.ManyToManyField('mig_main.OfficerPosition')
+
+    def __unicode__(self):
+        return self.title
+
+class OutreachEvent(models.Model):
+    outreach_event = models.ForeignKey(OutreachEventType)
+    banner   = StdImageField(upload_to='outreach_event_banners')
+    google_form_link = models.CharField(max_length=256,blank=True,null=True)
+
+    def __unicode__(self):
+        return 'Event # '+unicode(self.id)+' for '+unicode(self.outreach_event)

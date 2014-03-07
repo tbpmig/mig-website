@@ -17,26 +17,26 @@
             {% csrf_token %}
             <h4>Add New {{list_name}}</h4>
         {% if error_lists.bad_uniqnames or error_lists.current_actives or error_list.current_electees %}
-        <p class="text-error">There were errors in processing the list of uniqnames</p>
+        <p class="text-danger">There were errors in processing the list of uniqnames</p>
         {% if error_lists.bad_uniqnames %}
-        <p class="text-error">The following uniqnames are invalid:</p>
-        <ul class="text-error">
+        <p class="text-danger">The following uniqnames are invalid:</p>
+        <ul class="text-danger">
         {% for error in error_lists.bad_uniqnames %}
             <li>{{error}}</li>
         {% endfor %}
         </ul>
         {% endif %}
         {% if error_lists.current_actives %}
-        <p class="text-error">The following uniqnames are listed as actives already:</p>
-        <ul class="text-error">
+        <p class="text-danger">The following uniqnames are listed as actives already:</p>
+        <ul class="text-danger">
         {% for error in error_lists.current_actives %}
             <li>{{error}}</li>
         {% endfor %}
         </ul>
         {% endif %}
         {% if error_lists.current_electees %}
-        <p class="text-error">The following uniqnames are listed as electees. {% if is_active_list %}If you wish to make them actives, please do so through the appropriate method (<a href="{% url 'member_resources:move_electees_to_active' %}">here</a>){% endif%}:</p>
-        <ul class="text-error">
+        <p class="text-danger">The following uniqnames are listed as electees. {% if is_active_list %}If you wish to make them actives, please do so through the appropriate method (<a href="{% url 'member_resources:move_electees_to_active' %}">here</a>){% endif%}:</p>
+        <ul class="text-danger">
         {% for error in error_lists.current_electees %}
             <li>{{error}}</li>
         {% endfor %}

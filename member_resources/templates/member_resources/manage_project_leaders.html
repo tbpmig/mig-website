@@ -19,7 +19,7 @@
     <div class="col-md-6">
         <h4>Bulk Add Members as Project Leaders</h4>
         {% if error_list %}
-        <p class="text-error">The following uniqnames are not members</p>
+        <p class="text-danger">The following uniqnames are not members</p>
         <ul>
         {% for error in error_list %}
             <li>{{error}}</li>

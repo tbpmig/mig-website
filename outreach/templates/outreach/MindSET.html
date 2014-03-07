@@ -22,11 +22,12 @@
             <li><a href="#faq" data-toggle="tab">FAQs</a></li>
         </ul>
     </div>
-    <div class="col-md-7">
+    <hr class="hidden-md hidden-lg"/>
+    <div class="col-lg-7 col-md-6">
         <div class="tab-content">
             <div class="tab-pane active" id="general">
         {% if slideshow_photos %}
-        <div id="MindSETSlideshow" class="carousel slide" data-interval="10000">
+        <div id="MindSETSlideshow" class="carousel slide centered" data-interval="10000">
             <ol class="carousel-indicators">
             {% for slide in slideshow_photos %}
                 <li data-target="#MindSETSlideshow" data-slide-to="{{forloop.counter0}}" {%if forloop.first %}class="active"{%endif %}></li>
@@ -64,7 +65,7 @@
                         <p class="text-justify">Concurrent to the promising growth in jobs, we are also faced by the challenges of high dropout rates, and very low proficiency rates among our school students.  In Michigan for instance, the mathematics and science proficiency rates among elementary and middle school students in 2012 were below 40% and 20% respectively.  A critical aspect of bridging the STEM achievement gap, thus, is engagement of students in science and mathematics from early stages of their education. The government, education institutions, corporations, and non-profits have invested several million dollars in K-12 STEM education initiatives, research, and teacher training. <p>
                         <h3>What is MindSET?</h3>
                 <div class="text-center">
-                    <img class="img-responsive" src="{{main_photo.photo.thumbnail.url}}" alt="{{main_photo.title}} image" style="max-width:50em;" />
+                    <img class="img-responsive" src="{{main_photo.photo.thumbnail.url}}" alt="{{main_photo.title}} image" />
                 </div>
                         <p class="text-justify">MindSET is a STEM education initiative started by TBP.  It is an outreach program put on by a number of TBP chapters around the country, and is aimed at engaging K-12 students in science and mathematics through hands-on, design-based learning activities, and mentoring from current engineering undergraduate and graduate students.  The MindSET program at the TBP MI-Gamma chapter started in 2010.  Since then, we have partnered with half a dozen Ann Arbor and Ypsilanti schools to work with over a hundred students every year.<p>
                         <p class="text-justify">The program is designed around learn-design-build-test modules.  Each semester, we do three to four modules. The modules cover topics in physics, chemistry, and mathematics, along with their engineering applications such as bridges, circuits, and water rockets.  The design-build activities involve groups of 4&ndash;5 school students working together with 2&ndash;3 college students.  This structure provides a fun-filled and creative learning experience for school students, and also creates opportunities for college students to share their experience with learning engineering.</p> 
@@ -77,7 +78,7 @@
                                 {% if forloop.counter0|divisibleby:"4" %}
                                 <div class="row">
                                 {% endif %}
-                                <div class="col-md-5 col-md-offset-1" id="officer-profile">
+                                <div class="col-lg-5 col-md-6 col-sm-6 {% if forloop.first %}col-lg-offset-1 col-md-offset-0{%endif%}" id="officer-profile">
                                         {% with mindset_profile=officer.user.mindsetprofileadditions %}
                                         <p><strong>{{officer.user.get_firstlast_name}}</strong></p>
                                         <img  class="img-responsive img-rounded" src="{{officer.website_photo.thumbnail.url}}"></img>
@@ -92,21 +93,20 @@
                                 {% endfor %}
                                 <hr>
                         <p>Over the years, we've had some pretty cool people lead our K-12 outreach efforts. Here's a list of these awesome people, and what they did for MindSET and fun facts about them!</p>
-                                {% for officer in k_12_officers %}
-                                {% if forloop.counter0|divisibleby:"4" %}
                                 <div class="row">
-                                {% endif %}
-                                    <div class="col-md-4" id="officer-profile">
+                                {% for officer in k_12_officers %}
+                                    <div class="col-lg-4 col-md-6 col-sm-6" id="officer-profile">
                                         <p><strong>{{officer.user.get_firstlast_name}}</strong></p>
                                         <img  class="img-responsive img-rounded" src="{{officer.website_photo.thumbnail.url}}"></img>
                                         {% with mindset_profile=officer.user.mindsetprofileadditions %}
                                         <p class="text-justify">{{mindset_profile.mindset_bio}}</p>
                                         {% endwith %}
                                     </div>
-                                {% if forloop.counter|divisibleby:"4" or forloop.last %}
-                                </div>
-                                {% endif %}
+                                    {% if forloop.counter|divisibleby:"2" %}
+                                    <div class="clearfix hidden-lg"></div>
+                                    {% endif%}
                                 {% endfor %}
+                                </div>
                             </div>
             <div class="tab-pane" id="modules">
                         <h3>Modules</h3>
@@ -134,7 +134,7 @@
                 <p class="text-justify">Parents can drive their child to the specified North Campus location before 9:00 am, and sign them in at the desk manned by a student volunteer.  At the end of the module around noon, parents need to sign their child out, before driving him/her home. Some schools provide a school bus to pick-up and drop-off children from their own school. Please ask your school MindSET representative if the school provides bus service for MindSET.</p>
                 <h4>Where do I park?</h4>
                 <p class="text-justify">Since MindSET happens on Saturdays, parents can park for free in the areas shown in the map below.</p>
-                <img class="img-responsive" src="{{parking_photo.photo.thumbnail.url}}" alt="{{parking_photo.title}} image" style="max-width:50em;" />
+                <img class="img-responsive" src="{{parking_photo.photo.thumbnail.url}}" alt="{{parking_photo.title}} image" />
                 <h4>Do I send my child with food and/or water?</h4>
                 <p class="text-justify">We provide the school children and our college student volunteers with light snacks and fruit juice at around 10:30 am during the module. There are also water fountains in the buildings in which we organize our modules. However, if you wish to send your child with snacks and water, you are welcome to do so. Additionally, if your child has any food allergies that we should be aware if, please be sure to mention them on the permission slips that you will fill out at the beginning of the term in order to sign up for MindSET.</p>
                 <h4>What if my child misses a Saturday session?</h4>
@@ -142,7 +142,8 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <hr class="hidden-md hidden-lg"/>
+    <div class="col-lg-3 col-md-4">
         <h3>Modules this Semester</h3>
         <ul id="event-list">
         {% for event in events %}

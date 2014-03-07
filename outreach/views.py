@@ -2,7 +2,7 @@ from django.core.urlresolvers import reverse
 from django.db.models import Min
 from django.http import HttpResponse#, Http404, HttpResponseRedirect
 from django.forms.models import modelformset_factory
-from django.shortcuts import redirect
+from django.shortcuts import redirect,get_object_or_404
 from django.template import RequestContext, loader
 from django.utils import timezone
 
@@ -11,7 +11,7 @@ from history.models import Officer
 from mig_main.models import OfficerPosition
 from mig_main.utility import get_message_dict, Permissions
 from mig_main.default_values import get_current_term
-from outreach.models import OutreachPhoto,MindSETModule,VolunteerFile,TutoringPageSection
+from outreach.models import OutreachPhoto,MindSETModule,VolunteerFile,TutoringPageSection,OutreachEventType
 
 def get_permissions(user):
     permission_dict={'can_edit_mindset':Permissions.can_update_mindset_materials(user),}
@@ -33,6 +33,7 @@ def get_common_context(request):
         'event_signed_up':event_signed_up,
         'now':timezone.now(),
         'main_nav':'outreach',
+        'sub_nav_extras':OutreachEventType.objects.all(),
         })
     return context_dict
 
@@ -180,26 +181,44 @@ def tutoring(request):
     return HttpResponse(template.render(context))
 
 
-def townhalls(request):
-    request.session['current_page']=request.path
-    events = CalendarEvent.objects.filter(term=get_current_term(),event_type__name='Town Hall').order_by('announce_start')
-    template = loader.get_template('outreach/townhalls.html')
-    context_dict = {
-        'events':events,
-        'subnav':'townhalls',
-        }
-    context_dict.update(get_common_context(request))
-    context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+#def townhalls(request):
+#    request.session['current_page']=request.path
+#    events = CalendarEvent.objects.filter(term=get_current_term(),event_type__name='Town Hall').annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
+#    template = loader.get_template('outreach/townhalls.html')
+#    context_dict = {
+#        'events':events,
+#        'subnav':'townhalls',
+#        }
+#    context_dict.update(get_common_context(request))
+#    context_dict.update(get_permissions(request.user))
+#    context = RequestContext(request, context_dict)
+#    return HttpResponse(template.render(context))
 
-def puesdays(request):
+#def puesdays(request):
+#    request.session['current_page']=request.path
+#    events = CalendarEvent.objects.filter(term=get_current_term(),event_type__name='Breakfast Outreach').annotate(earliest_shift=Min('eventshift__start_time')).order_by('-earliest_shift')
+#    template = loader.get_template('outreach/puesdays.html')
+#    context_dict = {
+#        'events':events,
+#        'subnav':'puesdays',
+#        }
+#    context_dict.update(get_common_context(request))
+#    context_dict.update(get_permissions(request.user))
+#    context = RequestContext(request, context_dict)
+#    return HttpResponse(template.render(context))
+
+def outreach_event(request,url_stem):
     request.session['current_page']=request.path
-    events = CalendarEvent.objects.filter(term=get_current_term(),event_type__name='Breakfast Outreach').annotate(earliest_shift=Min('eventshift__start_time')).order_by('-earliest_shift')
-    template = loader.get_template('outreach/puesdays.html')
+    outreach_event = get_object_or_404(OutreachEventType,url_stem=url_stem)
+    events = CalendarEvent.objects.filter(term=get_current_term(),event_type=outreach_event.event_category).annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
+    template = loader.get_template('outreach/outreach_template.html')
     context_dict = {
         'events':events,
-        'subnav':'puesdays',
+        'subnav':url_stem,
+        'title':outreach_event.title,
+        'text':outreach_event.text,
+        'event_category':outreach_event.event_category.name,
+        'event_timeline':outreach_event.outreachevent_set.all(),
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))

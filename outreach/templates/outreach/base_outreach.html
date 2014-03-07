@@ -1,8 +1,10 @@
 {% extends "base.html" %}
+{% block subnav_class %}subnav-medium{%endblock%}
 {% block subnav %}
 <li {% if subnav and subnav == 'index' %}class="active"{% endif%}><a href="{% url 'outreach:index' %}">Overview</a></li>
 <li {% if subnav and subnav == 'mindset' %}class="active"{% endif%}><a href="{% url 'outreach:mindset' %}">MindSET</a></li>
 <li {% if subnav and subnav == 'tutoring' %}class="active"{% endif%}><a href="{% url 'outreach:tutoring' %}">Tutoring</a></li>
-<li {% if subnav and subnav == 'townhalls' %}class="active"{% endif%}><a href="{% url 'outreach:townhalls' %}">Town Halls</a></li>
-<li {% if subnav and subnav == 'puesdays' %}class="active"{% endif%}><a href="{% url 'outreach:puesdays' %}">Tuesday Breakfast Parties</a></li>
+{% for extra in sub_nav_extras %}
+<li {% if subnav and subnav == extra.url_stem %}class="active"{% endif%}><a href="{% url 'outreach:outreach_event' extra.url_stem %}">{{extra.event_category}}</a></li>
+{% endfor %}
 {% endblock %}

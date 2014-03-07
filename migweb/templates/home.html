@@ -17,7 +17,7 @@
         <div class="row">
             <div class="col-lg-7 col-md-12 col-sm-12">
                 {% if slideshow_photos %}
-                <div id="homeSlideshow" class="carousel slide" data-interval="10000">
+                <div id="homeSlideshow" class="carousel slide centered" data-interval="10000">
                     <ol class="carousel-indicators">
                     {% for slide in slideshow_photos %}
                         <li data-target="#homeSlideshow" data-slide-to="{{forloop.counter0}}" {%if forloop.first %}class="active"{%endif %}></li>

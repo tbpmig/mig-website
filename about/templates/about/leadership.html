@@ -37,7 +37,11 @@
                             {% if forloop.counter0|divisibleby:"4" %}
                             <div class="row">
                             {% endif %}
-                            <div class="col-md-3 officer-profile">
+                            {% if forloop.counter0|divisibleby:"2" %}
+                            <div class="col-sm-12 col-lg-6">
+                                <div class="row">
+                            {% endif %}
+                            <div class="col-sm-6 officer-profile">
                                 <h4>{{officer.position}}</h4>
                                 <p><strong>{{officer.user.get_firstlast_name}}</strong></p>
                                 {% if is_current %}
@@ -46,18 +50,26 @@
                                 <img  class="img-responsive img-rounded" src="{{officer.website_photo.thumbnail.url}}" ></img>
                                 <p class="text-justify">{{officer.website_bio|my_markdown}}</p>
                             </div>
-                        {% if forloop.counter|divisibleby:"4" or forloop.last %}
-                        </div>
-                        {% endif %}
-                            {% endfor %}
+                            {% if forloop.counter|divisibleby:"2" or forloop.last %}
+                            </div>
+                            </div>
+                            {% endif %}
+                            {% if forloop.counter|divisibleby:"4" or forloop.last %}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
                         <hr/>
                         {% endfor %}
                         {% else %}
                         {% for officer in officers.officers|dictsort:"position.id" %}
-                        {% if forloop.counter0|divisibleby:"4" %}
-                        <div class="row">
-                        {% endif %}
-                            <div class="col-md-3 officer-profile">
+                            {% if forloop.counter0|divisibleby:"4" %}
+                            <div class="row">
+                            {% endif %}
+                            {% if forloop.counter0|divisibleby:"2" %}
+                                <div class="col-sm-12 col-lg-6">
+                                    <div class="row">
+                            {% endif %}
+                            <div class="col-sm-6 officer-profile">
                                 <h4>{{officer.position}}</h4>
                                 <p><strong>{{officer.user.get_firstlast_name}}</strong></p>
                                 {% if is_current %}
@@ -66,6 +78,10 @@
                                 <img  class="img-responsive img-rounded" src="{{officer.website_photo.thumbnail.url}}"></img>
                                 <p class="text-justify">{{officer.website_bio|my_markdown}}</p>
                             </div>
+                            {% if forloop.counter|divisibleby:"2" or forloop.last %}
+                            </div>
+                            </div>
+                            {% endif %}
                         {% if forloop.counter|divisibleby:"4" or forloop.last %}
                         </div>
                         {% endif %}
@@ -88,14 +104,22 @@
                         <p class="text-center"><a href="mailto:tbp-advisors@umich.edu">tbp-advisors@umich.edu</a></p>
                         
                         {% for advisor in officers.advisors %}
-                        {% if forloop.counter0|divisibleby:"4" %}
-                        <div class="row">
-                        {% endif %}
-                            <div class="col-md-3 officer-profile">
+                            {% if forloop.counter0|divisibleby:"4" %}
+                            <div class="row">
+                            {% endif %}
+                            {% if forloop.counter0|divisibleby:"2" %}
+                                <div class="col-sm-12 col-lg-6">
+                                    <div class="row">
+                            {% endif %}
+                            <div class="col-sm-6 officer-profile">
                                 <p><strong>{{advisor.user.get_firstlast_name}}</strong></p>
                                 <img  class="img-responsive img-rounded" src="{{advisor.website_photo.thumbnail.url}}"></img>
                                 <p class="text-justify">{{advisor.website_bio|my_markdown}}</p>
                             </div>
+                            {% if forloop.counter|divisibleby:"2" or forloop.last %}
+                            </div>
+                            </div>
+                            {% endif %}
                         {% if forloop.counter|divisibleby:"4" or forloop.last %}
                         </div>
                         {% endif %}

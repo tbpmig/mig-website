@@ -19,7 +19,7 @@
     <div class="col-md-6">
         <h4>Bulk Move Electees To Actives</h4>
         {% if error_list %}
-        <p class="text-error">The following uniqnames are not current electees.</p>
+        <p class="text-danger">The following uniqnames are not current electees.</p>
         <ul>
         {% for error in error_list %}
             <li>{{error}}</li>

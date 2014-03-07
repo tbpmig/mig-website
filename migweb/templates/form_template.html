@@ -1,18 +1,18 @@
 {% if error_message and form.visible_fields|length > 10 %}
-    <p class="text-error">Errors</p>
+    <p class="text-danger">Errors</p>
     {% for field in form %}
         {% if field.errors %}
-            <p class="text-error">{{ field.label_tag }}</p>
+            <p class="text-danger">{{ field.label_tag }}</p>
             <ul>    
                 {% for error in field.errors %}
-                    <li class="text-error">{{error|escape }}</li>
+                    <li class="text-danger">{{error|escape }}</li>
                 {% endfor %}
             </ul>
         {% endif %}
     {% endfor %}
 {% endif %}
 {% if form.non_field_errors %}
-    <p class="text-error">{{form.non_field_errors}}</p>
+    <p class="text-danger">{{form.non_field_errors}}</p>
 {% endif %}
 <table class="table-striped table-bordered">
     <tbody>
@@ -39,11 +39,11 @@
     {% if field.errors|length > 1 %}
         <ul>    
             {% for error in field.errors %}
-                <li class="text-error">{{error|escape }}</li>
+                <li class="text-danger">{{error|escape }}</li>
             {% endfor %}
         </ul>
     {% elif field.errors|length == 1 %}
-        {% for error in field.errors %}<p class="text-error" style="display:inline;">{{error}}</p>{% endfor %}
+        {% for error in field.errors %}<p class="text-danger" style="display:inline;">{{error}}</p>{% endfor %}
     {% endif %}
 </td>
 </tr>
