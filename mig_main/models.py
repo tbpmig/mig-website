@@ -54,6 +54,35 @@ class AcademicTerm(models.Model):
         return self.semester_type.name[0]+str(self.year)
     def __unicode__(self):
         return self.semester_type.name +' '+unicode(self.year)
+    def __gt__(self,term2):
+        if not hasattr(term2,'year'):
+            return True
+        if self.year > term2.year:
+            return True
+        if self.year < term2.year:
+            return False
+        return self.semester_type > term2.semester_type
+    def __lt__(self,term2):
+        if not hasattr(term2,'year'):
+            return False
+        if self.year < term2.year:
+            return True
+        if self.year > term2.year:
+            return False
+        return self.semester_type < term2.semester_type
+    def __eq__(self,term2):
+        if not hasattr(term2,'year'):
+            return False
+        if self.year != term2.year:
+            return False
+        return self.semester_type == term2.semester_type
+    def __ne__(self,term2):
+        return not self == term2
+    def __le__(self,term2):
+        return not self > term2
+    def __ge__(self,term2):
+        return not self < term2
+
 class CurrentTerm(models.Model):
     current_term = models.ForeignKey(AcademicTerm)
     def __unicode__(self):
@@ -83,7 +112,8 @@ class OfficerTeam(models.Model):
     name    = models.CharField(max_length=80)
     lead    = models.ForeignKey(OfficerPosition,related_name='team_lead')
     members = models.ManyToManyField(OfficerPosition,related_name='members')
-    
+    start_term = models.ForeignKey(AcademicTerm,related_name='teams_starting_in_term') 
+    end_term = models.ForeignKey(AcademicTerm,related_name='teams_ending_in_term',null=True,blank=True) 
     def __unicode__(self):
         return self.name
         

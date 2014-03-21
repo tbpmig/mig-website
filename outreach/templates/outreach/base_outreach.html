@@ -5,6 +5,6 @@
 <li {% if subnav and subnav == 'mindset' %}class="active"{% endif%}><a href="{% url 'outreach:mindset' %}">MindSET</a></li>
 <li {% if subnav and subnav == 'tutoring' %}class="active"{% endif%}><a href="{% url 'outreach:tutoring' %}">Tutoring</a></li>
 {% for extra in sub_nav_extras %}
-<li {% if subnav and subnav == extra.url_stem %}class="active"{% endif%}><a href="{% url 'outreach:outreach_event' extra.url_stem %}">{{extra.event_category}}</a></li>
+<li {% if subnav and subnav == extra.url_stem %}class="active"{% endif%}><a href="{% url 'outreach:outreach_event' extra.url_stem %}">{{extra.get_tab_name}}</a></li>
 {% endfor %}
 {% endblock %}

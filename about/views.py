@@ -41,20 +41,21 @@ def get_terms():
 def pack_officers_for_term(term):
     officer_set = Officer.objects.filter(term=term)
     term_advisors = officer_set.filter(position__name='Advisor')
-    if term.year<2013 or (term.year==2013 and term.semester_type.name=='Winter'):
-        term_officers = officer_set.filter(~Q(position__name='Advisor'))
-    else:
-        term_officers =[]
-        for team in OfficerTeam.objects.all():
-            disp_order = 1
-            if team.name=='Executive Committee':
-                disp_order = 0
-            if team.name =='Electee and Membership Team':
-                query = Q(position__in=team.members.all())&~Q(position__name='Vice President')
-            else:
-                query = Q(position__in=team.members.all())
-            team_data={'order':disp_order,'name':team.name,'lead':team.lead.name,'officers':officer_set.filter(query)}
-            term_officers.append(team_data)
+
+    #if term.year<2013 or (term.year==2013 and term.semester_type.name=='Winter'):
+    #    term_officers = officer_set.filter(~Q(position__name='Advisor'))
+    #else:
+    term_officers =[]
+    for team in OfficerTeam.objects.filter(Q(start_term__lte=term)&(Q(end_term__gte=term)|Q(end_term=None))):
+        disp_order = 1
+        if team.name=='Executive Committee':
+            disp_order = 0
+        if team.name =='Electee and Membership Team':
+            query = Q(position__in=team.members.all())&~Q(position__name='Vice President')
+        else:
+            query = Q(position__in=team.members.all())
+        team_data={'order':disp_order,'name':team.name,'lead':team.lead.name,'officers':officer_set.filter(query)}
+        term_officers.append(team_data)
     return {'officers':term_officers,'advisors':term_advisors}
 def index(request):
     slideshow_photos = AboutSlideShowPhoto.objects.filter(active=True)
@@ -156,17 +157,12 @@ def leadership(request):
 def leadership_for_term(request,term_id):
     template = loader.get_template('about/leadership.html')
     term = get_object_or_404(AcademicTerm,id=term_id)
-    if term.year<2013 or (term.year==2013 and term.semester_type.name=='Winter'):
-        has_teams = False
-    else:
-        has_teams = True
     context_dict = {
         "officers":pack_officers_for_term(AcademicTerm.objects.get(id=term_id)),
         'request':request,
         'terms':get_terms()[:5],
         'requested_term':term,
         'is_current':(term_id==get_current_term().id),
-        'has_teams':has_teams,
         'subnav':'leadership',
         }
     context_dict.update(get_common_context(request))

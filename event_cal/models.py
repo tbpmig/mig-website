@@ -34,6 +34,7 @@ class CalendarEvent(models.Model):
     needs_carpool   = models.BooleanField(default=False)
     use_sign_in     = models.BooleanField(default=False)
     allow_advance_sign_up = models.BooleanField(default=True)
+    needs_facebook_event = models.BooleanField(default=False)
     def __unicode__(self):
         return self.name
     def get_relevant_event_type(self,status,standing):

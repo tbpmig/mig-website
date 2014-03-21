@@ -82,14 +82,20 @@ class OutreachEventType(models.Model):
     text=models.TextField()
     url_stem = models.CharField(max_length=64,unique=True, validators=[RegexValidator(regex=r'^[a-z,_]+$',message="The url stem must use only the lowercase letters a-z and the underscore.")]) 
     officers_can_edit = models.ManyToManyField('mig_main.OfficerPosition')
+    tab_name = models.CharField(max_length=64,blank=True,null=True)
+    has_calendar_events = models.BooleanField(default=True)
 
     def __unicode__(self):
         return self.title
+    def get_tab_name(self):
+        if self.tab_name:
+            return self.tab_name
+        return self.event_category.name
 
 class OutreachEvent(models.Model):
     outreach_event = models.ForeignKey(OutreachEventType)
     banner   = StdImageField(upload_to='outreach_event_banners')
     google_form_link = models.CharField(max_length=256,blank=True,null=True)
-
+    pin_to_top = models.BooleanField(default=False)
     def __unicode__(self):
         return 'Event # '+unicode(self.id)+' for '+unicode(self.outreach_event)

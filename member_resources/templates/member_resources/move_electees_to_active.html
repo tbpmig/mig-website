@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="row">
-        <a class="btn btn-default" href="{% url 'member_resources:manage_membership' %}"><i class="glyphicon glyphicon-chevron-left"></i> Back to Membership Management</a>
+        <a class="btn btn-default" href="{% url 'member_resources:view_misc_reqs' %}"><i class="glyphicon glyphicon-chevron-left"></i> Back to Membership Admin</a>
 <form method="post" action="{% url 'member_resources:move_electees_to_active' %}">
     <div class="col-md-6">
         <h4>Move Electees To Active</h4>

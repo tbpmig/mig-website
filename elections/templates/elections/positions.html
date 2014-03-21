@@ -1,0 +1,21 @@
+{% extends "elections/base_elections.html" %}
+{% load staticfiles %}
+{% load my_markdown %}
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+<h3>Officer Positions</h3>
+{% for position in positions|dictsort:"position.id"|dictsort:"order" %}
+<h4>{{position.position.name}}</h4>
+{% if position.leads %}<p><strong>Team Lead:</strong> {% for lead in position.leads%}{{lead}} {%endfor%}</p> {%endif%}
+{% if position.teams %}
+{% if position.teams|length > 1 or not position.leads %}
+<p><strong>Team{{position.teams|length|pluralize}}:</strong> {% for team in position.teams%}{{team}}{% if position.teams|length > 2 and not forloop.last %}, {% endif %}{% if position.teams|length > 1 and forloop.revcounter == 2 %} and {% endif %}{% endfor %}</p>
+{% endif %}
+{% endif %}
+{{position.position.description|my_markdown}}
+<hr>
+{% endfor %}
+</div>
+</div>
+{% endblock %}

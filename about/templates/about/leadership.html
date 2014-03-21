@@ -27,7 +27,6 @@
                 <div id="officersCollapse{{term_id}}" class="panel-collapse collapse in">
                     <div class="panel-body">
                         <p class="text-center"><a href="mailto:tbp.officers@umich.edu">tbp.officers@umich.edu</a></p>
-                        {% if has_teams %}
                         {% for team_data in officers.officers|dictsort:"order" %}
                         <h3>{{team_data.name}}</h3>
                         {% if team_data.lead %}
@@ -60,33 +59,6 @@
                         {% endfor %}
                         <hr/>
                         {% endfor %}
-                        {% else %}
-                        {% for officer in officers.officers|dictsort:"position.id" %}
-                            {% if forloop.counter0|divisibleby:"4" %}
-                            <div class="row">
-                            {% endif %}
-                            {% if forloop.counter0|divisibleby:"2" %}
-                                <div class="col-sm-12 col-lg-6">
-                                    <div class="row">
-                            {% endif %}
-                            <div class="col-sm-6 officer-profile">
-                                <h4>{{officer.position}}</h4>
-                                <p><strong>{{officer.user.get_firstlast_name}}</strong></p>
-                                {% if is_current %}
-                                <a href="mailto:{{officer.position.email}}">{{officer.position.email}}</a>
-                                {% endif %}
-                                <img  class="img-responsive img-rounded" src="{{officer.website_photo.thumbnail.url}}"></img>
-                                <p class="text-justify">{{officer.website_bio|my_markdown}}</p>
-                            </div>
-                            {% if forloop.counter|divisibleby:"2" or forloop.last %}
-                            </div>
-                            </div>
-                            {% endif %}
-                        {% if forloop.counter|divisibleby:"4" or forloop.last %}
-                        </div>
-                        {% endif %}
-                        {% endfor %}
-                        {% endif %}
                     </div>
                 </div>
             </div>

@@ -1,112 +1,170 @@
 #The views associated with the Elections widget
 import datetime
 
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.core.mail import send_mail, EmailMultiAlternatives
+from django.core.urlresolvers import reverse
+from django.db.models import Q
+from django.forms.models import modelform_factory
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template import RequestContext, loader
-from django.core.urlresolvers import reverse
-from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
+from django.utils.encoding import force_unicode
 
-from elections.models import Election, Nomination,TempNomination
-from mig_main.models import UserProfile, OfficerPosition, AcademicTerm, MemberProfile
-from elections.forms import NominationForm,TempNominationForm
+from markdown import markdown
 
-from django.core.mail import send_mail
+from elections.models import Election, Nomination
+from member_resources.views import get_permissions as get_member_permissions
+from mig_main.models import UserProfile, OfficerPosition, AcademicTerm, MemberProfile, OfficerTeam
+from mig_main.utility import get_message_dict,Permissions,get_members
 
-def get_current_election(term_name):
-    e = get_object_or_404(Election,term=AcademicTerm.objects.get(id=term_name))
-    current_elections = Election.objects.filter(open_date__lte=datetime.date.today())
-    current_elections = current_elections.filter(close_date__gte=datetime.date.today())
-    if e not in current_elections:
-        raise Http404
+
+def get_permissions(user):
+    permission_dict = get_member_permissions(user)
+    return permission_dict
+def get_common_context(request):
+    context_dict=get_message_dict(request)
+    context_dict.update({
+        'request':request,
+        'main_nav':'members',
+        'elections':get_current_elections(),
+        'subnav':'elections',
+        })
+    return context_dict
+def get_current_elections():
+    e = Election.objects.filter(open_date__lte=datetime.date.today(),close_date__gte=datetime.date.today())
     return e
 
 def index(request):
     request.session['current_page']=request.path
-    current_elections = Election.objects.filter(open_date__lte=datetime.date.today())
-    current_elections = current_elections.filter(close_date__gte=datetime.date.today())
-    template = loader.get_template('elections/temp_index.html')
-    context = RequestContext(request, {
+    template = loader.get_template('elections/index.html')
+    current_elections=get_current_elections()
+    context_dict = {
         'current_elections':current_elections,
-        'request':request,
-    })
-    if current_elections:
-        return list(request,current_elections[0].term.id)
-    
+    }
+    if current_elections.count()==1:
+        return redirect('elections:list',current_elections[0].id)
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
     
-def list(request,term_name):
+def list(request,election_id):
     request.session['current_page']=request.path
-    e=get_current_election(term_name)       
-    #nominees = e.nomination_set.exclude(accepted__exact=False)
-    
-    nominees = e.tempnomination_set.exclude(accepted__exact=False).order_by('id')
-    return render(request, 'elections/temp_list.html', {'nominees':nominees,'term':term_name,'term_name':unicode(AcademicTerm.objects.get(id=term_name)),'request':request,})
+    e=get_object_or_404(Election,id=election_id)
+    nominees = e.nomination_set.exclude(accepted=False)
+    context_dict = {
+            'nominees':nominees,
+            'election':e,
+            'subsubnav':'list',
+    }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    template = loader.get_template('elections/list.html')
+    return HttpResponse(template.render(context))
 
-
-
-def temp_nominate(request,term_name):
-    base_web = r'http://tbp.engin.umich.edu:8000/'
+def positions(request,election_id):
     request.session['current_page']=request.path
-    e=get_current_election(term_name)
-    nomination = TempNomination(election=e)
-#    nomination.nominator = request.user.userprofile
-    if request.method =='POST':
-        form = TempNominationForm(request.POST)
-        if form.is_valid():
-            existing_nominations = TempNomination.objects.filter(nominee=form.cleaned_data['nominee_uniqname']).filter(position=form.cleaned_data['position'])
-            if existing_nominations:
-                pass
+    positions=OfficerPosition.objects.filter(enabled=True).order_by('members')
+    election = get_object_or_404(Election,id=election_id)
+    teams = OfficerTeam.objects.filter(start_term__lte=election.term).filter(Q(end_term=None)|Q(end_term__gte=election.term))
+    packed_positions=[]
+    for team in teams:
+        for position in team.members.all():
+            if team.name == 'Executive Committee':
+                order=0
             else:
-                nomination.name = form.cleaned_data['nominee_name']
-                nomination.nominee = form.cleaned_data['nominee_uniqname']
-                nomination.position = form.cleaned_data['position']
-                nomination.save()
+                order=1
+            temp_pos={'order':order,'position':position,'teams':position.members.filter(start_term__lte=election.term).filter(Q(end_term=None)|Q(end_term__gte=election.term)),'leads':position.team_lead.filter(start_term__lte=election.term).filter(Q(end_term=None)|Q(end_term__gte=election.term))}
+            packed_positions.append(temp_pos)
+    context_dict = {
+            'subsubnav':'positions',
+            'positions':packed_positions,
+    }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    template = loader.get_template('elections/positions.html')
+    return HttpResponse(template.render(context))
+
+def my_nominations(request,election_id):
+    if not Permissions.can_nominate(request.user):
+        request.session['error_message']='You must be logged in, have a profile, and be a member to view nominations.'
+        return redirect('elections:index')
+    e=get_object_or_404(Election,id=election_id)
+    noms = Nomination.objects.filter(nominee=request.user.userprofile.memberprofile,election=e)
+    context_dict = {
+            'my_nominations':noms,
+            'election':e,
+            'subsubnav':'my_nominations',
+    }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    template = loader.get_template('elections/my_nominations.html')
+    return HttpResponse(template.render(context))
+
+
+@login_required
+def nominate(request,election_id):
+    base_web = r'https://tbp.engin.umich.edu/'
+    if not Permissions.can_nominate(request.user):
+        request.session['error_message']='You must be logged in, have a profile, and be a member to submit a nomination'
+        return redirect('elections:index')
+    request.session['current_page']=request.path
+    e=get_object_or_404(Election,id=election_id)
+    nomination = Nomination(election=e)
+    nomination.nominator = request.user.userprofile
+    NominationForm = modelform_factory(Nomination,exclude=('nominator','accepted','election'))
+    NominationForm.base_fields['position'].queryset=e.officers_for_election.all().order_by('id')
+    NominationForm.base_fields['nominee'].queryset=get_members().order_by('last_name')
+    if request.method =='POST':
+        form = NominationForm(request.POST,instance=nomination)
+        if form.is_valid():
+            existing_nominations = Nomination.objects.filter(nominee=form.cleaned_data['nominee'],position=form.cleaned_data['position'],election=e)
+            instance = form.save(commit=False)
+            if existing_nominations.exists():
+                if instance.nominee == request.user.userprofile.memberprofile:
+                    existing_nominations[0].accepted=True
+                    existing_nominations[0].save()
+                    request.session['success_message']='Your self nomination was successfully submitted and accepted.'
+                else:
+                    request.session['warning_message']='This nomination has been previously submitted.'
+            elif instance.nominee == request.user.userprofile.memberprofile:
+                instance.accepted=True
+                instance.save()
+                request.session['success_message']='Your self nomination was successfully submitted and accepted.'
+            else:
+                instance.save()
                 #TODO move these to a more sensible location and use kyle & my email script
-                name = nomination.name
-                recipient =nomination.nominee
-                position =  nomination.position
-                recipient_email = recipient+"@umich.edu"
+                recipient = instance.nominee
+                instance.position
+                recipient_email = recipient.get_email()
+                position=instance.position
+                url_stem = base_web+reverse('elections:accept_or_decline_nomination',args=(instance.id,))
+                accept_link = url_stem+r'?accept=YES'
+                decline_link = url_stem+r'?accept=NO'
+                if position.team_lead.exists():
+                    team_lead_bit = '**Team Lead:** '+' and '.join( unicode(x) for x in position.team_lead.all())
+                else:
+                    team_lead_bit = ''
+                if position.team_lead.count() < position.members.count():
+                    if position.members.count() > 1:
+                        team_member_bit = '**Teams:** '
+                    else:
+                        team_member_bit = ''
+                    team_member_bit+= ' and '.join(unicode(x) for x in position.members.all())
+                else:
+                    team_member_bit=''
                 body = r'''Hello %(name)s,
             
 You've been nominated for %(position)s!
 Here's some information on it:
-%(description)s
-            
-To accept (or decline) this nomination, please email tbp-elections@umich.edu            
-            
-Regards,
-The TBP Election Chairs
-tbp-elections@umich.edu'''%{'name':name,'position':position.name,
-                                        'description':position.description}
-                send_mail('You\'ve been nominated for an officer position!',body,'tbp-elections@umich.edu',[recipient_email],fail_silently=False)
-            return HttpResponseRedirect(reverse('elections:list', args=(term_name,)))
-    else:
-        form = TempNominationForm()
-    return render(request,'elections/temp_nominate.html',{'form':form,'term_name':term_name})
 
-@login_required
-def nominate(request,term_name):
-    base_web = r'http://tbp.engin.umich.edu:8000/'
-    request.session['current_page']=request.path
-    e=get_current_election(term_name)
-    nomination = Nomination(election=e)
-    nomination.nominator = request.user.userprofile
-    if request.method =='POST':
-        form = NominationForm(request.POST,instance=nomination)
-        if form.is_valid():
-            form.save()
-            #TODO move these to a more sensible location and use kyle & my email script
-            recipient = MemberProfile.objects.get(uniqname=form['nominee'].value())
-            position =  OfficerPosition.objects.get(id=form['position'].value())
-            recipient_email = recipient.get_email()
-            accept_link = base_web+r'members/elections/'+term_name+r'/acceptdecline/?user='+recipient.uniqname+r'&position='+str(position.id)+r'&accept=YES'
-            decline_link = base_web+r'members/elections/'+term_name+r'/acceptdecline/?user='+recipient.uniqname+r'&position='+str(position.id)+r'&accept=NO'
-            body = r'''Hello %(name)s,
-            
-You've been nominated for %(position)s!
-Here's some information on it:
+%(team_info)s
+
 %(description)s
             
 To accept the nomination please click this link: %(accept_link)s
@@ -117,39 +175,52 @@ You can also accept or decline by visiting the website.
 Regards,
 The TBP Election Chairs
 tbp-elections@umich.edu'''%{'name':recipient.get_casual_name(),'position':position.name,
-                                        'description':position.description,'accept_link':accept_link,'decline_link':decline_link}
-            send_mail('You\'ve been nominated for an officer position!',body,'tbp-elections@umich.edu',[recipient_email],fail_silently=False)
-            return HttpResponseRedirect(reverse('elections:list', args=(term_name,)))
+        'description':position.description,'accept_link':accept_link,'decline_link':decline_link,'team_info':team_lead_bit+'\n'+team_member_bit}
+                html_body=markdown(force_unicode(body),['nl2br'],safe_mode=True,enable_attributes=False)
+                msg = EmailMultiAlternatives('You\'ve been nominated for an officer position!',body,'tbp-elections@umich.edu',[recipient_email])
+                msg.attach_alternative(html_body,"text/html")
+                msg.send()
+                #send_mail('You\'ve been nominated for an officer position!',body,'tbp-elections@umich.edu',[recipient_email],fail_silently=False)
+                request.session['success_message']='Your nomination was successfully submitted, and the nominee emailed.'
+            return HttpResponseRedirect(reverse('elections:list', args=(election_id,)))
+        else:
+            request.session['error_message']='There were errors in your submission'
     else:
         form = NominationForm(instance=nomination)
-    return render(request,'elections/nominate.html',{'form':form,'term_name':term_name})
+    context_dict = {
+        'form':form,
+        'has_files':False,
+        'submit_name':'Submit Nomination',
+        'back_button':{'link':reverse('elections:list',args=(election_id,)),'text':'List of Nominees'},
+        'form_title':'Election Nomination',
+        'help_text':'Choose a member to nominate for an officer position. If you nominate someone other than yourself, they will be emailed to determine their acceptance.',
+        'base':'elections/base_elections.html',
+        'subsubnav':'list',
+    }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    template = loader.get_template('generic_form.html')
+    return HttpResponse(template.render(context))
 
-def accept_or_decline_nomination(request,term_name):
-    request.session['current_page']=request.path
-    e=get_current_election(term_name)
+def accept_or_decline_nomination(request,nomination_id):
+    if not Permissions.can_nominate(request.user):
+        request.session['error_message']='You must be logged in, have a profile, and be a member to accept/decline a nomination.'
+        return redirect('elections:index')
+    nom = get_object_or_404(Nomination,id=nomination_id)
+    if not nom.nominee == request.user.userprofile.memberprofile:
+        request.session['error_message']='You can only accept or decline your own nominations.'
+        return redirect('elections:index')
+        
+
     if request.method=='POST':
         request_body = request.POST
     else:
         request_body = request.GET
-    if request_body.__contains__('user'):
-        request.session['user'] = request_body.__getitem__('user')
-    if request_body.__contains__('position'):
-        request.session['position'] = request_body.__getitem__('position')
-        print request.session['position']
+
     if request_body.__contains__('accept'):
-        request.session['accept'] = request_body.__getitem__('accept')
-    if not request.user.is_authenticated():
-        return redirect('/accounts/login/?next=%s'%(request.path))
-    if not request.user.userprofile.uniqname == request.session['user']:
-        raise PermissionDenied
-    nominations = Nomination.objects.filter(election=e,nominee__uniqname=request.session['user'],position__id=int(request.session['position']))
-    first_pass = True
-    for nom in nominations:
-        if first_pass:
-            first_pass = False
-            nom.accepted=(request.session['accept']=='YES')
-            nom.save()
-        else:
-            nom.delete()
-    return HttpResponseRedirect(reverse('elections:list', args=(term_name,)))
+        accepted= (request_body.__getitem__('accept')=='YES')
+    nom.accepted=accepted
+    nom.save()
+    return HttpResponseRedirect(reverse('elections:my_nominations', args=(nom.election.id,)))
         

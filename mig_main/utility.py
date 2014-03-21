@@ -98,8 +98,7 @@ def get_quick_links(user):
     # Pres items-nothing unique
     # VP items
     if positions.filter(Q(position__name='Vice President')|Q(position__name='Graduate Student Coordinator')).exists():
-        quick_links.append({'link_name':'Manage Requirements','link':reverse('member_resources:view_misc_reqs')})
-        quick_links.append({'link_name':'Add Electees/Move to Actives','link':reverse('member_resources:manage_membership')})
+        quick_links.append({'link_name':'Member Admin','link':reverse('member_resources:view_misc_reqs')})
         quick_links.append({'link_name':'Manage Electee Groups','link':reverse('electees:view_electee_groups')})
     # Secretary items - nothing unique
     # Treasurer items 
@@ -117,8 +116,7 @@ def get_quick_links(user):
         quick_links.append({'link_name':'Generate Weekly Announcements','link':reverse('event_cal:generate_announcements')})
     # Membership Officer -- also needs meeting sign-in once that's a thing
     if positions.filter(position__name='Membership Officer').exists():
-        quick_links.append({'link_name':'Manage Requirements','link':reverse('member_resources:view_misc_reqs')})
-        quick_links.append({'link_name':'Add/Manage Members','link':reverse('member_resources:manage_membership')})
+        quick_links.append({'link_name':'Member Admin','link':reverse('member_resources:view_misc_reqs')})
         quick_links.append({'link_name':'View Meeting Surveys','link':reverse('member_resources:view_meeting_feedback')})
     #end officer permissions
     if Permissions.can_create_events(user):
@@ -139,7 +137,11 @@ class Permissions:
         if not user.userprofile.is_member():
             return None
         return user.userprofile.memberprofile
-
+    @classmethod
+    def can_nominate(cls,user):
+        if cls.get_profile(user):
+            return True
+        return False
     @classmethod
     def get_current_officer_positions(cls,user):
         profile = cls.get_profile(user)
@@ -434,7 +436,7 @@ class Permissions:
 
     @classmethod 
     def can_manage_misc_reqs(cls,user):
-        return cls.can_manage_finances(user) or cls.can_manage_ugrad_paperwork(user)or cls.can_manage_grad_paperwork(user) or cls.can_approve_tutoring(user) or cls.can_add_leadership_credit(user) or cls.can_view_background_forms(user)
+        return cls.can_manage_membership(user) or cls.can_manage_finances(user) or cls.can_manage_ugrad_paperwork(user)or cls.can_manage_grad_paperwork(user) or cls.can_approve_tutoring(user) or cls.can_add_leadership_credit(user) or cls.can_view_background_forms(user)
 
     @classmethod
     def can_approve_tutoring(cls,user):

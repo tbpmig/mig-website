@@ -12,7 +12,7 @@ def electee_stopped_electing(profile):
     profile.save()
     future_events = CalendarEvent.objects.filter(eventshift__attendees=profile,completed=False)
     for event in future_events:
-        for shift in event.eventshift_set:
+        for shift in event.eventshift_set.all():
             shift.attendees.remove(profile)
             shift.save()
     for group in ElecteeGroup.objects.filter(term=get_current_term(),members=profile):

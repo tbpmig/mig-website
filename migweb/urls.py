@@ -23,5 +23,8 @@ urlpatterns = patterns('',
 	url(r'^accounts/logout/$', 'migweb.views.logout_view', name='logout'),
     url(r'^oauth2callback/$','event_cal.views.oauth',name='oauth'),
     url(r'^townhalls/$',RedirectView.as_view(url='/outreach/townhalls/')),
+    url(r'^pi_day/$',RedirectView.as_view(url='/outreach/pi_day/')),
+    url(r'^pi-day/$',RedirectView.as_view(url='/outreach/pi_day/')),
+    url(r'^piday/$',RedirectView.as_view(url='/outreach/pi_day/')),
     #url(r'^settings/',include('dbsettings.urls')),
 )+static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)

@@ -8,10 +8,7 @@
 <li {% if subnav and subnav == 'view_others_progress' %}class="active"{% endif %}><a href="{% url 'member_resources:view_progress_list' %}">View Others' Progress</a></li>
 {% endif %}
 {% if misc_tab %}
-<li {% if subnav and subnav == 'misc_reqs' %}class="active"{% endif %}><a href="{% url 'member_resources:view_misc_reqs' %}">Manage Requirements</a></li>
-{% endif %}
-{% if manage_membership_tab %}
-<li {% if subnav and subnav == 'manage_members' %}class="active"{% endif %}><a href="{% url 'member_resources:manage_membership' %}">Manage Membership</a></li>
+<li {% if subnav and subnav == 'misc_reqs' %}class="active"{% endif %}><a href="{% url 'member_resources:view_misc_reqs' %}">Membership Admin</a></li>
 {% endif %}
 {% if can_access_history %}
     <li  {% if subnav and subnav == 'history' %}class="active"{% endif %}><a href ="{% url 'member_resources:access_history' %}">Access History</a></li>
@@ -20,6 +17,7 @@
 {% block subnavElectees %}
 
 {% endblock %}
+<li {% if subnav and subnav == 'elections' %}class="active"{% endif %}><a href="{% url 'elections:index' %}">Elections</a></li>
 {% block subnavElections %}
 
 {% endblock %}

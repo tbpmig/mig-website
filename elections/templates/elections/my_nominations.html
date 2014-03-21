@@ -1,0 +1,18 @@
+{% extends "elections/base_elections.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<h4>{{election}}: My Nominations</h4>
+<p>An explanation of the responsibilities of each position can be found <a href={% url 'elections:positions'  election.id %}>here</a></p>
+<a href="{% url 'elections:nominate' election.id %}">Make a nomination</a> 
+{% for nom in my_nominations %}
+<h4>{{nom.position.name}}: {% if nom.accepted %}Accepted{% elif nom.accepted == None %}Pending{% else%}Declined{%endif%}</h4>
+    <div class="btn-group">
+        <a class="btn btn-success {% if nom.accepted %}disabled{% endif %}" href="{% url 'elections:accept_or_decline_nomination' nom.id%}?accept=YES">Accept Nomination</a>
+        <a class="btn btn-danger {% if nom.accepted == False %}disabled{% endif %}" href="{% url 'elections:accept_or_decline_nomination' nom.id%}?accept=NO">Decline Nomination</a>
+        <hr/>
+{% empty %}
+<p> You have no nominations, but feel free to nominate yourself for a position!</p>
+{% endfor %}
+
+{% endblock %}

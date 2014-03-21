@@ -19,7 +19,7 @@ from event_cal.forms import  EventShiftFormset, EventShiftEditFormset,CompleteEv
 from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto
 from history.models import ProjectReport, Officer
 from mig_main.default_values import get_current_term
-from mig_main.models import OfficerPosition,PREFERENCES,UserPreference,MemberProfile,get_members
+from mig_main.models import OfficerPosition,PREFERENCES,UserPreference,MemberProfile,UserProfile,get_members
 from mig_main.utility import get_previous_page, Permissions, get_message_dict
 from outreach.models import TutoringRecord
 from requirements.models import ProgressItem, EventCategory
@@ -87,6 +87,24 @@ def add_event_to_gcal(event):
                 shift.google_event_id=submitted_event['id']
                 shift.save()
 
+def get_attendee_hours_at_event(profile,event):
+    shifts=event.eventshift_set.filter(attendees=profile).order_by('start_time') 
+    n=shifts.count()
+    count = 0
+    hours=0
+    if not shifts.exists():
+        return 0
+    if event.is_fixed_progress():
+        return 1
+    while count< n:
+        start_time = shifts[count].start_time
+        end_time = shifts[count].end_time
+        while count<(n-1) and shifts[count+1].start_time<end_time:
+            count+=1
+            end_time=shifts[count].end_time
+        hours+=(end_time-start_time).seconds/3600.0
+        count+=1
+    return hours
 def add_attendee_to_gcal(name,email,event,shift):
     c = get_credentials()
     h = get_authorized_http(c)
@@ -597,6 +615,19 @@ def create_event(request):
                 formset.save()
                 request.session['success_message']='Event created successfully'
                 add_event_to_gcal(event)
+                if event.needs_facebook_event:
+                    publicity_officer = OfficerPosition.objects.filter(name='Publicity Officer')
+                    if publicity_officer.exists():
+                        publicity_email = publicity_officer[0].email
+                        body = r'''Hello Publicity Officer,
+
+An event has been created that requires a facebook event to be created. The event information can be found at https://tbp.engin.umich.edu%(event_link)s
+
+Regards,
+The Website
+
+Note: This is an automated email. Please do not reply to it as responses are not checked.'''%{'event_link':reverse('event_cal:event_detail',args=(event.id,))}
+                        send_mail('[TBP] Event Needs Facebook Event.',body,'tbp.mi.g@gmail.com',[publicity_email],fail_silently=False)
                 if event.use_sign_in:
                     request.session['info_message']='Please create a sign-in for %s'%(unicode(event),)
                     event_id=int(event.id)
@@ -611,9 +642,9 @@ def create_event(request):
         form = EventForm(prefix='event')
         formset= EventShiftFormset(prefix='shift',instance=CalendarEvent())
     dp_ids=['id_event-announce_start']
-    for count in range(len(formset)):
-        dp_ids.append('id_shift-%d-start_time_0'%(count))
-        dp_ids.append('id_shift-%d-end_time_0'%(count))
+    #for count in range(len(formset)):
+    #    dp_ids.append('id_shift-%d-start_time_0'%(count))
+    #    dp_ids.append('id_shift-%d-end_time_0'%(count))
     template = loader.get_template('event_cal/create_event.html')
     context_dict = {
         'form':form,
@@ -703,7 +734,7 @@ def edit_event(request, event_id):
     EventForm = modelform_factory(CalendarEvent,exclude=('completed','google_event_id','project_report'))
     EventForm.base_fields['assoc_officer'].queryset=OfficerPosition.objects.filter(enabled=True)
     EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
-    
+    EventForm.base_fields['leaders'].queryset=get_members().order_by('last_name')
     if request.method == 'POST':
         form = EventForm(request.POST,prefix='event',instance=e)
         formset = EventShiftEditFormset(request.POST,prefix='shift',instance=e)
@@ -869,24 +900,17 @@ def complete_event(request, event_id):
             request.session['error_message']='There were errors in your submission. Progress was not updated. Please correct the errors and try again.'
     else:
         # create initial
-        user_hours ={}
-        for shift in e.eventshift_set.all():
-            hours = (shift.end_time-shift.start_time).seconds/3600.0
-            for attendee in shift.attendees.all():
-                if not attendee.is_member():
-                    continue
-                if ProgressItem.objects.filter(related_event=e,member=attendee.memberprofile).exists():
-                    continue
-                if attendee in user_hours.keys():
-                    user_hours[attendee.memberprofile]+=hours
-                else:
-                    user_hours[attendee.memberprofile]=hours
-        initial = []                    
-        for attendee in user_hours.keys():
+        initial=[]
+        attendees = UserProfile.objects.filter(event_attendee__event=e).distinct()
+        for attendee in attendees.order_by('last_name'):
+            if not attendee.is_member():
+                continue
+            if ProgressItem.objects.filter(related_event=e,member=attendee.memberprofile).exists():
+                continue
             if is_fixed:
-                initial.append({'member':attendee})
+                initial.append({'member':attendee.memberprofile})
             else:
-                initial.append({'member':attendee,'amount_completed':round(user_hours[attendee],2)})
+                initial.append({'member':attendee.memberprofile,'amount_completed':round(get_attendee_hours_at_event(attendee,e),2)})
         form_type.extra=len(initial)+1
         formset = form_type(prefix=form_prefix,queryset=ProgressItem.objects.none(),initial=initial)
     template = loader.get_template('generic_formset.html')

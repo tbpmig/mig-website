@@ -210,15 +210,16 @@ def tutoring(request):
 def outreach_event(request,url_stem):
     request.session['current_page']=request.path
     outreach_event = get_object_or_404(OutreachEventType,url_stem=url_stem)
-    events = CalendarEvent.objects.filter(term=get_current_term(),event_type=outreach_event.event_category).annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
+    events = CalendarEvent.objects.filter(term=get_current_term(),event_type=outreach_event.event_category,eventshift__end_time__gte=timezone.now()).annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
     template = loader.get_template('outreach/outreach_template.html')
     context_dict = {
         'events':events,
         'subnav':url_stem,
         'title':outreach_event.title,
         'text':outreach_event.text,
+        'has_cal_events':outreach_event.has_calendar_events,
         'event_category':outreach_event.event_category.name,
-        'event_timeline':outreach_event.outreachevent_set.all(),
+        'event_timeline':outreach_event.outreachevent_set.all().order_by('-pin_to_top','-id'),
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))

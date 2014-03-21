@@ -57,7 +57,9 @@ def login_view(request):
         body = request.POST
     else:
         body = request.GET
-    return redirect(body['next'])
+    if 'next' in body:
+        return redirect(body['next'])
+    return redirect('home')
 def logout_view(request):
     logout(request)
     return HttpResponseRedirect('https://weblogin.umich.edu/cgi-bin/logout?https://tbp.engin.umich.edu/')

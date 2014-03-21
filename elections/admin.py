@@ -1,17 +1,13 @@
 from django.contrib import admin
-from elections.models import Election, Nomination,TempNomination
+from elections.models import Election, Nomination
 
 class NominationInLine(admin.TabularInline):
 	model = Nomination
 	extra = 2
 	ordering = ['position']
 
-class TempNominationInLine(admin.TabularInline):
-	model = TempNomination
-	extra = 2
-	ordering = ['position']
 class ElectionAdmin(admin.ModelAdmin):
-	inlines = [TempNominationInLine]
+	inlines = [NominationInLine]
 	#list_filter = ['position']
 	
 admin.site.register(Election,ElectionAdmin)

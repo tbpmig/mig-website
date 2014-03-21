@@ -3,11 +3,16 @@
 {% load my_markdown %}
 {% block content %}
 <div class="row">
+    {% if has_cal_events %}
     <div class="col-md-8 col-md-offset-0 col-lg-6 col-lg-offset-2">
+    {% else %}
+    <div class="col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
+    {% endif %}
         <h2> {{title}}</h2>
         {{text|my_markdown}}
         {% for event in event_timeline %}
-        <img class="img-responsive img-rounded" src="{{ event.banner.url }}" />
+        <a id="{{event.id}}"></a>
+        <img class="img-responsive" src="{{ event.banner.url }}" />
         <hr>
         {% if event.google_form_link %}
         <iframe src="{{event.google_form_link}}" width="100%" height="1100" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>
@@ -15,6 +20,7 @@
         <hr/>
         {% endfor %}
     </div>
+    {% if has_cal_events %}
     <hr class="hidden-lg hidden-md" />
     <div class="col-md-4">
         <h3>{{event_category}} this Semester</h3>
@@ -33,6 +39,7 @@
             {% endfor %}
         </ul>
     </div>
+    {% endif %}
 </div>
 
 {% endblock content %}

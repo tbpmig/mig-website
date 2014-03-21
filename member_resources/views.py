@@ -94,7 +94,6 @@ def get_electees_who_completed_reqs():
 def get_permissions(user):
     return {'extra_progress_tab':Permissions.can_view_more_than_own_progress(user),
     'misc_tab':(Permissions.can_manage_misc_reqs(user) or Permissions.can_change_requirements(user)),
-    'manage_membership_tab':Permissions.can_manage_membership(user),
     'can_manage_website':Permissions.can_manage_website(user),
     'can_access_history':Permissions.can_access_history(user),
     }
@@ -1085,7 +1084,19 @@ def view_misc_reqs(request):
         return redirect('member_resources:index')
 
     template = loader.get_template('member_resources/manage_misc_reqs.html')
+    current_term = get_current_term()
+    if current_term.semester_type.name=='Summer':
+        current_term = get_next_term(current_term)
+    next_term = get_next_full_term(current_term)
     context_dict = {
+        'can_add_electee_members':Permissions.can_add_electee_members(request.user),
+        'can_manage_project_leaders':Permissions.can_manage_project_leaders(request.user),
+        'can_manage_officers':Permissions.can_manage_officers(request.user),
+        'terms':AcademicTerm.objects.all().exclude(semester_type__name='Summer').exclude(id=current_term.id).exclude(id=next_term.id).order_by('-year','-semester_type'),
+        'current_term':current_term,
+        'next_term':next_term,
+        'can_manage_actives':Permissions.can_manage_active_progress(request.user),
+        'can_manage_electees':Permissions.can_manage_electee_progress(request.user),
         'can_manage_finances':Permissions.can_manage_finances(request.user),
         'can_approve_tutoring':Permissions.can_approve_tutoring(request.user),
         'can_manage_ugrad_paperwork':Permissions.can_manage_ugrad_paperwork(request.user),
@@ -1168,31 +1179,31 @@ def advance_term(request):
     c.save()
     return redirect('member_resources:manage_website')
 
-def manage_membership(request):    
-    if not Permissions.can_manage_membership(request.user):
-        request.session['error_message']='You are not authorized to manage users.'
-        return redirect('member_resources:index')
-
-    template = loader.get_template('member_resources/manage_membership.html')
-    current_term = get_current_term()
-    if current_term.semester_type.name=='Summer':
-        current_term = get_next_term(current_term)
-    next_term = get_next_full_term(current_term)
-    context_dict = {
-        'can_add_electee_members':Permissions.can_add_electee_members(request.user),
-        'can_manage_project_leaders':Permissions.can_manage_project_leaders(request.user),
-        'can_manage_officers':Permissions.can_manage_officers(request.user),
-        'terms':AcademicTerm.objects.all().exclude(semester_type__name='Summer').exclude(id=current_term.id).exclude(id=next_term.id).order_by('-year','-semester_type'),
-        'current_term':current_term,
-        'next_term':next_term,
-        'can_manage_actives':Permissions.can_manage_active_progress(request.user),
-        'can_manage_electees':Permissions.can_manage_electee_progress(request.user),
-        'subnav':'manage_members',
-        }
-    context_dict.update(get_common_context(request))
-    context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+#def manage_membership(request):    
+#    if not Permissions.can_manage_membership(request.user):
+#        request.session['error_message']='You are not authorized to manage users.'
+#        return redirect('member_resources:index')
+#
+#    template = loader.get_template('member_resources/manage_membership.html')
+#    current_term = get_current_term()
+#    if current_term.semester_type.name=='Summer':
+#        current_term = get_next_term(current_term)
+#    next_term = get_next_full_term(current_term)
+#    context_dict = {
+#        'can_add_electee_members':Permissions.can_add_electee_members(request.user),
+#        'can_manage_project_leaders':Permissions.can_manage_project_leaders(request.user),
+#        'can_manage_officers':Permissions.can_manage_officers(request.user),
+#        'terms':AcademicTerm.objects.all().exclude(semester_type__name='Summer').exclude(id=current_term.id).exclude(id=next_term.id).order_by('-year','-semester_type'),
+#        'current_term':current_term,
+#        'next_term':next_term,
+#        'can_manage_actives':Permissions.can_manage_active_progress(request.user),
+#        'can_manage_electees':Permissions.can_manage_electee_progress(request.user),
+#        'subnav':'manage_members',
+#        }
+#    context_dict.update(get_common_context(request))
+#    context_dict.update(get_permissions(request.user))
+#    context = RequestContext(request, context_dict)
+#    return HttpResponse(template.render(context))
 
 def manage_officers(request,term_id):    
     if not Permissions.can_manage_officers(request.user):
@@ -1208,7 +1219,7 @@ def manage_officers(request,term_id):
                 instance.term = [term]
                 instance.save()
             request.session['success_message']='Officers updated successfully'
-            return redirect('member_resources:manage_membership')
+            return redirect('member_resources:view_misc_reqs')
         else:
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
@@ -1217,13 +1228,13 @@ def manage_officers(request,term_id):
     context_dict = {
         'formset':formset,
         'prefix':'officers',
-        'subnav':'manage_members',
+        'subnav':'misc_reqs',
         'can_add_row':True,
         'has_files':True,
         'base':'member_resources/base_member_resources.html',
         'submit_name':'Update Officers',
         'form_title':'Add/Remove Members as Officers for %s'%(unicode(term)),
-        'back_button':{'link':reverse('member_resources:manage_membership'),'text':'To Membership Management'},
+        'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Membership Management'},
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -1247,7 +1258,7 @@ def add_active_statuses(request):
                 if not Distinction.objects.filter(member=instance.member,distinction_type=instance.distinction_type,term=term).exists():
                     instance.save()
             request.session['success_message']='Active Statuses Updated successfully'
-            return redirect('member_resources:manage_membership')
+            return redirect('member_resources:view_misc_reqs')
         else:
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
@@ -1271,13 +1282,13 @@ def add_active_statuses(request):
     context_dict = {
         'formset':formset,
         'prefix':'current_status',
-        'subnav':'manage_members',
+        'subnav':'misc_reqs',
         'can_add_row':True,
         'has_files':False,
         'base':'member_resources/base_member_resources.html',
         'submit_name':'Update Statuses',
         'form_title':'Add Active Distinctions for  %s'%(unicode(term)),
-        'back_button':{'link':reverse('member_resources:manage_membership'),'text':'To Membership Management'},
+        'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Membership Management'},
         'help_text':'This list is pre-populated with members who have enough credit on the website to receive the noted status. Members whose status has already been logged are omitted.',
         }
     context_dict.update(get_common_context(request))
@@ -1297,7 +1308,7 @@ def manage_active_statuses(request):
         if formset.is_valid():
             formset.save()
             request.session['success_message']='Active statuses updated successfully'
-            return redirect('member_resources:manage_membership')
+            return redirect('member_resources:view_misc_reqs')
         else:
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
@@ -1306,13 +1317,13 @@ def manage_active_statuses(request):
     context_dict = {
         'formset':formset,
         'prefix':'active_status',
-        'subnav':'manage_members',
+        'subnav':'misc_reqs',
         'can_add_row':True,
         'has_files':False,
         'base':'member_resources/base_member_resources.html',
         'submit_name':'Update Statuses',
         'form_title':'Edit Active Distinctions',
-        'back_button':{'link':reverse('member_resources:manage_membership'),'text':'To Membership Management'},
+        'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Membership Management'},
         'help_text':'This list contains members\' status that have already been logged. You may edit or remove any status listed here. You may also add new statuses, but if for the current term, the \'Add Active/DA/PA Status \' tool is recommended.',
         }
     context_dict.update(get_common_context(request))
@@ -1351,7 +1362,7 @@ def add_to_list(request,type_of_list):
                 a.save()
             if not (error_lists['bad_uniqnames'] or error_lists['current_actives'] or error_lists['current_electees']):
                 request.session['success_message']='All uniqnames added successfully'
-                return redirect('member_resources:manage_membership')
+                return redirect('member_resources:view_misc_reqs')
             else:
                 request.session['warning_message']='Some uniqnames were not added'
                 form=MassAddProjectLeadersForm(initial={'uniqnames':'\n'.join(error_lists['bad_uniqnames']+error_lists['current_actives']+error_lists['current_electees'])},prefix='mass-add')
@@ -1378,7 +1389,7 @@ def add_to_list(request,type_of_list):
         'is_active_list':is_active_list,
         'list_name':type_of_list,
         'link':link,
-        'subnav':'manage_members',
+        'subnav':'misc_reqs',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -1441,7 +1452,7 @@ def add_leadership_credit(request):
                         error_list.append(uniqname)
                 if not error_list:
                     request.session['success_message']='Leadership credit added for all uniqnames'
-                    return redirect('member_resources:manage_membership')
+                    return redirect('member_resources:view_misc_reqs')
                 else:
                     request.session['warning_message']='Not all leadership credits added.'
                     form=MassAddProjectLeadersForm(initial={'uniqnames':'\n'.join(error_list)},prefix='mass-add')
@@ -1500,12 +1511,12 @@ def handle_electees_stopping_electing(request):
                     electee_stopped_electing(profile)
 
             request.session['success_message']='Electee status successfully updated.'
-            return redirect('member_resources:manage_membership')
+            return redirect('member_resources:view_misc_reqs')
         else:
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
         initial_data = []
-        electee_profiles = MemberProfile.objects.filter(status__name='Electee').order_by('last_name')
+        electee_profiles = MemberProfile.objects.filter(status__name='Electee').order_by('standing','last_name')
         for electee in electee_profiles:
             initial_data.append({'electee':electee.get_full_name(),'uniqname':electee.uniqname,'still_electing':electee.still_electing})
         formset = ManageElecteeStillElecting(initial=initial_data)
@@ -1513,13 +1524,13 @@ def handle_electees_stopping_electing(request):
     template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
-        'subnav':'manage_members',
+        'subnav':'misc_reqs',
         'can_add_row':False,
         'has_files':False,
         'base':'member_resources/base_member_resources.html',
         'submit_name':'Update Electees Still Electing',
         'form_title':'Manage Electees Still Electing',
-        'back_button':{'link':reverse('member_resources:manage_membership'),'text':'To Membership Management'},
+        'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Membership Management'},
         'help_text':'To note that an electee is no longer electing, uncheck the \'Still Electing\' Box next to their name/uniqname. This will unsign them up from any future events and will remove them from electee groups. It will also cause them to generally not show up in the list of members on the website. It will not remove them from events that have already been completed or prevent them from signing up in the future.',
         }
     context_dict.update(get_common_context(request))
@@ -1550,7 +1561,7 @@ def move_electees_to_active(request):
                     instance.member.status =Status.objects.get(name="Active")
                     instance.member.save()
                 request.session['success_message']='Selected electees successfully moved to actives'
-                return redirect('member_resources:manage_membership')
+                return redirect('member_resources:view_misc_reqs')
             else:
                 request.session['error_message']=INVALID_FORM_MESSAGE
         elif 'mass-add' in request.POST:
@@ -1573,7 +1584,7 @@ def move_electees_to_active(request):
                         error_list.append(uniqname)
                 if not error_list:
                     request.session['success_message']='All listed electees moved to actives.'
-                    return redirect('member_resources:manage_membership')
+                    return redirect('member_resources:view_misc_reqs')
                 else:
                     request.session['warning_message']='Some listed electees not moved.'
                     form=MassAddProjectLeadersForm(initial={'uniqnames':'\n'.join(error_list)},prefix='mass-add')
@@ -1592,7 +1603,7 @@ def move_electees_to_active(request):
         'mass_form':form,
         'error_list':error_list,
         'prefix':'electee2active',
-        'subnav':'manage_members',
+        'subnav':'misc_reqs',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -1625,7 +1636,7 @@ def manage_project_leaders(request):
                         for e in existing_list:
                             e.delete()
                 request.session['success_message']='Project leaders successfully added.'
-                return redirect('member_resources:manage_membership')
+                return redirect('member_resources:view_misc_reqs')
             else:
                 request.session['error_message']=INVALID_FORM_MESSAGE
         elif 'mass-add' in request.POST:
@@ -1645,7 +1656,7 @@ def manage_project_leaders(request):
                         error_list.append(uniqname)
                 if not error_list:
                     request.session['success_message']='All project leaders added successfully.'
-                    return redirect('member_resources:manage_membership')
+                    return redirect('member_resources:view_misc_reqs')
                 else:
                     request.session['warning_message']='Not all project leaders added.'
                     form=MassAddProjectLeadersForm(initial={'uniqnames':'\n'.join(error_list)})
@@ -1659,7 +1670,7 @@ def manage_project_leaders(request):
         'mass_form':form,
         'error_list':error_list,
         'prefix':'project_leaders',
-        'subnav':'manage_members',
+        'subnav':'misc_reqs',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))

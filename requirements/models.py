@@ -16,6 +16,36 @@ class SemesterType(models.Model):
     name = models.CharField(max_length = 30)
     def __unicode__(self):
         return self.name+' semester'
+    def __gt__(self,term2):
+        if not hasattr(term2,'name'):
+            return True
+        if self.name =='Winter':
+            return False
+        if self.name =='Summer' and term2.name =='Winter':
+            return True
+        if self.name =='Fall' and term2.name !='Fall':
+            return True
+        return False
+    def __lt__(self,term2):
+        if not hasattr(term2,'name'):
+            return False
+        if self.name =='Fall':
+            return False
+        if self.name =='Summer' and term2.name =='Fall':
+            return True
+        if self.name =='Winter' and term2.name !='Winter':
+            return True
+        return False
+    def __eq__(self,term2):
+        if not hasattr(term2,'name'):
+            return False
+        return self.name == term2.name
+    def __ne__(self,term2):
+        return not self == term2
+    def __le__(self,term2):
+        return not self > term2
+    def __ge__(self,term2):
+        return not self < term2
         
 class EventCategory(models.Model):
     parent_category = models.ForeignKey('self',null=True,blank=True,default=None)

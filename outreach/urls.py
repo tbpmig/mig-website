@@ -1,5 +1,6 @@
 from django.conf.urls import patterns, url
 
+from django.views.generic import RedirectView
 from outreach import views
 
 urlpatterns = patterns('',
@@ -11,4 +12,5 @@ urlpatterns = patterns('',
 	#url(r'^townhalls/$',views.townhalls, name='townhalls'),
 	#url(r'^breakfast/$',views.puesdays, name='puesdays'),
 	url(r'^(?P<url_stem>[a-z,_]+)/$',views.outreach_event, name='outreach_event'),
+    url(r'^townhalls/,$',RedirectView.as_view(url='/outreach/townhalls/')),
 )

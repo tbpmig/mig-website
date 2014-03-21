@@ -1,5 +1,5 @@
 from django import forms
-from elections.models import Election, Nomination, TempNomination
+from elections.models import Election, Nomination
 from mig_main.models import OfficerPosition
 
 class NominationForm(forms.ModelForm):
@@ -17,7 +17,7 @@ class NominationForm(forms.ModelForm):
 		return cleaned_data
 
 
-class TempNominationForm(forms.Form):
-    nominee_name = forms.CharField(max_length=50)
-    nominee_uniqname=forms.CharField(max_length=8)
-    position = forms.ModelChoiceField(queryset=OfficerPosition.objects.exclude(name='Secretary').exclude(name='External Vice President').exclude(name='Website Officer'))
+#class TempNominationForm(forms.Form):
+#    nominee_name = forms.CharField(max_length=50)
+#    nominee_uniqname=forms.CharField(max_length=8)
+#    position = forms.ModelChoiceField(queryset=OfficerPosition.objects.exclude(name='Secretary').exclude(name='External Vice President').exclude(name='Website Officer'))

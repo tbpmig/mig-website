@@ -1,28 +1,35 @@
-{% extends "base.html" %}
+{% extends "elections/base_elections.html" %}
 {% load staticfiles %}
-{% block navMembers %}active{% endblock %}
 
 {% block content %}
-{% regroup nominees|dictsort:"position.name" by position.name as nominee_list %}
-<p>An explanation of the responsibilities of each position can be found <a href={%static "TBP_Officer_Position_Descriptions.pdf"%}>here</a></p>
-<a href="{% url 'elections:nominate' term %}">Make a nomination</a> 
-{% for position in nominee_list %}
-	<h4>{{position.grouper}}</h4>
-	<ul>
-		{% for nomination in position.list %}
-			<li><strong>{{nomination.nominee.get_full_name}}</strong>
-			{% if nomination.position == "ADV" %}
-				<p>Term Length: {{nomination.term_length}} semesters</p>
-			{% endif %}
-			<p>Accepted: 
-			{% if nomination.accepted %}
-				Yes
-			{% else %}
-				Awaiting Response.
-			{% endif %}</p>
-			</li>
-		{% endfor %}
-	</ul>
+<h4>{{election}}</h4>
+<p>An explanation of the responsibilities of each position can be found <a href={% url 'elections:positions' election.id%}>here</a></p>
+<p><strong>Note:</strong> Nominations that have been declined are omitted from the following list for clarity.</p>
+<div class="btn-group">
+<a class="btn btn-default" href="{% url 'elections:nominate' election.id %}">Make a nomination.</a> 
+<a class="btn btn-default" href="{% url 'elections:my_nominations' election.id %}">View my nominations.</a> 
+</div>
+{% if nominees %}
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Position</th>
+            <th>Member</th>
+            <th>Accepted?</th>
+        </tr>
+    <thead>
+    <tbody>
+{% for position in nominees|dictsort:"position.id" %}
+    <tr>
+        <td>{{position.position.name}}</td>
+        <td><a href="{% url 'member_resources:profile' position.nominee.uniqname %}">{{position.nominee.get_full_name}}</a></td>
+        <td>{{position.accepted|yesno:"Yes,No,Awaiting Response"}}</td>
+    </tr>
 {% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>There are not yet any nominees. You may nominate yourself or another for a position though!</p>
+{% endif %}
 
 {% endblock %}

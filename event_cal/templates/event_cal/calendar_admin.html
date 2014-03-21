@@ -1,0 +1,15 @@
+{% extends "event_cal/base_event_cal.html" %}
+{% load staticfiles %}
+{% block cal_content %}
+<div class="row">
+    <div class="col-md-6">
+        <h4>{{page_title}}</h4>
+        <p>This page is for administering the calendar functionality. The functions you have permission for are listed below.</p>
+        <ul>
+        {% for link in links %}
+            <li><a href="{{link.link}}" >{{link.name}}</a></li>
+        {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock cal_content %}

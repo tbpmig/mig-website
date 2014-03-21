@@ -1,15 +1,17 @@
-{% extends "base.html" %}
-{% block navMembers %}active{% endblock %}
+{% extends "elections/base_elections.html" %}
 
 {% block content %}
+<div class="row">
+    <div class="col-md-12">
 {% if current_elections %}
 	{% for election in current_elections %}
 		<h1>{{election.term.semester_type.name}} {{election.term.year }} Elections Nominations</h1>
-		<p><a href="{% url 'elections:list' election.term.id %}">List of nominees</a></p>
-		<p><a href="{% url 'elections:nominate' election.term.id %}">Make a nomination</a></p>
+		<p><a href="{% url 'elections:list' election.id %}">List of nominees</a></p>
+		<p><a href="{% url 'elections:nominate' election.id %}">Make a nomination</a></p>
 	{% endfor %}
-	{% else %}
+{% else %}
 	<p> Nominations are not currently open. Check back later</p>
 {% endif %}
-
+    </div>
+</div>
 {% endblock %}
