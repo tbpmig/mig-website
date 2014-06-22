@@ -1,4 +1,5 @@
 import csv,codecs,cStringIO
+from datetime import date
 
 from django.db.models import Q
 from django.shortcuts import redirect
@@ -14,9 +15,44 @@ from member_resources.models import ProjectLeaderList
 
 from mig_main.default_values import get_current_term
 
+def get_previous_full_term(term):
+    new_type = None
+    new_year = 0;
+    if term.semester_type.name=='Winter':
+        new_year=term.year-1
+        new_type = SemesterType.objects.get(name='Fall')
+    else:
+        new_year = term.year
+        new_type = SemesterType.objects.get(name='Winter')
+    if AcademicTerm.objects.filter(year=new_year,semester_type=new_type).exists():
+        return AcademicTerm.objects.get(year=new_year,semester_type=new_type)
+    else:
+        a = AcademicTerm(year=new_year,semester_type=new_type)
+        a.save()
+        return a
+
+def get_project_report_term():
+    today = date.today()
+    current_term = get_current_term()
+    this_fall = Q(year=today.year,semester_type__name='Fall')
+    last_fall = Q(year=today.year-1,semester_type__name='Fall')
+    next_winter = Q(year=today.year+1,semester_type__name='Winter')
+    this_winter = Q(year=today.year,semester_type__name='Winter')
+    this_summer = Q(year=today.year,semester_type__name='Summer')
+    last_summer = Q(year=today.year-1,semester_type__name='Summer')
+    if today.month >=6: #the project reports were already turned in, only care about the fall
+        return AcademicTerm.objects.filter(this_fall|next_winter|this_summer)
+    else: #report not turned in yet
+        return AcademicTerm.objects.filter(this_winter|last_summer|last_fall)
+
+
 def get_current_officers():
     current_officers = Officer.objects.filter(term=get_current_term())
     return MemberProfile.objects.filter(officer__in = current_officers).distinct()
+def get_previous_officers():
+    previous_officers = Officer.objects.filter(term=get_previous_term())
+    return MemberProfile.objects.filter(officer__in=previous_officers).distinct()
+
 def get_current_group_leaders():
     current_electee_groups = ElecteeGroup.objects.filter(term=get_current_term())
     return MemberProfile.objects.filter(electee_group_leaders__in = current_electee_groups).distinct()
@@ -97,7 +133,7 @@ def get_quick_links(user):
         quick_links.append({'link_name':'View Members\' Progress','link':reverse('member_resources:view_progress_list')})
     # Pres items-nothing unique
     # VP items
-    if positions.filter(Q(position__name='Vice President')|Q(position__name='Graduate Student Coordinator')).exists():
+    if positions.filter(Q(position__name='Vice President')|Q(position__name='Graduate Student Coordinator')|Q(position__name='Graduate Student Vice President')).exists():
         quick_links.append({'link_name':'Member Admin','link':reverse('member_resources:view_misc_reqs')})
         quick_links.append({'link_name':'Manage Electee Groups','link':reverse('electees:view_electee_groups')})
     # Secretary items - nothing unique
@@ -147,12 +183,20 @@ class Permissions:
         profile = cls.get_profile(user)
         if not profile:
             return Officer.objects.none()
+        term = get_previous_full_term(get_current_term())
+        positions = Officer.objects.filter(user=profile,term = term)
+        return positions
+    
+    @classmethod
+    def get_previous_officer_positions(cls,user):
+        profile = cls.get_profile(user)
+        if not profile:
+            return Officer.objects.none()
         term = get_current_term()
         if term.semester_type.name=='Summer':
-            term = get_next_full_term()
+            term = get_next_full_term(term)
         current_positions = Officer.objects.filter(user=profile,term = term)
         return current_positions
-    
     @classmethod
     def can_create_events(cls,user):
         if user.is_superuser:
@@ -171,7 +215,7 @@ class Permissions:
         if user.is_superuser:
             return True
         current_positions = cls.get_current_officer_positions(user)
-        query = Q(position__name='President')|Q(position__name='Service Coordinator')|Q(position__name='New Initiatives Officer')|Q(position__name='Vice President')|Q(position__name='Activities Officer')
+        query = Q(position__name='President')|Q(position__name='Service Coordinator')|Q(position__name='New Initiatives Officer')|Q(position__name='Vice President')|Q(position__name='Activities Officer')|Q(position__name='Graduate Student Vice President')|Q(position__name='Chapter Development Officer')
         if current_positions.filter(query).exists():
             return True
         else:
@@ -225,7 +269,7 @@ class Permissions:
         if user.is_superuser:
             return True
         current_positions = cls.get_current_officer_positions(user) 
-        query = Q(position__name='Graduate Student Coordinator')|Q(position__name='Service Coordinator')|Q(position__name='Vice President')
+        query = Q(position__name='Graduate Student Coordinator')|Q(position__name='Service Coordinator')|Q(position__name='Vice President')|Q(position__name='Graduate Student Vice President')
         if current_positions.filter(query).exists():
             return True
         else:
@@ -235,7 +279,7 @@ class Permissions:
         if user.is_superuser:
             return True
         current_positions = cls.get_current_officer_positions(user) 
-        query = Q(position__name='President')|Q(position__name='Historian')|Q(position__name='New Initiatives Officer')
+        query = Q(position__name='President')|Q(position__name='Historian')|Q(position__name='New Initiatives Officer')|Q(position__name='Chapter Development Officer')
         if current_positions.filter(query).exists():
             return True
         else:
@@ -263,7 +307,7 @@ class Permissions:
         if user.is_superuser:
             return True
         current_positions = cls.get_current_officer_positions(user) 
-        query = Q(position__name='President')|Q(position__name='Secretary')|Q(position__name='New Initiatives Officer')
+        query = Q(position__name='President')|Q(position__name='Secretary')|Q(position__name='New Initiatives Officer')|Q(position__name='Chapter Development Officer')
         if current_positions.filter(query).exists():
             return True
         else:
@@ -273,7 +317,7 @@ class Permissions:
         if user.is_superuser:
             return True
         current_positions = cls.get_current_officer_positions(user) 
-        query = Q(position__name='President')|Q(position__name='Historian')|Q(position__name='New Initiatives Officer')|Q(position__name='Publicity Officer')|Q(position__name='Website Officer')|Q(position__name='Advisor')
+        query = Q(position__name='President')|Q(position__name='Historian')|Q(position__name='New Initiatives Officer')|Q(position__name='Publicity Officer')|Q(position__name='Website Officer')|Q(position__name='Advisor')|Q(position__name='Chapter Development Officer')
         if current_positions.filter(query).exists():
             return True
         else:
@@ -294,7 +338,7 @@ class Permissions:
             return False
         current_positions = cls.get_current_officer_positions(user) 
         if profile2[0].status.name=='Electee':
-            query = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Graduate Student Coordinator')
+            query = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Graduate Student Coordinator')|Q(position__name='Graduate Student Vice President')
             if current_positions.filter(query).exists():
                 return True
             elif ElecteeGroup.objects.filter(members=profile2[0],leaders=user.userprofile.memberprofile).exists():
@@ -304,7 +348,7 @@ class Permissions:
             else:
                 return False
         else:
-            query = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Membership Officer')    
+            query = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Membership Officer')|Q(position__name='Graduate Student Vice President')    
             if current_positions.filter(query).exists():
                 return True
             else:
@@ -316,7 +360,7 @@ class Permissions:
         if not hasattr(user,'userprofile') or not user.userprofile.is_member():
             return False
         current_positions = cls.get_current_officer_positions(user) 
-        query = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Graduate Student Coordinator')|Q(position__name='Membership Officer')
+        query = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Graduate Student Coordinator')|Q(position__name='Membership Officer')|Q(position__name='Graduate Student Vice President')
         query2 = Q(leaders=user.userprofile.memberprofile)|Q(officers=user.userprofile.memberprofile)
         if current_positions.filter(query).exists():
             return True
@@ -326,31 +370,30 @@ class Permissions:
             return False
     @classmethod
     def project_reports_you_can_view(cls,user):
+        terms=get_project_report_term()
         if user.is_superuser:
-            return ProjectReport.objects.filter(term=get_current_term())
+            return ProjectReport.objects.filter(term__in=terms).distinct()
         current_positions=cls.get_current_officer_positions(user)
-        if current_positions.filter(position__name='Secretary').exists():
-            return ProjectReport.objects.filter(term=get_current_term())
+        previous_positions=cls.get_previous_officer_positions(user)
+        if current_positions.filter(position__name='Secretary').exists() or previous_positions.filter(position__name='Secretary').exists():
+            return ProjectReport.objects.filter(term__in=terms).distinct()
         profile =cls.get_profile(user)
         if not profile:
             return ProjectReport.objects.none()
         query = Q()
-        events=CalendarEvent.objects.filter(term=get_current_term()).filter(~Q(project_report=None))
+        events=CalendarEvent.objects.filter(term__in=terms).filter(~Q(project_report=None))
         for position in current_positions:
             query = query|Q(assoc_officer=position.position)
         query=query|Q(leaders=profile)
         events =events.filter(query)
-        project_reports=[]
-        for event in events:
-            if not event.project_report in project_reports:
-                project_reports.append(event.project_report)
+        project_reports= ProjectReport.objects.filter(calendarevent__in=events).distinct()
         return project_reports
     @classmethod
     def profiles_you_can_view(cls,user):
         if user.is_superuser:
             return get_members()
         current_positions = cls.get_current_officer_positions(user) 
-        query_all = Q(position__name='President')|Q(position__name='Vice President')
+        query_all = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Graduate Student Vice President')
         query_actives = Q(position__name='Membership Officer')
         query_electees= Q(position__name='Graduate Student Coordinator')
         query_electee_groups = Q(leaders=user.userprofile.memberprofile)|Q(officers=user.userprofile.memberprofile)
@@ -387,7 +430,7 @@ class Permissions:
         if user.is_superuser:
             return True
         current_positions = cls.get_current_officer_positions(user)
-        query_actives = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Membership Officer')
+        query_actives = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Membership Officer')|Q(position__name='Graduate Student Vice President')
         if current_positions.filter(query_actives).exists():
             return True
         else:
@@ -398,7 +441,7 @@ class Permissions:
         if user.is_superuser:
             return True
         current_positions = cls.get_current_officer_positions(user)
-        query_electees = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Graduate Student Coordinator')
+        query_electees = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Graduate Student Coordinator')|Q(position__name='Graduate Student Vice President')
         if current_positions.filter(query_electees).exists():
             return True
         else:
@@ -474,7 +517,7 @@ class Permissions:
         if user.is_superuser:
             return True
         current_positions = cls.get_current_officer_positions(user)
-        query_dues = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Graduate Student Coordinator')
+        query_dues = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Graduate Student Coordinator')|Q(position__name='Graduate Student Vice President')
         if current_positions.filter(query_dues).exists():
             return True
         else:
@@ -484,7 +527,7 @@ class Permissions:
         if user.is_superuser:
             return True
         current_positions = cls.get_current_officer_positions(user)
-        query_forms = Q(position__name='President')|Q(position__name='Secretary')|Q(position__name='Vice President')|Q(position__name='Graduate Student Coordinator')
+        query_forms = Q(position__name='President')|Q(position__name='Secretary')|Q(position__name='Vice President')|Q(position__name='Graduate Student Coordinator')|Q(position__name='Graduate Student Vice President')
         if current_positions.filter(query_forms).exists():
             return True
         else:

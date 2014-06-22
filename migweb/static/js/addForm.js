@@ -11,6 +11,12 @@ function addForm(btn, prefix) {
     var row = $('.formset-row:last').clone(true).get(0);
     $(row).removeAttr('id').insertAfter($('.formset-row:last')).children('.hidden').removeClass('hidden');
     $(row).children().children().each(function() {
+        var elem = $(this);
+        if (elem.is('input:checkbox')|| elem.is('input:radio')){
+            elem.attr('checked',false);
+        }else{
+            elem.val('');
+        }
         updateElementIndex(this, prefix, formCount);
         $(this).val('');
     });

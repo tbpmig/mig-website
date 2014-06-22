@@ -77,6 +77,7 @@
             <li><a href="{% url 'member_resources:add_to_active_list' %}">Add Active Members</a></li>
             <li><a href="{% url 'member_resources:add_active_statuses' %}">Add Active/DA/PA Status for current term</a></li>
             <li><a href="{% url 'member_resources:manage_active_statuses' %}">Edit/Remove Active/DA/PA Status</a></li>
+            <li><a href="{% url 'member_resources:add_electee_DA_PA_status' %}">Add Electee DA/PA Status</a></li>
         {% endif %}
         {% if can_manage_officers %}
         <li><a href="{% url 'member_resources:manage_officers' current_term.id%}">Manage Officers for Current Term</a></li>

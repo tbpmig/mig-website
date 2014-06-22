@@ -6,8 +6,9 @@
 <p>An explanation of the responsibilities of each position can be found <a href={% url 'elections:positions' election.id%}>here</a></p>
 <p><strong>Note:</strong> Nominations that have been declined are omitted from the following list for clarity.</p>
 <div class="btn-group">
-<a class="btn btn-default" href="{% url 'elections:nominate' election.id %}">Make a nomination.</a> 
-<a class="btn btn-default" href="{% url 'elections:my_nominations' election.id %}">View my nominations.</a> 
+<a class="btn btn-default" href="{% url 'elections:nominate' election.id %}">Make a nomination</a> 
+<a class="btn btn-default" href="{% url 'elections:my_nominations' election.id %}">View my nominations</a>
+<a class="btn btn-default" href="https://docs.google.com/a/umich.edu/forms/d/1MN9DgnxXApi3y7f4p6S5xs5davNTKPkieyJe86Nnnlg/viewform">Apply to be a K-12 Outreach Officer</a>
 </div>
 {% if nominees %}
 <table class="table table-bordered table-striped">
