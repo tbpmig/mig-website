@@ -17,4 +17,4 @@ Thanks,
 The TBP Website'''
         for event in pending_events:
             body=body_template%{'leaders':', '.join([leader.first_name for leader in event.leaders.all()]),'event':event.name,'link':reverse('event_cal:event_detail',args=(event.id,))}
-            send_mail('A friendly reminder to complete your event.',body,'tbp.mi.g@gmail.com',[leader.get_email() for leader in event.leaders.all()],fail_silently=False)
+            send_mail('[TBP] A friendly reminder to complete your event.',body,'tbp.mi.g@gmail.com',[leader.get_email() for leader in event.leaders.all()],fail_silently=False)
