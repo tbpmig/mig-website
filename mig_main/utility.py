@@ -562,6 +562,26 @@ class Permissions:
         return user.is_superuser
     
     @classmethod
+    def can_view_pending_events(cls,user):
+        if user.is_superuser:
+            return True
+        current_positions = cls.get_current_officer_positions(user) 
+        query = Q(position__name='President')|Q(position__name='Secretary')|Q(position__name='Service Coordinator')
+        if current_positions.filter(query).exists():
+            return True
+        else:
+            return False
+    @classmethod
+    def can_view_missing_reports(cls,user):
+        if user.is_superuser:
+            return True
+        current_positions = cls.get_current_officer_positions(user) 
+        query = Q(position__name='President')|Q(position__name='Secretary')
+        if current_positions.filter(query).exists():
+            return True
+        else:
+            return False
+    @classmethod
     def can_edit_corporate_page(cls,user):
         if user.is_superuser:
             return True

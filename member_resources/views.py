@@ -18,7 +18,7 @@ from django.core.urlresolvers import reverse
 
 from corporate.views import update_resume_zips
 from electees.models import ElecteeGroup, electee_stopped_electing, EducationalBackgroundForm
-from event_cal.models import CalendarEvent, MeetingSignInUserData
+from event_cal.models import CalendarEvent, MeetingSignInUserData,get_pending_events,get_events_w_o_reports
 from history.models import Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant
 from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet
 from member_resources.forms import MeetingMinutesForm,ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditFormSet,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet
@@ -1061,10 +1061,18 @@ def project_reports_list(request):
         request.session['error_message']='You are not authorized to view/edit project reports'
         return redirect('member_resources:index')
     project_reports = Permissions.project_reports_you_can_view(request.user)
-
+    
+    events_w_o_reports = None
+    pending_events=None
+    if Permissions.can_view_missing_reports(request.user):
+        events_w_o_reports = get_events_w_o_reports(get_current_term())
+    if Permissions.can_view_pending_events(request.user):
+        pending_events=get_pending_events()
     template = loader.get_template('member_resources/list_project_reports.html')
     context_dict = {
         'project_reports':project_reports,
+        'pending_events':pending_events,
+        'events_w_o_reports':events_w_o_reports,
         'subnav':'history',
         }
     context_dict.update(get_common_context(request))

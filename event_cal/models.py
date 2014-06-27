@@ -1,12 +1,18 @@
 from datetime import date,timedelta
 
 from django.db import models
+from django.db.models import Max
 from django.utils import timezone
 from stdimage import StdImageField
 
 from mig_main.default_values import get_current_term
 from requirements.models import Requirement
-
+def get_pending_events():
+    now = timezone.localtime(timezone.now())
+    return CalendarEvent.objects.annotate(latest_shift=Max('eventshift__end_time')).filter(latest_shift__lte=now,completed=False)
+def get_events_w_o_reports(term):
+    events = CalendarEvent.objects.filter(term=term,project_report=None,completed=True)
+    return events
 # Create your models here.
 
 class GoogleCalendar(models.Model):
