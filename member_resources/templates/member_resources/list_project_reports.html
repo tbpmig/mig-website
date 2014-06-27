@@ -31,8 +31,11 @@
     <div class="col-md-3">
         {% if pending_events %}
         <h3>Past Events Not Yet Completed</h3>
-        <ul>
-            {% for event in pending_events %}
+        {% regroup pending_events|dictsort:"term" by term as pending_by_term %}
+        {% for term in pending_by_term %}
+            <h4>{{term.grouper}}</h4>
+            <ul>
+            {% for event in term.list %}
             <li><p><a href="{% url 'event_cal:event_detail' event.id %}">{{event.name}}</a><p>
                 <p><strong>Leaders:</strong>
                 <ul>
@@ -42,7 +45,8 @@
                 </ul>
                 </p>
             {% endfor %}
-        </ul>
+            </ul>
+        {%endfor%}
         {% endif %}
     </div>
 </div>
