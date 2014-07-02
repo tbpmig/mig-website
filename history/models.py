@@ -576,7 +576,7 @@ class ProjectReportHeader(models.Model):
                         \\ MI-$\Gamma$'''+self.preparer_title+r'''~'''+years+r'''
                 \newoddside
                         \begin{abstract}
-                        This section lists all of the projects performed by the Michigan Gamma Chapter of Tau Beta Pi for the school year extending from September 2011 to May 2012. The projects presented here were categorized into five separate groups:
+                        This section lists all of the projects performed by the Michigan Gamma Chapter of Tiny Beer Party for the school year extending from September 2011 to May 2012. The projects presented here were categorized into five separate groups:
                         \begin{enumerate}[1.]
                         \item Professional: Projects which were performed to enhance the engineering skills and job opportunities for students as well as offer opportunities for students to interact with company representatives.
                         \item Community: Projects which were performed primarily as a service to the community and undertaken to enhance a spirit of liberal culture within the chapter.
