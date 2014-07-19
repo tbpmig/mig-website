@@ -46,6 +46,20 @@ class SemesterType(models.Model):
         return not self > term2
     def __ge__(self,term2):
         return not self < term2
+    def __sub__(self,term2):
+        if not hasattr(term2,'name'):
+            return 0
+        res = 0
+        if self.name =='Winter':
+            res=-2
+        elif self.name =='Summer':
+            res=-1
+        
+        if term2.name =='Summer':
+            res+=1
+        elif term2.name=='Winter':
+            res+=2
+        return res
         
 class EventCategory(models.Model):
     parent_category = models.ForeignKey('self',null=True,blank=True,default=None)

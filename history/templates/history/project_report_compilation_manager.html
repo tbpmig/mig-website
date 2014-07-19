@@ -1,0 +1,92 @@
+{% extends "history/base_history.html" %}
+{% load staticfiles %}
+{% load my_markdown %}
+
+{% block content %}
+<div class="row">
+    {% if fall_term %}
+    <div class="col-md-6">
+        <h3>Fall Term Checkpoint Reports</h3>
+        {% if pr_fall %}
+        <p><a class="btn btn-success" href={% url 'history:start_project_report_compilation' winter_term.id %}>Edit Overview Information</a></p>
+            
+            {% if pr_fall.finished_processing %}
+                <p><a class="btn btn-success" href={% url 'history:process_project_reports' pr_fall.id 0 %}>Process Reports from beginning</a></p>
+                {% if pr_fall.finished_photos %}
+                    <p><a class="btn btn-success" href={% url 'history:process_project_report_photos' pr_fall.id 0 %}>Process Photos from beginning</a></p>
+                    <p><a class="btn btn-primary" href={% url 'history:compile_project_reports' pr_fall.id %}>Compile Reports (DO NOT REFRESH, This takes a few minutes.)</a></p>
+                {% else %}
+                    {% if pr_fall.last_photo %}
+                    <p><a class="btn btn-primary" href={% url 'history:process_project_report_photos' pr_fall.id pr_fall.last_photo %}>Continue Processing Photos</a>
+                    <a class="btn btn-primary" href={% url 'history:process_project_report_photos' pr_fall.id 0 %}>Process Photos from beginning</a></p>
+                    
+                    {% else %}
+                    <p><a class="btn btn-primary" href={% url 'history:process_project_report_photos' pr_fall.id pr_fall.last_photo %}>Process Photos</a></p>
+
+                    {% endif %}
+            <p><button type="button" class="btn btn-default" disabled="disabled">Compile Reports</button></p>
+                {% endif %}
+            {% else %}
+                {% if pr_fall.last_processed %}
+                    <p><a class="btn btn-primary" href={% url 'history:process_project_reports' pr_fall.id pr_fall.last_processed %}>Continue Processing Reports</a>
+                    <a class="btn btn-primary" href={% url 'history:process_project_reports' pr_fall.id 0 %}>Process Reports from beginning</a></p>
+                {% else %}
+                    <p><a class="btn btn-primary" href={% url 'history:process_project_reports' pr_fall.id pr_fall.last_processed %}>Process Individual Reports</a></p>
+                {% endif %}
+                    <p><button type="button" class="btn btn-default" disabled="disabled">Process Report Photos</button></p>
+                    <p><button type="button" class="btn btn-default" disabled="disabled">Compile Reports</button></p>
+                
+            {% endif %}
+        {% else %}
+        <p><a type="button" class="btn btn-primary" href={% url 'history:start_project_report_compilation' winter_term.id %}>Start Project Report Compilation</a></p>
+            <p><button type="button" class="btn btn-default" disabled="disabled">Process Individual Reports</button></p>
+            <p><button type="button" class="btn btn-default" disabled="disabled">Process Report Photos</button></p>
+            <p><button type="button" class="btn btn-default" disabled="disabled">Compile Reports</button></p>
+        {% endif %}
+
+    </div>
+    {% endif %}
+    {% if winter_term %}
+    <div class="col-md-6">
+        <h3>End of Year Reports</h3>
+        {% if pr_winter %}
+        <p><a class="btn btn-success" href={% url 'history:start_project_report_compilation' winter_term.id %}>Edit Overview Information</a></p>
+            
+            {% if pr_winter.finished_processing %}
+                <p><a class="btn btn-success" href={% url 'history:process_project_reports' pr_winter.id 0 %}>Process Reports from beginning</a></p>
+                {% if pr_winter.finished_photos %}
+                    <p><a class="btn btn-success" href={% url 'history:process_project_report_photos' pr_winter.id 0 %}>Process Photos from beginning</a></p>
+                    <p><a class="btn btn-primary" href={% url 'history:compile_project_reports' pr_winter.id %}>Compile Reports (DO NOT REFRESH, This takes a few minutes.)</a></p>
+                {% else %}
+                    {% if pr_winter.last_photo %}
+                    <p><a class="btn btn-primary" href={% url 'history:process_project_report_photos' pr_winter.id pr_winter.last_photo %}>Continue Processing Photos</a>
+                    <a class="btn btn-primary" href={% url 'history:process_project_report_photos' pr_winter.id 0 %}>Process Photos from beginning</a></p>
+                    
+                    {% else %}
+                    <p><a class="btn btn-primary" href={% url 'history:process_project_report_photos' pr_winter.id pr_winter.last_photo %}>Process Photos</a></p>
+
+                    {% endif %}
+            <p><button type="button" class="btn btn-default" disabled="disabled">Compile Reports</button></p>
+                {% endif %}
+            {% else %}
+                {% if pr_winter.last_processed %}
+                    <p><a class="btn btn-primary" href={% url 'history:process_project_reports' pr_winter.id pr_winter.last_processed %}>Continue Processing Reports</a>
+                    <a class="btn btn-primary" href={% url 'history:process_project_reports' pr_winter.id 0 %}>Process Reports from beginning</a></p>
+                {% else %}
+                    <p><a class="btn btn-primary" href={% url 'history:process_project_reports' pr_winter.id pr_winter.last_processed %}>Process Individual Reports</a></p>
+                {% endif %}
+                    <p><button type="button" class="btn btn-default" disabled="disabled">Process Report Photos</button></p>
+                    <p><button type="button" class="btn btn-default" disabled="disabled">Compile Reports</button></p>
+                
+            {% endif %}
+        {% else %}
+        <p><a type="button" class="btn btn-primary" href={% url 'history:start_project_report_compilation' winter_term.id %}>Start Project Report Compilation</a></p>
+            <p><button type="button" class="btn btn-default" disabled="disabled">Process Individual Reports</button></p>
+            <p><button type="button" class="btn btn-default" disabled="disabled">Process Report Photos</button></p>
+            <p><button type="button" class="btn btn-default" disabled="disabled">Compile Reports</button></p>
+        {% endif %}
+
+    </div>
+    {% endif %}
+</div>
+{% endblock content %}

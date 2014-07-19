@@ -1218,31 +1218,6 @@ def advance_term(request):
     c.save()
     return redirect('member_resources:manage_website')
 
-#def manage_membership(request):    
-#    if not Permissions.can_manage_membership(request.user):
-#        request.session['error_message']='You are not authorized to manage users.'
-#        return redirect('member_resources:index')
-#
-#    template = loader.get_template('member_resources/manage_membership.html')
-#    current_term = get_current_term()
-#    if current_term.semester_type.name=='Summer':
-#        current_term = get_next_term(current_term)
-#    next_term = get_next_full_term(current_term)
-#    context_dict = {
-#        'can_add_electee_members':Permissions.can_add_electee_members(request.user),
-#        'can_manage_project_leaders':Permissions.can_manage_project_leaders(request.user),
-#        'can_manage_officers':Permissions.can_manage_officers(request.user),
-#        'terms':AcademicTerm.objects.all().exclude(semester_type__name='Summer').exclude(id=current_term.id).exclude(id=next_term.id).order_by('-year','-semester_type'),
-#        'current_term':current_term,
-#        'next_term':next_term,
-#        'can_manage_actives':Permissions.can_manage_active_progress(request.user),
-#        'can_manage_electees':Permissions.can_manage_electee_progress(request.user),
-#        'subnav':'manage_members',
-#        }
-#    context_dict.update(get_common_context(request))
-#    context_dict.update(get_permissions(request.user))
-#    context = RequestContext(request, context_dict)
-#    return HttpResponse(template.render(context))
 
 def manage_officers(request,term_id):    
     if not Permissions.can_manage_officers(request.user):

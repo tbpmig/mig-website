@@ -84,6 +84,12 @@ class AcademicTerm(models.Model):
         return not self > term2
     def __ge__(self,term2):
         return not self < term2
+    def __sub__(self,term2):
+        if not hasattr(term2,'year'):
+            return 0
+        years_diff = self.year-term2.year
+        terms_diff = self.semester_type-term2.semester_type
+        return 3*years_diff+terms_diff
 
 class CurrentTerm(models.Model):
     current_term = models.ForeignKey(AcademicTerm)
