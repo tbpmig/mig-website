@@ -1,0 +1,15 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+
+{% block content %}
+{% if profiles|length > 0 %}
+<div class="row">
+    <div class="col-md-12">
+        <h4>Tau Beta Playground</h4>
+        {% for link in links %}
+        <a class="btn btn-default" href="{{link.link}}">{{link.name}}</a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock content %}

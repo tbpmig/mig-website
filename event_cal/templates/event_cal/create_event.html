@@ -11,7 +11,7 @@
 {% block cal_content %}
 <h3>Create a new event</h3>
 <p><strong>Note:</strong> If your event is on campus and needs a room, fill out the form <a href="http://tinyurl.com/tbprooms">here</a> so that one will be reserved for you.</p>
-<form action="{% url 'event_cal:create_event' %}" method="post">{% csrf_token %}
+<form action="{% url 'event_cal:create_event' %}" method="post" id="dynForm">{% csrf_token %}
     {% include 'event_cal/event_form.html' %}
 </form>
 {% endblock cal_content %}

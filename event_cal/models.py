@@ -1,12 +1,18 @@
 from datetime import date,timedelta
 
 from django.db import models
+from django.db.models import Max
 from django.utils import timezone
 from stdimage import StdImageField
 
 from mig_main.default_values import get_current_term
 from requirements.models import Requirement
-
+def get_pending_events():
+    now = timezone.localtime(timezone.now())
+    return CalendarEvent.objects.annotate(latest_shift=Max('eventshift__end_time')).filter(latest_shift__lte=now,completed=False)
+def get_events_w_o_reports(term):
+    events = CalendarEvent.objects.filter(term=term,project_report=None,completed=True)
+    return events
 # Create your models here.
 
 class GoogleCalendar(models.Model):
@@ -86,11 +92,46 @@ class CalendarEvent(models.Model):
             if not output["end"] or output["end"]< shift.end_time:
                 output["end"]=shift.end_time
         return output
-
+    
     def get_attendees_with_progress(self):
         return list(set([pr.member for pr in self.progressitem_set.all()]))
-
     
+    def get_max_duration(self):
+        shifts = self.eventshift_set.all().order_by('start_time')
+        duration= shifts[0].end_time-shifts[0].start_time
+        if shifts.count()==1:
+            return duration
+        previous_shift = shifts[0]
+        end_time = previous_shift.end_time
+        start_time = previous_shift.start_time
+        duration=timedelta(hours=0)
+        for shift in shifts[1:]:
+            if shift.start_time<end_time:
+                end_time = max(shift.end_time,end_time)
+            else:
+                duration+=end_time-start_time
+                end_time = shift.end_time
+                start_time = shift.start_time
+        duration+=end_time-start_time
+        return duration
+    def get_attendee_hours_at_event(self,profile):
+        shifts=self.eventshift_set.filter(attendees=profile).order_by('start_time') 
+        n=shifts.count()
+        count = 0
+        hours=0
+        if not shifts.exists():
+            return 0
+        if self.is_fixed_progress():
+            return 1
+        while count< n:
+            start_time = shifts[count].start_time
+            end_time = shifts[count].end_time
+            while count<(n-1) and shifts[count+1].start_time<end_time:
+                count+=1
+                end_time=shifts[count].end_time
+            hours+=(end_time-start_time).seconds/3600.0
+            count+=1
+        return hours
 
 class EventShift(models.Model):
     event = models.ForeignKey(CalendarEvent)

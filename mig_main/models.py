@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
+from django.core.mail import send_mail
 from django.core.validators import validate_email, RegexValidator,MinValueValidator
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.text import slugify
 from localflavor.us.models import PhoneNumberField
@@ -39,7 +41,7 @@ PREFERENCES = [
 
 # homepage models
 class SlideShowPhoto(models.Model):
-    photo   = StdImageField(upload_to='home_page_photos',thumbnail_size=(1050,790))
+    photo   = StdImageField(upload_to='home_page_photos',thumbnail_size=(1050,790,True))
     active  = models.BooleanField()
     title   = models.TextField()
     text    = models.TextField()
@@ -309,4 +311,43 @@ class MemberProfile(UserProfile):
         else:
             return self.alt_email
 
+class TBPraise(models.Model):
+    giver = models.ForeignKey(UserProfile,related_name='praise_giver')
+    recipient=models.ForeignKey(UserProfile,related_name='praise_recipient')
+    description=models.TextField()
+    public=models.BooleanField(default=False)
+    anonymous=models.BooleanField(default=False)
+    approved = models.BooleanField(default=False)
+    date_added = models.DateField(auto_now_add=True)
 
+    def is_public(self):
+        return self.approved and self.public
+
+    def email_praise(self):
+        persons_name = self.recipient.get_casual_name()
+        if self.anonymous:
+            sender='someone' 
+            subject = '[TBP] You\'ve been sent an affirmation'
+        else:
+            sender=self.giver.get_firstlast_name()
+            subject = '[TBP] %(name)s has sent you an affirmation'%{'name':sender}
+        if self.public:
+            public_bit='Pending your approval, this message will appear on the website so that other\'s know about your awesomeness. To approve the affirmation for posting click here: https://tbp.engin.umich.edu%(link)s'%{'link':reverse('member_resources:approve_praise',args=(self.id,))}
+        else:
+            public_bit=''
+            public_take_down=''
+        body=r'''Hello %(name)s
+This is an automated notice that %(sender)s has sent you a personal affirmation, TBPraise if you will. The details are below:
+
+%(praise)s
+
+%(public_bit)s
+
+If you have any questions, please let the Website Chair know (tbp-website@umich.edu).
+
+Regards,
+The Website
+
+If you'd like, you can pay it forward by sending an affirmation to another member:
+https://tbp.engin.umich.edu%(link)s'''%{'name':persons_name,'public_bit':public_bit,'sender':sender,'praise':self.description,'link':reverse('member_resources:submit_praise')}
+        send_mail(subject,body,'tbp.mi.g@gmail.com',[self.recipient.get_email()],fail_silently=True)

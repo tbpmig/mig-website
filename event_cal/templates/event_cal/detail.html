@@ -20,13 +20,13 @@
         <a class="btn btn-success btn-lg" href="{% url 'event_cal:complete_event' event.id %}">Complete Event and Assign Hours</a>
     {% endif %}
     {% if event.completed %}
-    <a class="btn btn-info btn-lg" href="{% url 'event_cal:project_report' %}">Add/Update Project Report</a>
+    <a class="btn btn-info btn-lg" href="{% url 'event_cal:event_project_report' event.id %}">Add/Update Project Report</a>
     <a class="btn btn-warning btn-lg" href="{% url 'event_cal:update_completed_event' event.id %}">Update Event Progress</a>
     <a class="btn btn-info btn-lg" href="{% url 'event_cal:add_project_report_to_event' event.id %}">Add/Swap Existing Project Report</a>
     {% endif %}
 {% else %}
 <h3>{{event.name}}</h3>
-<form action="{% url 'event_cal:edit_event' event.id %}" method="post">{% csrf_token %}
+<form action="{% url 'event_cal:edit_event' event.id %}" method="post" id="dynForm">{% csrf_token %}
     {% include 'event_cal/event_form.html' %}
 </form>
 {% endif %}

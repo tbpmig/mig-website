@@ -13,46 +13,62 @@ from django.template import RequestContext, loader
 from django.db import IntegrityError
 from django.db.models import Max,Q
 from django.core.exceptions import PermissionDenied
-from django.forms.models import modelformset_factory
+from django.forms.models import modelformset_factory, modelform_factory
 from django.core.urlresolvers import reverse
 
 from corporate.views import update_resume_zips
 from electees.models import ElecteeGroup, electee_stopped_electing, EducationalBackgroundForm
-from event_cal.models import CalendarEvent, MeetingSignInUserData
-from history.models import Officer, MeetingMinutes,Distinction
+from event_cal.models import CalendarEvent, MeetingSignInUserData,get_pending_events,get_events_w_o_reports
+from history.models import Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant
 from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet
-from member_resources.forms import MeetingMinutesForm,ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditFormSet
+from member_resources.forms import MeetingMinutesForm,ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditFormSet,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
 from migweb.context_processors import profile_setup
 from mig_main.default_values import get_current_term
-from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,PREFERENCES,get_members,get_actives,get_electees
+from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,TBPraise,PREFERENCES,get_members,get_actives,get_electees
 from mig_main.utility import  Permissions, get_previous_page,get_next_term, get_next_full_term,get_current_event_leaders,get_current_officers,get_current_group_leaders,get_message_dict,UnicodeWriter
 from outreach.models import TutoringRecord
 from requirements.models import DistinctionType, Requirement, ProgressItem, EventCategory
 
 INVALID_FORM_MESSAGE='The form is invalid. Please correct the noted errors.'
 
-LOGGING={
-    'version':1,
-    'disable_existing_loggers':False,
-    'handlers':{
-        'email':{
-            'level':'WARNING',
-            'class':'django.utils.log.AdminEmailHandler',
-            'include_html':True,
-        }
-    },
-    'loggers':{
-        'django.request':{
-            'handlers':['email'],
-            'level':'WARNING',
-            'propogate':True,
-        },
-    },
-}
-logging.config.dictConfig(LOGGING)
-logger = logging.getLogger('django.request')
+#LOGGING={
+#    'version':1,
+#    'disable_existing_loggers':False,
+#    'handlers':{
+#        'email':{
+#            'level':'ERROR',
+#            'class':'django.utils.log.AdminEmailHandler',
+#            'include_html':True,
+#        }
+#    },
+#    'loggers':{
+#        'django.request':{
+#            'handlers':['email'],
+#            'level':'ERROR',
+#            'propogate':True,
+#        },
+#    },
+#}
+#logging.config.dictConfig(LOGGING)
+#logger = logging.getLogger('django.request')
 
+def get_electees_with_status(distinction):
+    
+    query =  Q(distinction_type=distinction)& Q(term=get_current_term().semester_type)
+    dist_standing = distinction.standing_type.all()
+    requirements = Requirement.objects.filter(query)
+    unflattened_reqs = package_requirements(requirements)
+    electee_profiles = get_electees().filter(standing=dist_standing) 
+    electees_with_status = []
+    for profile in electee_profiles:
+        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=get_current_term()))
+        amount_req = 0;
+        amount_has = 0;
+        has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
+        if has_dist:
+            electees_with_status.append(profile)
+    return electees_with_status
 def get_actives_with_status(distinction):
     query =  Q(distinction_type=distinction)& Q(term=get_current_term().semester_type)
     requirements = Requirement.objects.filter(query)
@@ -68,10 +84,10 @@ def get_actives_with_status(distinction):
             actives_with_status.append(profile)
     return actives_with_status
 def get_electees_who_completed_reqs():
-    ugrad_distinction =DistinctionType.objects.get(status_type__name="Electee",standing_type__name="Undergraduate") 
-    grad_distinction =DistinctionType.objects.get(status_type__name="Electee",standing_type__name="Graduate") 
+    ugrad_distinction =DistinctionType.objects.get(status_type__name="Electee",standing_type__name="Undergraduate",name='Electee (undergrad)') 
+    grad_distinction =DistinctionType.objects.get(status_type__name="Electee",standing_type__name="Graduate",name='Electee (grad)') 
     ugrad_query = Q(distinction_type= ugrad_distinction)&Q(term=get_current_term().semester_type)
-    grad_query = Q(distinction_type=DistinctionType.objects.get(status_type__name="Electee",standing_type__name="Graduate"))&Q(term=get_current_term().semester_type)
+    grad_query = Q(distinction_type=grad_distinction)&Q(term=get_current_term().semester_type)
     
     ugrad_reqs = Requirement.objects.filter(ugrad_query)
     grad_reqs = Requirement.objects.filter(grad_query)
@@ -96,6 +112,7 @@ def get_permissions(user):
     'misc_tab':(Permissions.can_manage_misc_reqs(user) or Permissions.can_change_requirements(user)),
     'can_manage_website':Permissions.can_manage_website(user),
     'can_access_history':Permissions.can_access_history(user),
+    'can_access_playground':hasattr(user,'userprofile'),
     }
 def get_common_context(request):
     context_dict=get_message_dict(request)
@@ -313,9 +330,8 @@ def profile(request,uniqname):
         return redirect('member_resources:index')
     template = loader.get_template('member_resources/userprofile.html')
     profile = get_object_or_404(MemberProfile,uniqname=uniqname)
-    is_user=False
-    if hasattr(request.user,'userprofile'):
-        is_user = request.user.userprofile.uniqname==uniqname
+    praise = TBPraise.objects.filter(recipient=profile)
+    is_user = request.user.userprofile.uniqname==uniqname
     distinctions = DistinctionType.objects.filter(status_type=profile.status, standing_type=profile.standing).distinct()
     distinction_terms = []
     has_distinctions = False
@@ -338,6 +354,7 @@ def profile(request,uniqname):
         'edit':False,
         'has_distinctions':has_distinctions,
         'subnav':'member_profiles',
+        'praise':praise,
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -352,7 +369,7 @@ def profile_edit(request,uniqname):
     is_user = False
     if hasattr(request.user,'userprofile'):
         is_user = request.user.userprofile.uniqname==uniqname
-    if not is_user:
+    if not (is_user or request.user.is_superuser):
         request.session['error_message']="You are not authorized to edit this profile"
         return redirect('member_resources:profile', uniqname)
     profile = MemberProfile.objects.get(uniqname__exact=uniqname)
@@ -367,12 +384,11 @@ def profile_edit(request,uniqname):
             if is_user:
                 intro_string = 'Your'
             else:
-                intro_string = profile.get_firstlast_name+'\'s'
+                intro_string = profile.get_firstlast_name()+'\'s'
             request.session['success_message']=intro_string+' profile was updated successfully.'
             return redirect('member_resources:profile', uniqname)
         else:
             request.session['error_message']='The form is invalid, please correct the errors noted below.'
-            logger.warning(request.FILES)
     else:
         if profile.status.name == 'Active':
             form = MemberProfileForm(instance=MemberProfile.objects.get(uniqname__exact=uniqname))
@@ -422,7 +438,6 @@ def profile_create(request):
                 return redirect('member_resources:profile',request.user.username)
             else:
                 request.session['error_message']='The form is invalid, please correct the errors noted below.'
-                logger.warning(request.FILES)
         else:
             form = MemberProfileNewActiveForm()
     elif user_info["is_grad_electee"] or user_info["is_ugrad_electee"]:
@@ -442,7 +457,6 @@ def profile_create(request):
                 return redirect('member_resources:profile',request.user.username)
             else:
                 request.session['error_message']='The form is invalid, please correct the errors noted below.'
-                logger.warning(request.FILES)
         else:
             form = MemberProfileNewElecteeForm()
     else:
@@ -455,7 +469,6 @@ def profile_create(request):
                 return redirect('home')
             else:
                 request.session['error_message']='The form is invalid, please correct the errors noted below.'
-                logger.warning(request.FILES)
         else:
             form = NonMemberProfileForm()
     template = loader.get_template('generic_form.html')
@@ -859,7 +872,7 @@ def view_progress_table(request):
         distinctions_actives = None
     if can_manage_electees:
         #ugrad
-        distinctions_ugrad_el = DistinctionType.objects.filter(status_type__name="Electee").filter(standing_type__name="Undergraduate").distinct()
+        distinctions_ugrad_el = DistinctionType.objects.filter(status_type__name="Electee").filter(standing_type__name="Undergraduate").distinct().order_by('name')
         query = Q()
         for distinction in distinctions_ugrad_el:
             query = query | Q(distinction_type=distinction)
@@ -905,7 +918,7 @@ def view_progress_table(request):
             row["distinctions"]=dist_progress
             progress_rows_ugrad_el.append(row)
         #grad
-        distinctions_grad_el = DistinctionType.objects.filter(status_type__name="Electee").filter(standing_type__name="Graduate").distinct()
+        distinctions_grad_el = DistinctionType.objects.filter(status_type__name="Electee").filter(standing_type__name="Graduate").distinct().order_by('name')
         query = Q()
         for distinction in distinctions_grad_el:
             query = query | Q(distinction_type=distinction)
@@ -944,7 +957,7 @@ def view_progress_table(request):
                         amount_has = amount_has + amount_has_temp
                     amount_req=amount_req+amount_req_temp
                 has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
-                close_dist = (Decimal(1.0)*amount_has/amount_req)>.75
+                close_dist = (Decimal(1.0)*amount_has)>(.75*amount_req)
                 dist_progress.append(has_dist)
                 dist_progress.append(close_dist)
 
@@ -1048,10 +1061,18 @@ def project_reports_list(request):
         request.session['error_message']='You are not authorized to view/edit project reports'
         return redirect('member_resources:index')
     project_reports = Permissions.project_reports_you_can_view(request.user)
-
+    
+    events_w_o_reports = None
+    pending_events=None
+    if Permissions.can_view_missing_reports(request.user):
+        events_w_o_reports = get_events_w_o_reports(get_current_term())
+    if Permissions.can_view_pending_events(request.user):
+        pending_events=get_pending_events()
     template = loader.get_template('member_resources/list_project_reports.html')
     context_dict = {
         'project_reports':project_reports,
+        'pending_events':pending_events,
+        'events_w_o_reports':events_w_o_reports,
         'subnav':'history',
         }
     context_dict.update(get_common_context(request))
@@ -1071,6 +1092,7 @@ def access_history(request):
     context_dict = {
         'can_view_feedback':Permissions.can_view_meeting_feedback(request.user),
         'can_access_project_reports':Permissions.can_access_project_reports(request.user),
+        'can_create_nep':Permissions.can_create_events(request.user),
         'subnav':'history',
         }
     context_dict.update(get_common_context(request))
@@ -1241,22 +1263,83 @@ def manage_officers(request,term_id):
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
+def add_electee_DA_PA_status(request):   
+    if not Permissions.can_manage_active_progress(request.user):
+        request.session['error_message']='You are not authorized to manage electee DA/PA status.'
+        return redirect('member_resources:index')
+    term = get_current_term()
+    if request.method =='POST':
+        formset = ManageElecteeDAPAFormSet(request.POST,prefix='current_status')
+        if formset.is_valid():
+            formset.save(commit=False)
+            for instance in formset.new_objects:
+                if instance:
+                    instance.term = term
+                    if 'DA' in instance.distinction_type.name:
+                        instance.distinction_type=DistinctionType.objects.get(name='Distinguished Active')
+                    elif 'PA' in instance.distinction_type.name:
+                        instance.distinction_type=DistinctionType.objects.get(name='Prestigious Active')
+                    if not Distinction.objects.filter(member=instance.member,distinction_type=instance.distinction_type,term=term).exists():
+                        instance.save()
+            request.session['success_message']='Active Statuses Updated successfully'
+            return redirect('member_resources:view_misc_reqs')
+        else:
+            request.session['error_message']=INVALID_FORM_MESSAGE
+    else:
+        initial=[]
+        #electee DA
+        for distinction in DistinctionType.objects.filter(status_type__name="Electee").filter(name__contains='DA'):
+            related_distinction = DistinctionType.objects.get(name='Distinguished Active')
+            electees_already_received_distinction = MemberProfile.objects.filter(distinction__distinction_type=related_distinction,distinction__term=get_current_term())
+            electees = get_electees_with_status(distinction)
+            for electee in electees:
+                if electee in electees_already_received_distinction:
+                    continue
+                gift='Not specified'
+                initial.append({'member':electee,'distinction_type':distinction,'gift':gift})
+        for distinction in DistinctionType.objects.filter(status_type__name="Electee").filter(name__contains='PA'):
+            related_distinction = DistinctionType.objects.get(name='Prestigious Active')
+            electees_already_received_distinction = MemberProfile.objects.filter(distinction__distinction_type=related_distinction,distinction__term=get_current_term())
+            electees = get_electees_with_status(distinction)
+            for electee in electees:
+                if electee in electees_already_received_distinction:
+                    continue
+                gift='Not specified'
+                initial.append({'member':electee,'distinction_type':distinction,'gift':gift})
+        ManageElecteeDAPAFormSet.extra=len(initial)+1
+        formset = ManageElecteeDAPAFormSet(queryset=Distinction.objects.none(),initial=initial,prefix='current_status')
+    template = loader.get_template('generic_formset.html')
+    context_dict = {
+        'formset':formset,
+        'prefix':'current_status',
+        'subnav':'misc_reqs',
+        'can_add_row':True,
+        'has_files':False,
+        'base':'member_resources/base_member_resources.html',
+        'submit_name':'Update Statuses',
+        'form_title':'Add Electee DA/PA Distinctions for  %s'%(unicode(term)),
+        'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Membership Management'},
+        'help_text':'This list is pre-populated with members who have enough credit on the website to receive the noted status. Members whose status has already been logged are omitted.',
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
+
 def add_active_statuses(request):   
     if not Permissions.can_manage_active_progress(request.user):
         request.session['error_message']='You are not authorized to manage active members.'
         return redirect('member_resources:index')
     term = get_current_term()
     if request.method =='POST':
-        ManageActiveCurrentStatusFormSet = modelformset_factory(Distinction,exclude=('term',))
-        ManageActiveCurrentStatusFormSet.form.base_fields['member'].queryset=get_actives()
-        ManageActiveCurrentStatusFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Active')
         formset = ManageActiveCurrentStatusFormSet(request.POST,prefix='current_status')
         if formset.is_valid():
             formset.save(commit=False)
             for instance in formset.new_objects:
-                instance.term = term
-                if not Distinction.objects.filter(member=instance.member,distinction_type=instance.distinction_type,term=term).exists():
-                    instance.save()
+                if instance:
+                    instance.term = term
+                    if not Distinction.objects.filter(member=instance.member,distinction_type=instance.distinction_type,term=term).exists():
+                        instance.save()
             request.session['success_message']='Active Statuses Updated successfully'
             return redirect('member_resources:view_misc_reqs')
         else:
@@ -1272,11 +1355,9 @@ def add_active_statuses(request):
                 if distinction.name=='Active':
                     gift='N/A'
                 else:
-                    gift=None
+                    gift='Not specified'
                 initial.append({'member':active,'distinction_type':distinction,'gift':gift})
-        ManageActiveCurrentStatusFormSet = modelformset_factory(Distinction,exclude=('term',),extra=len(initial)+1)
-        ManageActiveCurrentStatusFormSet.form.base_fields['member'].queryset=get_actives()
-        ManageActiveCurrentStatusFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Active')
+        ManageActiveCurrentStatusFormSet.extra=len(initial)+1
         formset = ManageActiveCurrentStatusFormSet(queryset=Distinction.objects.none(),initial=initial,prefix='current_status')
     template = loader.get_template('generic_formset.html')
     context_dict = {
@@ -1543,68 +1624,43 @@ def move_electees_to_active(request):
         request.session['error_message']='You are not authorized to give electees active status.'
         return redirect('member_resources:index')
     error_list=[]
-    ElecteeToActiveFormSet = modelformset_factory(Distinction,exclude=('term',))
-    ElecteeToActiveFormSet.form.base_fields['member'].queryset=get_electees().order_by('last_name')
-    ElecteeToActiveFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Electee')
     #should probably add extra checking here to ensure added members have correct distinction
     term = get_current_term()
     if request.method == 'POST':
-        if 'submit' in request.POST:
-            formset = ElecteeToActiveFormSet(request.POST,prefix='electee2active')
-            form = MassAddProjectLeadersForm(request.POST,prefix='mass-add')
-            if formset.is_valid():
-                formset.save(commit=False)
-                #technically should check here that the distinction doesn't already exist...
-                for instance in formset.new_objects:
+        formset = ElecteeToActiveFormSet(request.POST,prefix='electee2active')
+        if formset.is_valid():
+            instances=formset.save(commit=False)
+            #technically should check here that the distinction doesn't already exist...
+            for instance in instances:
+                if instance:
                     instance.term = term
                     instance.save()
                     instance.member.status =Status.objects.get(name="Active")
                     instance.member.save()
-                request.session['success_message']='Selected electees successfully moved to actives'
-                return redirect('member_resources:view_misc_reqs')
-            else:
-                request.session['error_message']=INVALID_FORM_MESSAGE
-        elif 'mass-add' in request.POST:
-            form = MassAddProjectLeadersForm(request.POST,prefix='mass-add')
-            formset = ElecteeToActiveFormSet(request.POST,prefix='electee2active')
-            if form.is_valid():
-                uniqnames=form.cleaned_data['uniqnames'].split('\n')
-                for uniqname in uniqnames:
-                    members = get_electees().filter(uniqname=uniqname.strip())
-                    if members:
-                        distinction_type = DistinctionType.objects.filter(status_type__name='Electee',standing_type = members[0].standing)[0]
-                        members[0].status=Status.objects.get(name='Active')
-                        members[0].save()
-                        if Distinction.objects.filter(distinction_type=distinction_type,member=members[0]).exists():
-                            continue
-                        distinction = Distinction(distinction_type=distinction_type,member=members[0],gift='None')
-                        distinction.term = get_current_term()
-                        distinction.save()
-                    else:
-                        error_list.append(uniqname)
-                if not error_list:
-                    request.session['success_message']='All listed electees moved to actives.'
-                    return redirect('member_resources:view_misc_reqs')
-                else:
-                    request.session['warning_message']='Some listed electees not moved.'
-                    form=MassAddProjectLeadersForm(initial={'uniqnames':'\n'.join(error_list)},prefix='mass-add')
-                    formset = ElecteeToActiveFormSet(request.POST,prefix='electee2active')
+            request.session['success_message']='Selected electees successfully moved to actives'
+            return redirect('member_resources:view_misc_reqs')
+        else:
+            request.session['error_message']=INVALID_FORM_MESSAGE
     else:
         initial=[]
         electees_with_reqs = get_electees_who_completed_reqs()
         for electee in electees_with_reqs:
-            initial.append({'member':electee,'distinction_type':DistinctionType.objects.get(status_type__name='Electee',standing_type = electee.standing),'gift':'None'})
+            initial.append({'member':electee,'distinction_type':DistinctionType.objects.get(Q(status_type__name='Electee',standing_type = electee.standing)&~(Q(name__contains='DA')|Q(name__contains='PA'))),'gift':'None'})
         ElecteeToActiveFormSet.extra = len(initial)+1
         formset = ElecteeToActiveFormSet(queryset=Distinction.objects.none(),initial=initial,prefix='electee2active')
-        form = MassAddProjectLeadersForm(prefix='mass-add')
-    template = loader.get_template('member_resources/move_electees_to_active.html')
+    template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
-        'mass_form':form,
-        'error_list':error_list,
         'prefix':'electee2active',
         'subnav':'misc_reqs',
-        }
+        'can_add_row':True,
+        'has_files':False,
+        'base':'member_resources/base_member_resources.html',
+        'submit_name':'Move Electees To Actives',
+        'form_title':'Move Electees To Actives',
+        'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Membership Management'},
+        'help_text':'To note that an electee has completed their requirements and been initiated, check the approve box next to his/her name and then click the button at the bottom. This will move the electee from being considered an electee to being considered an active. NOTE: If the electee also completed electee DA/PA status you\'ll need to take note of this as those statuses are only show up for electees.',
+        } 
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
@@ -2229,6 +2285,7 @@ def change_requirements(request,distinction_id):
             for instance in instances:
                 instance.distinction_type = distinction
                 instance.save()
+            formset.save_m2m()
             request.session['success_message']='Requirements updated successfuly.'
             return redirect('member_resources:view_misc_reqs')
         else:
@@ -2299,12 +2356,13 @@ def view_meeting_feedback_for_term(request,term_id):
     else:
         term=terms[0]
     completed_meetings = CalendarEvent.objects.filter(completed=True,term=term,event_type__name__contains='Meeting Attendance')
+    meeting_surveys = MeetingSignInUserData.objects.filter(meeting_data__event__term=term)
     feedback_surveys=[]
     for meeting in completed_meetings:
         feedback_surveys.append({'meeting':meeting,'surveys':MeetingSignInUserData.objects.filter(meeting_data__event=meeting)})
     template = loader.get_template('member_resources/meeting_feedback.html')
     context_dict = {
-        'surveys':feedback_surveys,
+        'surveys':meeting_surveys,
         'term':term,
         'subnav':'history',
         }
@@ -2411,4 +2469,161 @@ def view_background_forms(request):
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
+def member_playground(request):
+    if not hasattr(request.user, 'userprofile'): 
+        request.session['error_message']='You must create a profile to access TBPlayground.'
+        return redirect('member_resources:index')
+    profile = request.user.userprofile
+    links=[]
+    links.append({'name':'Submit Affirmation','link':reverse('member_resources:submit_praise')})
+    if profile.is_member:
+        pass
+    template = loader.get_template('member_resources/playground.html')
+    context_dict = {
+        'subnav':'playground',
+        'links':links,
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
+    
+def approve_praise(request,praise_id): 
+    if not hasattr(request.user,'userprofile'):
+        request.session['error_message']='You must create a profile to approve an affirmation.'
+        return redirect('member_resources:index')
+    tbp=get_object_or_404(TBPraise,id=praise_id)
+    if not tbp.public:
+        request.session['error_message']='You can only approve public affirmations.'
+        return redirect('member_resources:member_playground')
+    if not request.user.userprofile ==tbp.recipient:
+        request.session['error_message']='You can only approve affirmations you received.'
+        return redirect('member_resources:member_playground')
+    tbp.approved=True
+    tbp.save()
+    request.session['success_message']='Affirmation successfully approved for posting'
+    return redirect('member_resources:member_playground')
+        
+def submit_praise(request):
+    if not hasattr(request.user,'userprofile'):
+        request.session['error_message']='You must create a profile to send an affirmation.'
+        return redirect('member_resources:index')
+    PraiseForm = modelform_factory(TBPraise,exclude=('giver','date_added','approved',))
+    PraiseForm.base_fields['recipient'].queryset=UserProfile.objects.all().order_by('last_name')
+    if request.method == 'POST':
 
+        form = PraiseForm(request.POST)
+        if form.is_valid():
+            instance=form.save(commit=False)
+            instance.giver=request.user.userprofile
+            instance.save()
+            instance.email_praise()
+            request.session['success_message']='Affirmation submitted successfully'
+            return redirect('member_resources:member_playground')
+        else:
+            request.session['error_message']=INVALID_FORM_MESSAGE
+    else:
+        form = PraiseForm()
+    template = loader.get_template('generic_form.html')
+    context_dict = {
+        'form':form,
+        'subnav':'playground',
+        'has_files':False,
+        'base':'member_resources/base_member_resources.html',
+        'submit_name':'Submit Praise/Affirmation',
+        'back_button':{'link':reverse('member_resources:member_playground'),'text':'To Member Playground'},
+        'form_title':'Affirm/Praise/Congratulate a member',
+        'help_text':'Use this form to give some positive feedback to another member (or user). This can be done anonymously or attributed to you. You can also indicate that the feedback should be private to the recipient or public (other members/users can see it). This is only for *positive* feedback and should not be used as a means to provide anonymous criticism.',
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
+
+def non_event_project(request,ne_id):
+    n = get_object_or_404(NonEventProject,id=ne_id)
+    #enforce permissions here!
+    return non_event_project_meta_data(request,n)
+
+def new_non_event_project(request):
+    if not Permissions.can_create_events(request.user):
+        request.session['error_message']='You are not authorized to create project reports.'
+        return get_previous_page(request,alternate='event_cal:index')
+    return non_event_project_meta_data(request,None)
+
+def non_event_project_meta_data(request,ne_report):
+    if ne_report:
+        NonEventProjectForm = modelform_factory(NonEventProject, exclude=('term','project_report'))
+    else:
+        NonEventProjectForm = modelform_factory(NonEventProject, exclude=('project_report',))
+        ne_report = None
+
+    NonEventProjectForm.base_fields['leaders'].queryset=get_members().order_by('last_name')
+    if request.method =='POST':
+        if ne_report:
+            form = NonEventProjectForm(request.POST,instance=ne_report)
+        else:
+            form = NonEventProjectForm(request.POST)
+        
+        if form.is_valid():
+            nep = form.save()
+            request.session['success_message']='Non-event project created successfully'
+            return redirect('member_resources:non_event_project_participants',nep.id)
+        else:
+            request.session['error_message']='Form contained errors, was not saved.'
+    else:
+        if ne_report:
+            form = NonEventProjectForm(instance=ne_report)
+        else:
+            form = NonEventProjectForm()
+    template = loader.get_template('generic_form.html')
+    dp_ids=['id_start_date','id_end_date']
+    context_dict ={
+        'form':form,
+        'dp_ids':dp_ids,
+        'subnav':'history',
+        'has_files':False,
+        'submit_name':'Create/update non-event project',
+        'form_title':'Create non-event project',
+        'help_text':'These are for reports sent to the national organization to determine eligibility for certain chapter awards. They are also used for transition material to help future project leaders perform a similar event. Please be descriptive in your responses. Note that this form contains the meta-data for the project, you\'ll be asked to submit 2 additional forms with it.',
+        'base':'member_resources/base_member_resources.html',
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))
+
+def non_event_project_participants(request,ne_id):
+    ne = get_object_or_404(NonEventProject,id=ne_id)
+    NonEventFormSet = modelformset_factory(NonEventProjectParticipant,exclude=('project',))
+    NonEventFormSet.form.base_fields['participant'].queryset=get_members().order_by('last_name')
+
+    if request.method =='POST':
+        formset = NonEventFormSet(request.POST,queryset=NonEventProjectParticipant.objects.filter(project=ne).order_by('participant__last_name'),prefix='nep_parts')
+        if formset.is_valid():
+            instances = formset.save(commit=False)
+            for instance in instances:
+                instance.project = ne
+                instance.save()
+            request.session['success_message']='Non-event project participants updated successfully'
+            return redirect('event_cal:non_event_project_report',ne_id)
+        else:
+            request.session['error_message']='Form contained errors, was not saved.'
+    else:
+        formset = NonEventFormSet(queryset=NonEventProjectParticipant.objects.filter(project=ne).order_by('participant__last_name'),prefix='nep_parts')
+    template = loader.get_template('generic_formset.html')
+    context_dict ={
+        'formset':formset,
+        'can_add_row':True,
+        'subnav':'history',
+        'has_files':False,
+        'prefix':'nep_parts',
+        'submit_name':'Update non-event project participants',
+        'form_title':'Update non-event project participants',
+        'help_text':'These are for reports sent to the national organization to determine eligibility for certain chapter awards. They are also used for transition material to help future project leaders perform a similar event. Please be descriptive in your responses. Note that this form contains the participants for the project, you\'ll be asked to submit 1 additional form with it.',
+        'base':'member_resources/base_member_resources.html',
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))

@@ -17,7 +17,7 @@ from markdown import markdown
 
 from event_cal.forms import  EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm
 from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto
-from history.models import ProjectReport, Officer
+from history.models import ProjectReport, Officer,NonEventProject
 from mig_main.default_values import get_current_term
 from mig_main.models import OfficerPosition,PREFERENCES,UserPreference,MemberProfile,UserProfile,get_members
 from mig_main.utility import get_previous_page, Permissions, get_message_dict
@@ -86,7 +86,7 @@ def add_event_to_gcal(event):
                 submitted_event=service.events().insert(calendarId=event.google_cal.calendar_id,body=gcal_event).execute()
                 shift.google_event_id=submitted_event['id']
                 shift.save()
-
+#TODO remove in favor of copied event in event model
 def get_attendee_hours_at_event(profile,event):
     shifts=event.eventshift_set.filter(attendees=profile).order_by('start_time') 
     n=shifts.count()
@@ -506,7 +506,6 @@ def list(request):
     user_is_member = False
     has_profile = False
     event_signed_up = request.session.pop('event_signed_up',None)
-    query_semester = Q(term=get_current_term())
     query_members = Q(members_only=False) 
     query_event_type=Q()
     query_location=Q()
@@ -544,7 +543,7 @@ def list(request):
             query_event_type = ~Q(event_type__name='Officer Meetings')
         initial={'after_date':starting_after_text}
         form = EventFilterForm(initial=initial)
-    events = CalendarEvent.objects.filter(query_members&query_semester&query_date&query_event_type&query_location).distinct()
+    events = CalendarEvent.objects.filter(query_members&query_date&query_event_type&query_location).distinct()
     template = loader.get_template('event_cal/list.html')
     packed_events=[]
     for event in events.annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift'):
@@ -642,14 +641,15 @@ Note: This is an automated email. Please do not reply to it as responses are not
         form = EventForm(prefix='event')
         formset= EventShiftFormset(prefix='shift',instance=CalendarEvent())
     dp_ids=['id_event-announce_start']
-    #for count in range(len(formset)):
-    #    dp_ids.append('id_shift-%d-start_time_0'%(count))
-    #    dp_ids.append('id_shift-%d-end_time_0'%(count))
+    for count in range(len(formset)):
+        dp_ids.append('id_shift-%d-start_time_0'%(count))
+        dp_ids.append('id_shift-%d-end_time_0'%(count))
     template = loader.get_template('event_cal/create_event.html')
     context_dict = {
         'form':form,
         'formset':formset,
         'dp_ids':dp_ids,
+        'dp_ids_dyn':['start_time_0', 'end_time_0'],
         'prefix':'shift',
         'subnav':'admin',
         'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
@@ -757,9 +757,9 @@ def edit_event(request, event_id):
         form = EventForm(prefix='event',instance=e)
         formset= EventShiftEditFormset(prefix='shift',instance=e)
     dp_ids=['id_event-announce_start']
-#    for count in range(len(formset)):
-#        dp_ids.append('id_shift-%d-start_time_0'%(count))
-#        dp_ids.append('id_shift-%d-end_time_0'%(count))
+    for count in range(len(formset)):
+        dp_ids.append('id_shift-%d-start_time_0'%(count))
+        dp_ids.append('id_shift-%d-end_time_0'%(count))
     template = loader.get_template('event_cal/detail.html')
     context_dict = {
         'form':form,
@@ -767,6 +767,7 @@ def edit_event(request, event_id):
         'edit':True,
         'event':e,
         'dp_ids':dp_ids,
+        'dp_ids_dyn':['start_time_0', 'end_time_0'],
         'prefix':'shift',
         'subnav':'list',
         }
@@ -895,7 +896,7 @@ def complete_event(request, event_id):
                 request.session['warning_message']='The following members had progress listed twice, with latter listings ignored: '+ ','.join([prof.uniqname for prof in duplicate_progress])+'. Go to update progress to check that the amount of progress is correct'
             request.session['success_message']='Event and progress updated successfully'
             request.session['project_report_event']=event_id
-            return redirect('event_cal:project_report')
+            return redirect('event_cal:event_project_report',event_id)
         else:
             request.session['error_message']='There were errors in your submission. Progress was not updated. Please correct the errors and try again.'
     else:
@@ -1002,10 +1003,19 @@ def oauth(request):
 def event_project_report(request,event_id):
     e=get_object_or_404(CalendarEvent,id=event_id)
     request.session['project_report_event']=event_id
+    request.session.pop('project_report_non_event',None)
+    request.session.pop('project_report_id',None)
     return project_report(request)
 def project_report_by_id(request,report_id):
     request.session.pop('project_report_event',None)
+    request.session.pop('project_report_non_event',None)
     request.session['project_report_id']=report_id
+    return project_report(request)
+
+def non_event_project_report(request,ne_id):
+    request.session.pop('project_report_event',None)
+    request.session.pop('project_report_id',None)
+    request.session['project_report_non_event']=ne_id
     return project_report(request)
 
 def project_report(request):
@@ -1013,12 +1023,19 @@ def project_report(request):
         request.session['error_message']='You are not authorized to create project reports.'
         return get_previous_page(request,alternate='event_cal:index')
     related_event = request.session.pop('project_report_event',None)
+    related_non_event = request.session.pop('project_report_non_event',None)
     report_id = request.session.pop('project_report_id',None)
     if related_event:
         event = CalendarEvent.objects.get(id=related_event)
         event_name=event.name
         if event.project_report:
             event_name=event.project_report.name
+        ProjectReportForm =modelform_factory(ProjectReport,exclude=('term',))
+    elif related_non_event:
+        non_event = NonEventProject.objects.get(id=related_non_event)
+        event_name=non_event.name
+        if non_event.project_report:
+            event_name=non_event.project_report.name
         ProjectReportForm =modelform_factory(ProjectReport,exclude=('term',))
     elif report_id:
         report = get_object_or_404(ProjectReport,id=report_id)
@@ -1031,6 +1048,8 @@ def project_report(request):
     if request.method =='POST':
         if related_event and event.project_report:
             form = ProjectReportForm(request.POST,instance=event.project_report)
+        elif related_non_event and non_event.project_report:
+            form = ProjectReportForm(request.POST,instance=non_event.project_report)
         elif report_id:
             form = ProjectReportForm(request.POST,instance=report)
         else:
@@ -1044,6 +1063,12 @@ def project_report(request):
                 pr.save()
                 event.project_report = pr
                 event.save()
+            elif related_non_event:
+                pr = form.save(commit=False)
+                pr.term = non_event.term
+                pr.save()
+                non_event.project_report = pr
+                non_event.save()
             elif report_id:
                 pr=form.save()
             else:
@@ -1056,6 +1081,8 @@ def project_report(request):
     else:
         if related_event and event.project_report:
             form = ProjectReportForm(instance=event.project_report)
+        elif related_non_event and non_event.project_report:
+            form = ProjectReportForm(instance=non_event.project_report)
         elif report_id:
             form = ProjectReportForm(instance=report)
         else:
@@ -1074,6 +1101,8 @@ def project_report(request):
         }
     if related_event:
         request.session['project_report_event']=related_event
+    if related_non_event:
+        request.session['project_report_non_event']=related_non_event
     if report_id:
         request.session['project_report_id']=report_id
     context_dict.update(get_permissions(request.user))
@@ -1130,7 +1159,7 @@ Regards,
 %(email)s
 
 Note: This is an automated email. Please do not reply to it as responses are not checked.'''%{'tutor':tutor_name,'hours':number_hours,'date':unicode(tutoring_record.date_tutored),'email':tutoring_email,'chair_name':tutoring_chair_name,'position_name':tutoring_name,}
-            send_mail('We want your feedback on your recent tutoring session.',body,tutoring_email,[recipient_email],fail_silently=False)
+            send_mail('We want your feedback on your recent tutoring session.',body,tutoring_email,[recipient_email],fail_silently=True)
             return get_previous_page(request,alternate='event_cal:index')          
         else:
             request.session['error_message']='There were errors in your submission, please correct them and resubmit. Your submission was not saved.'

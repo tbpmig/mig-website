@@ -79,6 +79,27 @@
         {% endif %}
 
     </div>
+    <div class="col-md-3">
+        {% regroup praise|dictsort:"public" by public as sorted_praise %}
+        {% for visibility in sorted_praise %}
+        {% if visibility.grouper %}
+            <h4>{% if is_user %}Publicly-viewable {% endif%}Affirmations Received</h4>
+            {% for praise_item in visibility.list %}
+            {% if praise_item.approved or is_user %}
+            <p>{%if not praise_item.approved %}(Hidden pending your approval) {%endif%}&ldquo;{{praise_item.description}}&rdquo;{% if not praise_item.anonymous %}&mdash;<em>{{praise_item.giver.get_firstlast_name}}</em>{% endif %}</p>
+            {% else %}
+            <p>Affirmation is hidden pending user approval.</p>
+            {%endif%}
+            {% endfor %}
+        {% elif is_user %}
+            <h4>Affirmations Received (viewable just to you)</h4>
+            {% for praise_item in visibility.list %}
+            <p>&ldquo;{{praise_item.description}}&rdquo;{% if not praise_item.anonymous %}&mdash;<em>{{praise_item.giver.get_firstlast_name}}</em>{% endif %}</p>
+            {% endfor %}
+        {% endif %}
+        {% endfor %}
+            
+    </div>
 </div>
 {% endif %}
 {% endblock content %}

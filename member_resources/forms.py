@@ -5,9 +5,9 @@ from django.core.exceptions import ValidationError
 from django.forms.models import modelformset_factory
 from django.db.models import Q
 
-from mig_main.models import MemberProfile, UserProfile,UserPreference,PREFERENCES,get_members,get_actives
-from history.models import MeetingMinutes, Officer
-from requirements.models import Requirement,EventCategory,ProgressItem
+from mig_main.models import MemberProfile, UserProfile,UserPreference,PREFERENCES,get_members,get_actives,get_electees
+from history.models import MeetingMinutes, Officer,Distinction
+from requirements.models import Requirement,EventCategory,ProgressItem,DistinctionType
 def max_peer_interviews_validator(value):
     requirement = Requirement.objects.filter(event_category__name='Peer Interviews')
     if requirement:
@@ -124,4 +124,28 @@ class LeadershipCreditForm(forms.ModelForm):
         else:
             return None
 
+class AddActiveStatusForm(forms.ModelForm):
+    approve= forms.BooleanField(required=False)
+
+    class Meta:
+        model = Distinction
+        exclude= ('term',)
+
+    def save(self,commit=True):
+        approved=self.cleaned_data.pop('approve',False)
+        if approved:
+            return super(AddActiveStatusForm, self).save(commit=commit)
+        else:
+            return None
 LeadershipCreditFormSet = modelformset_factory(ProgressItem,form=LeadershipCreditForm)
+ManageActiveCurrentStatusFormSet = modelformset_factory(Distinction,form=AddActiveStatusForm)
+ManageActiveCurrentStatusFormSet.form.base_fields['member'].queryset=get_actives()
+ManageActiveCurrentStatusFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Active')
+
+ManageElecteeDAPAFormSet = modelformset_factory(Distinction,form=AddActiveStatusForm)
+ManageElecteeDAPAFormSet.form.base_fields['member'].queryset=get_electees()
+ManageElecteeDAPAFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Electee').filter(Q(name__contains='DA')|Q(name__contains='PA'))
+
+ElecteeToActiveFormSet = modelformset_factory(Distinction,form=AddActiveStatusForm)
+ElecteeToActiveFormSet.form.base_fields['member'].queryset=get_electees().order_by('last_name')
+ElecteeToActiveFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Electee')

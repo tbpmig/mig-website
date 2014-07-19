@@ -4,11 +4,12 @@
 {% block content %}
 <div class="row">
     <div class="col-md-12">
-<h3>Meeting Surveys for {{term}}</h3>
-{% for meeting in surveys %}
-<h4> Surveys for {{meeting.meeting}}</h4>
+        <h3>Meeting Surveys for {{term}}</h3>
+{% regroup surveys|dictsort:"meeting_data.id" by meeting_data as sorted_surveys %}
+{% for meeting in sorted_surveys %}
+<h4> Surveys for {{meeting.grouper.event}}</h4>
 <table class="table table-striped table-bordered">
-        {% for survey in meeting.surveys %}
+        {% for survey in meeting.list %}
             {% if forloop.first %}
             <thead>
                 <tr>
@@ -19,8 +20,8 @@
             <tbody>
             {% endif %}
                 <tr>
-                    <td>{{survey.question_response}}</td>
-                    <td>{{survey.free_response}}</td>
+                    <td>{{survey.question_response|linebreaksbr}}</td>
+                    <td>{{survey.free_response|linebreaksbr}}</td>
                 </tr>
             {% if forloop.last %}
         </tbody>

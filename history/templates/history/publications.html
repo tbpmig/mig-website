@@ -2,6 +2,19 @@
 {% load staticfiles %}
 {% load my_markdown %}
 
+{% block og_props %}
+
+{% for news_article in web_articles %}
+{% if main_id == 0 and  forloop.counter == 1 or main_id == news_article.id %}
+<meta property="og:title" content="{{news_article.title}}"/>
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://tbp.engin.umich.edu{% url 'history:article_view' news_article.id %}" />
+<meta property="og:image" content="https://tbp.engin.umich.edu{% static 'TBP_Logo.png' %}"/>
+<meta property="og:description" content="{{news_article.get_short_view}}" />
+{% endif %}
+{% endfor %}
+{% endblock%}
+
 {% block content %}
 {% if can_post %}
 <div class="panel-group" id="newArticleAccordion">
@@ -39,10 +52,12 @@
             <div class="tab-pane {% if main_id == 0 and  forloop.counter == 1 or main_id == news_article.id %}active{% endif %}" id="{{news_article.id}}">
                 <div class="row">
                     <div class="col-md-9">
-                        <h2>{{news_article.title}}</h2>
+                        <h2> {{news_article.title}}</h2>
                         <p>{{news_article.date_posted}}</p>
-                        <p class="text-justify">{{news_article.body|my_markdown}} 
+                        <p class="text-justify">{{news_article.get_full_view|my_markdown}} 
                         </p>
+                        <div class="fb-like" data-kid-directed-site="true" data-href="{% url 'history:article_view' news_article.id %}" data-layout="button_count" data-action="like" data-show-faces="false" data-share="true"></div><br/>
+                        <div class="g-plusone" data-size="medium" data-href="{% url 'history:article_view' news_article.id %}"></div>
                         <p>Tagged: {% for member in news_article.tagged_members.all %} 
                                 <a href="{% url 'member_resources:profile' member.uniqname %}">{{member}}</a>{% if news_article.tagged_members.count > 2 and not forloop.last %}, {% endif %}{% if news_article.tagged_members.count > 1 and forloop.revcounter == 2 %} and {% endif %}
                             {% endfor %}</p>

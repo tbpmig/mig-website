@@ -10,7 +10,7 @@
 <meta name="description" content="The Michigan Gamma Chapter of Tau Beta Pi. Located at the University of Michigan, Ann Arbor.">
 <meta name="keywords" value="engineering, tbp, michigan, gamma, honor, society, honesty, integrity, mindset, tutoring,tau beta pi,michigan gamma,college, students, community service, organization, nonprofit">
 <meta name="google-site-verification" content="GPMiSSubLqeAEsylrSwQQA4Q1BZenn8TLTlXlN7qJmU" />
-
+<meta property="fb:admins" content="560687947">
 <!-- CSS Files -->
 {% load staticfiles %}
 
@@ -66,9 +66,20 @@ ga('create', 'UA-46746852-1', 'umich.edu');
 ga('send', 'pageview');
 
 </script>
+{% block og_props %}
+
+{% endblock %}
 </head>
  
 <body>
+    <div id="fb-root"></div>
+<script>(function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+    fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
 <div class="container-fluid">
     <div class="foot-wrapper">
         <!--Header-->
@@ -139,8 +150,10 @@ ga('send', 'pageview');
     </div><!--/.nav-collapse -->
 </nav>
 <div id="page-header">
+<a href="{% url 'home' %}" style="text-decoration:none; color:inherit;"> 
 <img src="{% static 'TBP_Logo.png' %}" id="logo" alt="TBP Logo"> 
 <h1>Tau Beta Pi&#8211;Michigan Gamma</h1>
+</a>
 </div>
 <div class="clearfix hidden-lg"  ></div>
 <ul id="main-subnav" class="nav nav-tabs {% block subnav_class %} subnav-medium{%endblock%}">
@@ -254,7 +267,7 @@ ga('send', 'pageview');
             });
 </script>
 {% if prefix %}
-<script src="{% static 'js/addForm.js' %}"></script>
+<!--<script src="{% static 'js/addForm.js' %}"></script>
 <script type="text/javascript">
     $(function() {
          $('.add-row').click(function() {
@@ -275,8 +288,31 @@ ga('send', 'pageview');
     })
                 
 
+</script>-->
+<script src="{% static 'js/jquery.formset.js' %}"></script>
+<script type="text/javascript">
+    $(function() {
+        $('#dynForm tbody tr').formset({
+            prefix:'{{formset.prefix }}',
+            added:function(row){
+                {% for dp_id in dp_ids_dyn %}
+                console.log("#{{formset.prefix}}-"+row.index()+"-{{dp_id}}")
+                $("#id_{{formset.prefix}}-"+row.index()+"-{{dp_id}}").datepicker().on('changeDate',function(){
+                    $("#id_{{formset.prefix}}-"+row.index()+"-{{dp_id}}").datepicker('hide');
+                    });
+                {% endfor %}
+            }
+        });
+})
 </script>
 {% endif %}
+<script type="text/javascript">
+    (function() {
+        var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+        po.src = 'https://apis.google.com/js/platform.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+    })();
+</script>
 {% block js %}
 {% endblock %}
 {% block js_bottom %}

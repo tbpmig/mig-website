@@ -14,6 +14,9 @@
         {% if can_access_project_reports %}
             <li><a href="{% url 'member_resources:project_reports_list' %}">View Project Reports</a></li>
         {% endif %}
+        {% if can_create_nep %}
+            <li><a href="{% url 'member_resources:new_non_event_project' %}">Create New Non-Event Project and Report</a></li>
+        {% endif %}
             <li><a href="{% url 'member_resources:main_meeting_minutes' %}">View Meeting Minutes</a></li>
         </ul>
     </div>
