@@ -15,14 +15,14 @@
         <table class="table table-striped table-bordered table-autosort:0">
             <thead>
             <tr>
-                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by name">Name<br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
-                <th class="table-sortable:ignorecase table-filterable" title="click to sort by uniqname">Uniqname<br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by name">Name <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th class="table-sortable:ignorecase table-filterable" title="click to sort by uniqname">Uniqname <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
                 {%for req in active_reqs %}
-                <th class="table-sortable:numeric table-filterable" title="Click to sort by {{req}}">{{req}}</th>
+                <th class="table-sortable:numeric table-filterable" title="Click to sort by {{req}}">{{req}} <i class="fa fa-sort"> </i></th>
                 {% endfor %}
                 {% for distinction in distinctions_actives %}
-                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by completion">Has {{distinction}} status?</th>
-                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by is close">Is close?</th>
+                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by completion">Has {{distinction}} status? <i class="fa fa-sort"> </i></th>
+                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by is close">Is close? <i class="fa fa-sort"> </i></th>
                 {% endfor %}
             </tr>
         </thead>
@@ -54,14 +54,14 @@
         <table class="table table-striped table-bordered table-autosort:0">
             <thead>
             <tr>
-                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by name">Name<br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
-                <th class="table-sortable:ignorecase table-filterable" title="click to sort by uniqname">Uniqname<br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by name">Name <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th class="table-sortable:ignorecase table-filterable" title="click to sort by uniqname">Uniqname <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
                 {%for req in ugrad_electees_reqs %}
-                <th class="table-sortable:numeric table-filterable" title="Click to sort by {{req}}">{{req}}</th>
+                <th class="table-sortable:numeric table-filterable" title="Click to sort by {{req}}">{{req}} <i class="fa fa-sort"> </i></th>
                 {% endfor %}
                 {% for distinction in distinction_ugrad_el %}
-                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by completion">Has {{distinction}} status?</th>
-                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by is close">Is close?</th>
+                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by completion">Has {{distinction}} status? <i class="fa fa-sort"> </i></th>
+                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by is close">Is close? <i class="fa fa-sort"> </i></th>
                 {% endfor %}
             </tr>
             </thead>
@@ -87,14 +87,14 @@
         <table class="table table-striped table-bordered table-autosort:0">
             <thead>
             <tr>
-                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by name">Name<br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
-                <th class="table-sortable:ignorecase table-filterable" title="click to sort by uniqname">Uniqname<br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by name">Name <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th class="table-sortable:ignorecase table-filterable" title="click to sort by uniqname">Uniqname <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
                 {%for req in grad_electees_reqs %}
-                <th class="table-sortable:numeric table-filterable" title="Click to sort by {{req}}">{{req}}</th>
+                <th class="table-sortable:numeric table-filterable" title="Click to sort by {{req}}">{{req}} <i class="fa fa-sort"> </i></th>
                 {% endfor %}
                 {% for distinction in distinction_grad_el %}
-                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by completion">Has {{distinction}} status?</th>
-                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by is close">Is close?</th>
+                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by completion">Has {{distinction}} status? <i class="fa fa-sort"> </i></th>
+                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by is close">Is close? <i class="fa fa-sort"> </i></th>
                 {% endfor %}
             </tr>
             </thead>

@@ -8,15 +8,17 @@ from django.shortcuts import  get_object_or_404,redirect
 from django.template import RequestContext, loader
 
 from history.forms  import ArticleForm, WebArticleForm,ProjectDescriptionForm,ProjectPhotoFormset
-from history.models import WebsiteArticle, Publication,ProjectReportHeader,ProjectReport
+from history.models import WebsiteArticle, Publication,ProjectReportHeader,ProjectReport,CompiledProjectReport
 from mig_main.default_values import get_current_term
 from mig_main.models import AcademicTerm
-from mig_main.utility import Permissions, get_previous_page,get_message_dict
+from mig_main.utility import Permissions, get_previous_page,get_message_dict,get_previous_full_term
 from event_cal.models import EventPhoto
 def get_permissions(user):
     permission_dict={
         'can_post':Permissions.can_post_web_article(user),
         'post_button':Permissions.can_upload_articles(user),
+        'is_member':hasattr(user,'userprofile') and user.userprofile.is_member(),
+        'can_process_project_reports': Permissions.can_process_project_reports(user),
         }
     return permission_dict
 def get_common_context(request):
@@ -90,6 +92,22 @@ def get_printed_documents(request,document_type,document_name):
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
+def get_project_reports(request):
+    if not hasattr(request.user,'userprofile')  or not request.user.userprofile.is_member():
+        raise PermissionDenied()
+    request.session['current_page']=request.path
+    documents   =CompiledProjectReport.objects.filter(is_full=True).order_by('term')
+    subnav='project_reports'
+    template = loader.get_template('history/compiled_project_reports.html')
+    context_dict = {
+        'reports':documents,
+        'page_title':'Compiled Project Reports from Past Semesters',
+        'subnav':subnav,
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
 def upload_article(request):
     if not Permissions.can_upload_articles(request.user):
         raise PermissionDenied()
@@ -125,9 +143,53 @@ def cornerstone_view(request):
 def alumninews_view(request):
     return get_printed_documents(request,'AN','Alumni Newsletter')
 
+def process_project_report_compilation(request):
+    if not Permissions.can_process_project_reports(request.user):
+        raise PermissionDenied()
+    current_term = get_current_term()
+    if current_term.semester_type.name=='Summer':
+        #Likely the whole one
+        winter_term = get_previous_full_term(current_term)
+        fall_term = None
+    elif current_term.semester_type.name=='Fall':
+        #either because summer term may be skipped to ease book keeping
+        winter_term = get_previous_full_term(current_term)
+        fall_term = current_term
+    else:
+        #could conceivably be either
+        winter_term = current_term
+        fall_term = get_previous_full_term(current_term)
+
+    pr_fall=None
+    pr_winter=None
+    if fall_term:
+        prs=ProjectReportHeader.objects.filter(terms=fall_term).distinct()
+        if prs.exists():
+            pr_fall=prs[0]
+
+    if winter_term:
+        prs=ProjectReportHeader.objects.filter(terms=winter_term).distinct()
+        if prs.exists():
+            pr_winter=prs[0]
+    template = loader.get_template('history/project_report_compilation_manager.html')
+    context_dict = {
+        'fall_term':fall_term,
+        'winter_term':winter_term,
+        'pr_fall':pr_fall,
+        'pr_winter':pr_winter,
+        'subnav':'project_reports',
+        'base':'history/base_history.html',
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
+
 def start_project_report_compilation(request,term_id):
+    if not Permissions.can_process_project_reports(request.user):
+        raise PermissionDenied()
     term = get_object_or_404(AcademicTerm,id=term_id)
-    ProjectForm =modelform_factory(ProjectReportHeader)
+    ProjectForm =modelform_factory(ProjectReportHeader,exclude=('finished_processing','finished_photos','last_processed','last_photo'))
     pr = ProjectReportHeader.objects.filter(terms=term).distinct()
     if request.method=='POST':
         if pr.exists():
@@ -137,7 +199,7 @@ def start_project_report_compilation(request,term_id):
         if form.is_valid():
             instance=form.save()
             request.session['success_message'] = 'Project report metadata/header created/updates'
-            return redirect('history:process_project_reports',instance.id,0)
+            return redirect('history:process_project_report_compilation')
         else:
             request.session['error_message']='There were errors in your submission. Please correct'
     else:
@@ -162,7 +224,8 @@ def start_project_report_compilation(request,term_id):
     
 def process_project_reports(request,prh_id,pr_id):
     # double check permissions
-
+    if not Permissions.can_process_project_reports(request.user):
+        raise PermissionDenied()
     pr_header = get_object_or_404(ProjectReportHeader,id=prh_id)
     reports = pr_header.get_project_reports().order_by('target_audience','planning_start_date')
     #
@@ -183,9 +246,13 @@ def process_project_reports(request,prh_id,pr_id):
             request.session['success_message'] = 'Descriptions updated'
             pr.set_description(form.cleaned_data['description'])
             if next_index< reports.count():
+                pr_header.last_processed=reports[next_index].id
+                pr_header.save()
                 return redirect('history:process_project_reports',pr_header.id,reports[next_index].id)
             else:
-                return redirect('history:process_project_report_photos',pr_header.id,0)
+                pr_header.finished_processing=True
+                pr_header.save()
+                return redirect('history:process_project_report_compilation')
         else:
             request.session['error_message']='Submission Error(s). Please correct'
     else:
@@ -197,7 +264,7 @@ def process_project_reports(request,prh_id,pr_id):
         'has_files':False,
         'submit_name':'Confirm Project Description: '+pr.name,
         'form_title':'Create Project Reports: Project Descriptions',
-        'help_text':'This is step 2 of N. Please make updates to the project descriptions as necessary. A suggested description based on project leader submissions is pre-loaded below for:\nProject Name: %s\nTerm: %s\nCategory: %s\nPlanning Start: %s\nProject %d out of %d'%(pr.name,unicode(pr.term),pr.get_target_audience_display(),pr.planning_start_date,next_index,reports.count()),
+        'help_text':'This is step 2 of 4. Please make updates to the project descriptions as necessary. A suggested description based on project leader submissions is pre-loaded below for:\nProject Name: %s\nTerm: %s\nCategory: %s\nPlanning Start: %s\nProject %d out of %d'%(pr.name,unicode(pr.term),pr.get_target_audience_display(),pr.planning_start_date,next_index,reports.count()),
         'base':'history/base_history.html',
         }
     context_dict.update(get_common_context(request))
@@ -208,6 +275,8 @@ def process_project_reports(request,prh_id,pr_id):
 def process_project_report_photos(request,prh_id,pr_id):
     # double check permissions
 
+    if not Permissions.can_process_project_reports(request.user):
+        raise PermissionDenied()
     pr_header = get_object_or_404(ProjectReportHeader,id=prh_id)
     reports = pr_header.get_project_reports().order_by('target_audience','planning_start_date')
     #
@@ -231,8 +300,12 @@ def process_project_report_photos(request,prh_id,pr_id):
             next_index +=1
             photo_query = EventPhoto.objects.filter((Q(event__project_report = pr)&Q(project_report=None))|Q(project_report=pr))
         else:
-            return redirect('/')
+            pr_header.finished_photos=True
+            pr_header.save()
+            return redirect('history:process_project_report_compilation')
     if needs_redirect:
+        pr_header.last_photo=pr.id
+        pr_header.save()
         return redirect('history:process_project_report_photos',pr_header.id,pr.id)
 
     if request.method=='POST':
@@ -241,9 +314,13 @@ def process_project_report_photos(request,prh_id,pr_id):
             formset.save()
             request.session['success_message'] = 'Photos updated'
             if next_index< reports.count():
+                pr_header.last_photo=reports[next_index].id
+                pr_header.save()
                 return redirect('history:process_project_report_photos',pr_header.id,reports[next_index].id)
             else:
-                return redirect('/')
+                pr_header.finished_photos=True
+                pr_header.save()
+                return redirect('history:process_project_report_compilation')
         else:
             request.session['error_message']='Submission Error(s). Please correct'
     else:
@@ -256,10 +333,17 @@ def process_project_report_photos(request,prh_id,pr_id):
         'submit_name':'Confirm Photos: '+pr.name,
         'can_add':True,
         'form_title':'Create Project Reports: Project Photos',
-        'help_text':'This is step 3 of N. Please make updates to the project descriptions as necessary. A suggested description based on project leader submissions is pre-loaded below for:\nProject Name: %s\nTerm: %s\nCategory: %s\nPlanning Start: %s\nProject %d out of %d'%(pr.name,unicode(pr.term),pr.get_target_audience_display(),pr.planning_start_date,next_index,reports.count()),
+        'help_text':'This is step 3 of 4. Please make updates to the project descriptions as necessary. A suggested description based on project leader submissions is pre-loaded below for:\nProject Name: %s\nTerm: %s\nCategory: %s\nPlanning Start: %s\nProject %d out of %d'%(pr.name,unicode(pr.term),pr.get_target_audience_display(),pr.planning_start_date,next_index,reports.count()),
         'base':'history/base_history.html',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
+def compile_project_reports(request,prh_id):
+    if not Permissions.can_process_project_reports(request.user):
+        raise PermissionDenied()
+    prh = get_object_or_404(ProjectReportHeader,id=prh_id)
+    prh.write_tex_files()
+    return redirect('history:process_project_report_compilation')

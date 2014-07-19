@@ -1,6 +1,9 @@
+import os
+import subprocess
 from decimal import Decimal
 from numpy import std,median,mean
 
+from django.core.files import File
 from django.db import models
 from django.core.validators import  MinValueValidator
 from localflavor.us.models import PhoneNumberField
@@ -8,7 +11,7 @@ from stdimage import StdImageField
 
 from mig_main.pdf_field import ContentTypeRestrictedFileField,pdf_types
 from mig_main.default_values import get_current_term
-from mig_main.models import MemberProfile,UserProfile
+from mig_main.models import MemberProfile,UserProfile,OfficerPosition
 
 from event_cal.models import EventShift,EventPhoto
 from requirements.models import ProgressItem
@@ -120,6 +123,20 @@ class Award(models.Model):
     comment = models.TextField(blank=True)
     def __unicode__(self):
         return unicode(self.award_type)+' for '+unicode(self.term)+': '+unicode(self.recipient)
+class CompiledProjectReport(models.Model):
+    term = models.ForeignKey('mig_main.AcademicTerm')
+    is_full = models.BooleanField(default=False)
+    associated_officer = models.ForeignKey('mig_main.OfficerPosition')
+    pdf_file = ContentTypeRestrictedFileField(
+            upload_to='compiled_project_reports',
+            content_types=pdf_types,
+            max_upload_size=214958080,
+    )
+    def __unicode__(self):
+        if self.is_full:
+            return 'Full Project Report for '+unicode(self.term.year)
+        else:
+            return unicode(self.term)+' Project Reports for '+unicode(self.associated_officer)
 
 class NonEventProject(models.Model):
     name            = models.CharField(max_length=50)
@@ -225,6 +242,13 @@ class ProjectReport(models.Model):
             for nep in neps:
                 nep.description = description
                 nep.save()
+
+    def get_associated_officer(self):
+        has_events = self.calendarevent_set.count()>0
+        if has_events:
+            return self.calendarevent_set.all()[0].assoc_officer
+        else:
+            return self.noneventproject_set.all()[0].assoc_officer
     def write_tex_file(self):
         f = open('/tmp/project_report%d.tex'%(self.id),'w')
         f.write(self.print_to_tex().encode('utf8'))
@@ -544,6 +568,10 @@ class ProjectReportHeader(models.Model):
     preparer_title = models.CharField(max_length = 128)
     terms = models.ManyToManyField('mig_main.AcademicTerm')
 
+    finished_processing=models.BooleanField(default=False)
+    finished_photos=models.BooleanField(default=False)
+    last_processed=models.PositiveIntegerField(default=0)
+    last_photo=models.PositiveIntegerField(default=0)
     def get_project_reports(self):
         return ProjectReport.objects.filter(term__in = self.terms.all())
 
@@ -555,7 +583,7 @@ class ProjectReportHeader(models.Model):
         output_string = r'''\documentclass{ProjectReport}
         \usepackage{placeins}
         \usepackage{fontspec}
-        \setmainfont[Ligatures=TeX]{Garamond}
+        \setmainfont[Ligatures=TeX]{Linux Libertine O}
         \graphicspath{{/srv/www/migweb/media/}}
         \begin{document}
         \newpage
@@ -592,14 +620,92 @@ class ProjectReportHeader(models.Model):
                         \newevenside
 '''
         previous_category = 'None'
+        officer_files = {}
+        officer_sheet_header=r'''\documentclass{ProjectReport}
+        \usepackage{placeins}
+        \usepackage{fontspec}
+        \setmainfont[Ligatures=TeX]{Linux Libertine O}
+        \graphicspath{{/srv/www/migweb/media/}}
+        \begin{document}
+        \begin{titlepage}
+        \begin{center}
+        \textsc{\LARGE Tau Beta Pi Project Report Summary}\\[1.5cm]
+        \textsc{\Large %(term)s}\\[.5cm]
+        \rule{\linewidth}{0.5mm}\\[.4cm]
+        {\huge\bfseries %(officer)s}\\[.4cm]
+        \rule{\linewidth}{0.5mm}\\[1.5cm]
+        This document contains the project reports related to your officer position. Please keep them as reference as and recommendation.\\
+        \vfill
+        {\large Last revised:}\\
+        {\large \today}
+        \end{center}
+        \end{titlepage}
+
+        '''
         for project in self.get_project_reports().order_by('target_audience','planning_start_date').distinct():
             if not previous_category == project.get_target_audience_display():
                 previous_category = project.get_target_audience_display()
                 output_string+=r'''\part{%s}
                 '''%(previous_category)
             project.write_tex_file()
+            if not project.get_associated_officer() in officer_files:
+                officer_files[project.get_associated_officer()]={}
+            if not project.term in officer_files[project.get_associated_officer()]:
+                officer_files[project.get_associated_officer()][project.term]=open('/tmp/officer_proj_report_%s_%s.tex'%(project.get_associated_officer().id,project.term.id),'w')
+                header_string =officer_sheet_header%{'officer':project.get_associated_officer().name,'term':unicode(project.term)}
+                officer_files[project.get_associated_officer()][project.term].write(header_string.encode('utf8'))
+            officer_files[project.get_associated_officer()][project.term].write((r'''\input{/tmp/project_report%d.tex}%% %s
+            \FloatBarrier\newpage\clearpage'''%(project.id,project.name)).encode('utf8'))
+
             output_string+=r'''\input{/tmp/project_report%d.tex}%% %s
             \FloatBarrier\newpage\clearpage'''%(project.id,project.name)
         output_string+=r'''\end{document}'''
+        cmd = 'xelatex -interaction=nonstopmode %(file_name)s'
+        current_dir = os.getcwd()
+        os.chdir('/tmp/')
+        for officer in officer_files:
+            for term in officer_files[officer]:
+                officer_files[officer][term].write(r'''\end{document}'''.encode('utf8'))
+                officer_files[officer][term].close()
+                new_cmd =cmd%{'file_name':'/tmp/officer_proj_report_%d_%d.tex'%(officer.id,term.id)}
+                print 'executing: '+new_cmd
+                p = subprocess.Popen(new_cmd.split(' '),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                p.communicate()
+                if p.returncode==0:
+                    p = subprocess.Popen(new_cmd.split(' '),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                    p.communicate()
+                    print 'officer compilation successful'
+                    if CompiledProjectReport.objects.filter(term=term,associated_officer=officer).exists():
+                        c=CompiledProjectReport.objects.get(term=term,associated_officer=officer)
+                    else:
+                        c = CompiledProjectReport(term = term,associated_officer=officer,is_full=False)
+                        c.save()
+                    new_f = open('./officer_proj_report_%d_%d.pdf'%(officer.id,term.id),'r')
+                    c.pdf_file.save('compiled_report_%d.pdf'%c.id,File(new_f),True)
+
         f.write(output_string.encode('utf8'))
         f.close()
+        new_cmd = cmd%{'file_name':'/tmp/Project_Report_Final_%d.tex'%(self.id)}
+        p = subprocess.Popen(new_cmd.split(' '),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        p.communicate()
+        if p.returncode==0:
+            p = subprocess.Popen(new_cmd.split(' '),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            p.communicate()
+            print 'full compilation successful'
+            if CompiledProjectReport.objects.filter(term=max(self.terms.all()),is_full=True).exists():
+                c = CompiledProjectReport.objects.get(term=max(self.terms.all()),is_full=True)
+            else:
+                c = CompiledProjectReport(term=max(self.terms.all()),is_full=True,associated_officer=OfficerPosition.objects.get(name='Secretary'))
+                c.save()
+            new_f = open('./Project_Report_Final_%d.pdf'%(self.id),'r')
+            c.pdf_file.save('compiled_report_%d.pdf'%c.id,File(new_f),True)
+        os.chdir(current_dir)
+
+class OfficerPositionRelationship(models.Model):
+    predecessor = models.ForeignKey('mig_main.OfficerPosition',related_name='officer_relationship_predecessor')
+    successor = models.ForeignKey('mig_main.OfficerPosition', related_name='officer_relationship_successor')
+    effective_term = models.ForeignKey('mig_main.AcademicTerm')
+    description = models.TextField()
+
+    def __unicode__(self):
+        return unicode(self.predecessor)+'->'+unicode(self.successor)+' in '+unicode(self.effective_term)

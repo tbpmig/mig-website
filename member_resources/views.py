@@ -5,6 +5,8 @@ import copy
 import re
 import logging
 
+from django.contrib.auth.models import User
+
 from django import forms
 from django.http import HttpResponse, Http404 #HttpResponseRedirect
 from django.shortcuts import  get_object_or_404
@@ -19,14 +21,14 @@ from django.core.urlresolvers import reverse
 from corporate.views import update_resume_zips
 from electees.models import ElecteeGroup, electee_stopped_electing, EducationalBackgroundForm
 from event_cal.models import CalendarEvent, MeetingSignInUserData,get_pending_events,get_events_w_o_reports
-from history.models import Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant
+from history.models import Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport
 from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet
 from member_resources.forms import MeetingMinutesForm,ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditFormSet,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
 from migweb.context_processors import profile_setup
 from mig_main.default_values import get_current_term
 from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,TBPraise,PREFERENCES,get_members,get_actives,get_electees
-from mig_main.utility import  Permissions, get_previous_page,get_next_term, get_next_full_term,get_current_event_leaders,get_current_officers,get_current_group_leaders,get_message_dict,UnicodeWriter
+from mig_main.utility import  Permissions, get_previous_page,get_next_term, get_next_full_term,get_current_event_leaders,get_current_officers,get_current_group_leaders,get_message_dict,UnicodeWriter,get_officer_positions_predecessors
 from outreach.models import TutoringRecord
 from requirements.models import DistinctionType, Requirement, ProgressItem, EventCategory
 
@@ -1057,20 +1059,35 @@ def upload_minutes(request):
     return HttpResponse(template.render(context))
 
 def project_reports_list(request):
-    if not Permissions.can_access_project_reports(request.user):
+    tmp_user = request.user
+    if not Permissions.can_access_project_reports(tmp_user):
         request.session['error_message']='You are not authorized to view/edit project reports'
         return redirect('member_resources:index')
-    project_reports = Permissions.project_reports_you_can_view(request.user)
+    project_reports = Permissions.project_reports_you_can_view(tmp_user)
     
     events_w_o_reports = None
     pending_events=None
-    if Permissions.can_view_missing_reports(request.user):
+    old_reports = None
+    if Permissions.can_view_missing_reports(tmp_user):
         events_w_o_reports = get_events_w_o_reports(get_current_term())
-    if Permissions.can_view_pending_events(request.user):
+    if Permissions.can_view_pending_events(tmp_user):
         pending_events=get_pending_events()
+    if tmp_user.is_superuser:
+        old_reports=CompiledProjectReport.objects.filter(is_full=False)
+    else:
+        current_positions = get_officer_positions_predecessors(Permissions.get_current_officer_positions_positions(tmp_user))
+        #Handle renamed officers
+        old_reports = CompiledProjectReport.objects.none()
+        for officer in current_positions:
+            limit_term = current_positions[officer]
+            if limit_term < AcademicTerm.objects.get(semester_type__name='Winter',year=2013):                      
+                limit_term=get_next_full_term(limit_term)
+            old_reports|=CompiledProjectReport.objects.filter(is_full=False,associated_officer=officer,term__lte=limit_term)
+
     template = loader.get_template('member_resources/list_project_reports.html')
     context_dict = {
         'project_reports':project_reports,
+        'old_reports':old_reports,
         'pending_events':pending_events,
         'events_w_o_reports':events_w_o_reports,
         'subnav':'history',

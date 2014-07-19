@@ -4,4 +4,7 @@
 <li {% if subnav and subnav == 'news' %}class="active"{%endif%}><a href="{% url 'history:index' %}">Chapter News</a></li>
 <li {% if subnav and subnav == 'cornerstone' %}class="active"{% endif%}><a href="{% url 'history:cornerstone_view' %}">The Cornerstone</a></li>
 <li {% if subnav and subnav == 'alumni_news' %}class="active"{% endif %}><a href="{% url 'history:alumninews_view' %}">Alumni Newsletters</a></li>
+{% if is_member %}
+<li {% if subnav and subnav == 'project_reports' %}class="active"{% endif %}><a href="{% url 'history:get_project_reports' %}">Chapter Project Reports</a></li>
+{% endif %}
 {% endblock %}

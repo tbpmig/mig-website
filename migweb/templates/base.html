@@ -306,6 +306,11 @@ ga('send', 'pageview');
 })
 </script>
 {% endif %}
+{% block js %}
+{% endblock %}
+{% block js_bottom %}
+{% endblock %}
+<!-- Place this tag after the last +1 button tag. It won't work if you place this before other JS either... -->
 <script type="text/javascript">
     (function() {
         var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
@@ -313,7 +318,3 @@ ga('send', 'pageview');
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
     })();
 </script>
-{% block js %}
-{% endblock %}
-{% block js_bottom %}
-{% endblock %}

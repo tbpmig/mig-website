@@ -1,5 +1,5 @@
 from django.contrib import admin
-from history.models import Publication, Officer, WebsiteArticle, ProjectReport, MeetingMinutes, Distinction, GoverningDocumentType, GoverningDocument,AwardType,Award,NonEventProject
+from history.models import Publication, Officer, WebsiteArticle, ProjectReport, MeetingMinutes, Distinction, GoverningDocumentType, GoverningDocument,AwardType,Award,NonEventProject,CompiledProjectReport,OfficerPositionRelationship,ProjectReportHeader
 
 
 admin.site.register(Publication)
@@ -13,3 +13,6 @@ admin.site.register(GoverningDocument)
 admin.site.register(AwardType)
 admin.site.register(Award)
 admin.site.register(NonEventProject)
+admin.site.register(CompiledProjectReport)
+admin.site.register(OfficerPositionRelationship)
+admin.site.register(ProjectReportHeader)

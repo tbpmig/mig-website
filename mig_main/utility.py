@@ -10,10 +10,46 @@ from electees.models import ElecteeGroup
 from event_cal.models import CalendarEvent
 from mig_main.models import AcademicTerm, OfficerPosition, MemberProfile,get_members,get_actives,get_electees
 from requirements.models import SemesterType
-from history.models import Officer,ProjectReport
+from history.models import Officer,ProjectReport,OfficerPositionRelationship
 from member_resources.models import ProjectLeaderList
 
 from mig_main.default_values import get_current_term
+
+def get_officer_position_predecessor_helper(officer,term,officer_set):
+    links = officer.officer_relationship_successor.exclude(id__in=officer_set,effective_term__gt=term).order_by('-effective_term')
+    if links.exists():
+        active_links = links.filter(effective_term=links[0].effective_term)
+    else:
+        active_links = links
+    officer_set|=active_links
+    for link in active_links:
+        officer_set|=get_officer_position_predecessor_helper(link.predecessor,get_previous_full_term(link.effective_term),officer_set)
+    return officer_set
+def get_officer_positions_predecessors(officers,term=None):
+    if term is None:
+        term = get_current_term()
+    officer_set=OfficerPositionRelationship.objects.none()
+    for officer in officers:
+        officer_set|=get_officer_position_predecessor_helper(officer,term,officer_set)
+    officer_trace={}
+    for officer in officers:
+        officer_trace[officer]=term
+    for rel in officer_set.distinct():
+        if rel.predecessor in officer_trace:
+            officer_trace[rel.predecessor]=max(rel.effective_term,officer_trace[rel.predecessor])
+        else:
+            officer_trace[rel.predecessor]=rel.effective_term
+    return officer_trace
+#    previous_relationships = officer.
+#    if officer in officer_set:
+#        return officer_set
+#    officer_set=officer_set|officer
+#    officer_predecessors = OfficerPosition
+#    return get_officer_position_predecessor_helper(
+#def get_officer_positions_predecessors(officers):
+#    officer_relationships = set()
+#    for officer in officers:
+#        if officer not in officer_set:
 
 def get_previous_full_term(term):
     new_type = None
@@ -179,7 +215,7 @@ class Permissions:
             return True
         return False
     @classmethod
-    def get_current_officer_positions(cls,user):
+    def get_previous_officer_positions(cls,user):
         profile = cls.get_profile(user)
         if not profile:
             return Officer.objects.none()
@@ -188,7 +224,11 @@ class Permissions:
         return positions
     
     @classmethod
-    def get_previous_officer_positions(cls,user):
+    def get_current_officer_positions_positions(cls,user):
+        return OfficerPosition.objects.filter(officer__in=cls.get_current_officer_positions(user)).distinct()
+    
+    @classmethod
+    def get_current_officer_positions(cls,user):
         profile = cls.get_profile(user)
         if not profile:
             return Officer.objects.none()
@@ -459,6 +499,18 @@ class Permissions:
     def can_change_grad_electee_requirements(cls,user):
         return cls.can_manage_electee_progress(user)
 
+    @classmethod
+    def can_process_project_reports(cls,user):
+        if user.is_superuser:
+            return True
+        current_positions = cls.get_current_officer_positions(user)
+        previous_positions=cls.get_previous_officer_positions(user)
+        query = Q(position__name='Secretary')
+        if current_positions.filter(query).exists():
+            return True
+        if previous_positions.filter(query).exists():
+            return True
+        return False
     @classmethod
     def can_change_ugrad_electee_requirements(cls,user):
         if user.is_superuser:
