@@ -1,8 +1,9 @@
 from django.db.models import Count
 
-from history.models import Distinction
+from event_cal.models import CalendarEvent
+from history.models import Distinction,Officer
 from mig_main.default_values import get_current_term
-from mig_main.models import MemberProfile,Major,Status,Standing,AcademicTerm
+from mig_main.models import MemberProfile,Major,Status,Standing,AcademicTerm,ShirtSize,TBPChapter,ALUM_MAIL_FREQ_CHOICES,GENDER_CHOICES
 from mig_main.utility import get_previous_full_term
 from requirements.models import ProgressItem,DistinctionType,SemesterType
 
@@ -46,21 +47,26 @@ def get_distribution(cls,**kwargs):
     return cls.objects.filter(memberprofile__in=members).annotate(num_members=Count('memberprofile'))
 
 def get_major_distribution(**kwargs):
-    return get_distribution(Major,**kwargs)
+    return get_distribution(Major,**kwargs).values('name','acronym','num_members')
 
 def get_gender_distribution(**kwargs):
     members = get_members(**kwargs)
-    genders= {}
-    genders['Male']=members.filter(gender='M').count()
-    genders['Female']=members.filter(gender='F').count()
-    genders['Other']=members.filter(gender__contains='O').count()
+    genders= [{'name':gender[1],'num_members':members.filter(gender=gender[0]).distinct().count()} for gender in GENDER_CHOICES]
     return genders
 
+def get_alum_mail_pref_distribution(**kwargs):
+    members = get_members(**kwargs)
+    prefs= [{'name':pref[1],'num_members':members.filter(alum_mail_freq=pref[0]).distinct().count()} for pref in ALUM_MAIL_FREQ_CHOICES]
+    return prefs
+def get_meeting_interest_distribution(**kwargs):
+    members = get_members(**kwargs)
+    prefs= [{'name':pref,'num_members':members.filter(meeting_speak=pref).distinct().count()} for pref in [True,False]]
+    return prefs
 def get_status_distribution(**kwargs):
-    return get_distribution(Status,**kwargs)
+    return get_distribution(Status,**kwargs).values('name','num_members')
 
 def get_standing_distribution(**kwargs):
-    return get_distribution(Standing,**kwargs)
+    return get_distribution(Standing,**kwargs).values('name','num_members')
 
 def get_distinction_distribution(**kwargs):
     term = kwargs.pop('term',None)
@@ -69,12 +75,43 @@ def get_distinction_distribution(**kwargs):
     if term:
         distinctions=distinctions.filter(term=term)
         
-    return DistinctionType.objects.filter(distinction__in=distinctions).annotate(num_members=Count('distinction'))
+    return DistinctionType.objects.filter(distinction__in=distinctions).annotate(num_members=Count('distinction')).values('name','num_members')
+
+def get_event_led_distribution(**kwargs):
+    term=kwargs.pop('term',None)
+    output = []
+    members=get_members(**kwargs)
+    if term:
+        events = CalendarEvent.objects.filter(term=term)
+    else:
+        events = CalendarEvent.objects.all()
+    num_mem=members.count()
+    num_led = members.filter(event_leader__in=events).distinct().count()
+    output.append({'name':True,'num_members':num_led})
+    output.append({'name':False,'num_members':num_mem-num_led})
+    return output
+
+def get_was_officer_distribution(**kwargs):
+    term=kwargs.pop('term',None)
+    output =[]
+    members=get_members(**kwargs)
+    if term:
+        officers = Officer.objects.filter(term=term)
+    else:
+        officers = Officer.objects.all()
+    num_mem=members.count()
+    num_yes = members.filter(officer__in=officers).distinct().count()
+    output.append({'name':True,'num_members':num_yes})
+    output.append({'name':False,'num_members':num_mem-num_yes})
+    return output
+
+def get_shirt_size_distribution(**kwargs):
+    return get_distribution(ShirtSize,**kwargs).values('name','acronym','num_members')
+def get_init_chapter_distribution(**kwargs):
+    return [{'name':chap.state+'-'+chap.letter,'num_members':chap.num_members} for chap in get_distribution(TBPChapter,**kwargs)]
 
 def get_year_when_join_distribution(**kwargs):
-    distribution = {'sophomore':0,'junior':0,'senior':0}
-    kwargs['include_grads']=False
-    kwargs['include_ugrads']=True
+    distribution = {}
     
     members=get_members(**kwargs)
     for member in members:
@@ -89,11 +126,10 @@ def get_year_when_join_distribution(**kwargs):
         year_diff = member.expect_grad_date.year-member.init_term.year
         term_diff = grad_term-member.init_term.semester_type
         terms_diff = 3*year_diff+term_diff
-        if terms_diff >=0 and terms_diff<=2:
-            distribution['senior']+=1
-        elif terms_diff>2 and terms_diff<=5:
-            distribution['junior']+=1
-        elif terms_diff>5 and terms_diff<=8:
-            distribution['sophomore']+=1
-    return distribution
+        if terms_diff in distribution:
+            distribution[terms_diff]+=1
+        else:
+            distribution[terms_diff]=1
+    dist_list = [{'name':key,'num_members':value} for key,value in distribution.iteritems()]
+    return dist_list
 

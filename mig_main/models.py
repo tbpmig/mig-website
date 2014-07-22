@@ -39,6 +39,18 @@ PREFERENCES = [
         },
 ]
 
+ALUM_MAIL_FREQ_CHOICES = (
+    ("NO", "None"),
+    ("YR", "Yearly"),
+    ("SM",  "Semesterly"),
+    ("MO",  "Monthly"),
+    ("WK",  "Weekly (left on tbp.all)"),
+)
+GENDER_CHOICES = (
+    ("F", "Female"),
+    ("M", "Male"),
+    ("O", "Other/Prefer not to respond"),
+)
 # homepage models
 class SlideShowPhoto(models.Model):
     photo   = StdImageField(upload_to='home_page_photos',thumbnail_size=(1050,790,True))
@@ -113,6 +125,7 @@ class OfficerPosition(models.Model):
     description     = models.TextField()
     email           = models.EmailField(max_length=254)
     enabled         = models.BooleanField(default=True)
+    display_order   = models.PositiveIntegerField(default=0)
     def __unicode__(self):
         return self.name
 
@@ -221,13 +234,6 @@ class MemberProfile(UserProfile):
     
     
     #Alumni Mail Frequency Options
-    ALUM_MAIL_FREQ_CHOICES = (
-        ("NO", "None"),
-        ("YR", "Yearly"),
-        ("SM",  "Semesterly"),
-        ("MO",  "Monthly"),
-        ("WK",  "Weekly (left on tbp.all)"),
-    )
     
     #Preferred Email address
     MAIL_PREF_CHOICES = (
@@ -237,11 +243,6 @@ class MemberProfile(UserProfile):
     
     
     #Gender Choices
-    GENDER_CHOICES = (
-        ("F", "Female"),
-        ("M", "Male"),
-        ("O", "Other/Prefer not to respond"),
-    )
     
     #Actual Fields
     #Name Stuff

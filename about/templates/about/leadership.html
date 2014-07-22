@@ -32,9 +32,9 @@
                         {% for team_data in officers.officers|dictsort:"order" %}
                         <h3>{{team_data.name}}</h3>
                         {% if team_data.lead %}
-                        <p>Team Lead: {{team_data.lead}}</p>
+                        <p>Team Lead: {{team_data.lead_name}}</p>
                         {% endif %}
-                        {% for officer in team_data.officers|dictsort:"position.id" %}
+                        {% for officer in team_data.officers %}
                             {% if forloop.counter0|divisibleby:"4" %}
                             <div class="row">
                             {% endif %}
