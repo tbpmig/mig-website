@@ -15,8 +15,8 @@ from django.forms.models import modelformset_factory,modelform_factory
 from django.db.models import Min,Q
 from markdown import markdown
 
-from event_cal.forms import  EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm
-from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto
+from event_cal.forms import  EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset
+from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift
 from history.models import ProjectReport, Officer,NonEventProject
 from mig_main.default_values import get_current_term
 from mig_main.models import OfficerPosition,PREFERENCES,UserPreference,MemberProfile,UserProfile,get_members
@@ -592,6 +592,107 @@ def my_events(request):
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
 
+def create_electee_interviews(request):
+    if not Permissions.can_manage_electee_progress(request.user):
+        request.session['error_message']='You are not authorized to create electee interviews'
+        return get_previous_page(request,alternate='event_cal:list')
+    request.session['current_page']=request.path
+    EventForm = modelform_factory(CalendarEvent,exclude=('completed','google_event_id','project_report','event_type','members_only','needs_carpool','use_sign_in','allow_advance_sign_up','needs_facebook_event'))
+    EventForm.base_fields['assoc_officer'].queryset=OfficerPosition.objects.filter(enabled=True)
+    EventForm.base_fields['leaders'].queryset=get_members().order_by('last_name')
+    EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
+    active_type = EventCategory.objects.get(name='Conducted Interviews')
+    electee_type = EventCategory.objects.get(name='Attended Interviews')
+    if request.method == 'POST':
+        form = EventForm(request.POST,prefix='event')
+        formset = InterviewShiftFormset(request.POST,prefix='shift')
+        if form.is_valid() and formset.is_valid():
+            active_event = form.save(commit=False)
+            active_event.event_type=active_type
+            active_event.save()
+            active_id = active_event.id
+            form.save_m2m()
+            leaders = active_event.leaders.all()
+            electee_event = active_event
+            electee_event.pk=None
+            electee_event.save()
+            active_event=CalendarEvent.objects.get(id=active_id)
+            electee_event.event_type=electee_type
+            electee_event.leaders=leaders
+            electee_event.name+=' (Electees)'
+            active_event.name+=' (Actives)'
+            active_event.save()
+            electee_event.save()
+            for shift_form in formset:
+                if not shift_form.is_valid():
+                    continue
+                cleaned_data=shift_form.cleaned_data
+                shift_date=cleaned_data['date']
+                shifts_start = cleaned_data['start_time']
+                mid_time =datetime.combine(shift_date,shifts_start)
+                end_time = datetime.combine(shift_date,shift_form.cleaned_data['end_time']) 
+                while mid_time<end_time:
+                    start_time = mid_time
+                    mid_time +=timedelta(minutes=shift_form.cleaned_data['duration'])
+                    electee_shift = EventShift()
+                    electee_shift.start_time = start_time
+                    electee_shift.end_time = mid_time
+                    electee_shift.location = shift_form.cleaned_data['location']
+                    electee_shift.ugrads_only = shift_form.cleaned_data['ugrads_only']
+                    electee_shift.grads_only = shift_form.cleaned_data['grads_only']
+                    electee_shift.max_attendance = 1
+                    electee_shift.electees_only = True
+                    electee_shift.event = electee_event
+                    electee_shift.save()
+                    active_shift = electee_shift
+                    active_shift.pk = None
+                    active_shift.save()
+                    active_shift.max_attendance = 2
+                    active_shift.electees_only = False
+                    active_shift.actives_only = True
+                    active_shift.event = active_event
+                    active_shift.save()
+                    interview_shift = InterviewShift()
+                    interview_shift.interviewer_shift = active_shift
+                    interview_shift.interviewee_shift = electee_shift
+                    interview_shift.term = active_event.term
+                    interview_shift.save()
+                    
+                request.session['success_message']='Event created successfully'
+                add_event_to_gcal(active_event)
+                add_event_to_gcal(electee_event)
+                return redirect('event_cal:list')
+            else:
+                request.session['error_message']='There were errors in your shifts.'
+        else:
+            request.session['error_message']='There were errors in the submitted event, please correct the errors noted below.'
+    else:
+        form = EventForm(prefix='event')
+        formset= InterviewShiftFormset(prefix='shift')
+    dp_ids=['id_event-announce_start']
+    for count in range(len(formset)):
+        dp_ids.append('id_shift-%d-date'%(count))
+    template = loader.get_template('event_cal/create_event.html')
+    context_dict = {
+        'form':form,
+        'formset':formset,
+        'dp_ids':dp_ids,
+        'dp_ids_dyn':['date'],
+        'prefix':'shift',
+        'subnav':'admin',
+        'submit_name':'Create Interview Slots',
+        'form_title':'Electee Interview Slot Creation',
+        'help_text':'Create the interview slots. Just one per session, separate events will be automatically created for actives and electees.',
+        'shift_title':'Shift days and time windows',
+        'shift_help_text':'Shifts will be automatically created within the window you specify, for the duration you give. Note that if your duration does not line up with the end time, you may go longer than you planned.',
+        'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
+#        'date_prefixes':[{'id_shift':['start_time_0','end_time_0']}],
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context_dict['edit']=True
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))
 def create_event(request):
     if not Permissions.can_create_events(request.user):
         request.session['error_message']='You are not authorized to create events'
@@ -652,6 +753,11 @@ Note: This is an automated email. Please do not reply to it as responses are not
         'dp_ids_dyn':['start_time_0', 'end_time_0'],
         'prefix':'shift',
         'subnav':'admin',
+        'submit_name':'Create Event',
+        'form_title':'Create New Event',
+        'help_text':'',
+        'shift_title':'Event Shifts',
+        'shift_help_text':'',
         'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
 #        'date_prefixes':[{'id_shift':['start_time_0','end_time_0']}],
         }
@@ -770,6 +876,8 @@ def edit_event(request, event_id):
         'dp_ids_dyn':['start_time_0', 'end_time_0'],
         'prefix':'shift',
         'subnav':'list',
+        'submit_name':'Submit Changes',
+        'shift_title':'Edit Shifts',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -1236,6 +1344,8 @@ def calendar_admin(request):
         links.append({'link':reverse('event_cal:edit_announcements'),'name':'Edit Announcements'})
     if Permissions.can_add_event_photo(request.user):
         links.append({'link':reverse('event_cal:add_event_photo'),'name':'Add Event Photo'})
+    if Permissions.can_manage_electee_progress(request.user):
+        links.append({'link':reverse('event_cal:create_electee_interviews'),'name':'Schedule Electee Interview Slots'})
     context_dict = {
         'subnav':'admin',
         'page_title':'Calendar Administrative Functions',

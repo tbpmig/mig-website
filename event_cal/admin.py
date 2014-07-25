@@ -1,5 +1,5 @@
 from django.contrib import admin
-from event_cal.models import CalendarEvent, EventShift, GoogleCalendar, MeetingSignIn, MeetingSignInUserData, AnnouncementBlurb,CarpoolPerson, EventPhoto
+from event_cal.models import CalendarEvent, EventShift, GoogleCalendar, MeetingSignIn, MeetingSignInUserData, AnnouncementBlurb,CarpoolPerson, EventPhoto,InterviewShift
 
 class EventInLine(admin.TabularInline):
 	model = EventShift
@@ -17,3 +17,4 @@ admin.site.register(MeetingSignInUserData)
 admin.site.register(AnnouncementBlurb)
 admin.site.register(CarpoolPerson)
 admin.site.register(EventPhoto)
+admin.site.register(InterviewShift)

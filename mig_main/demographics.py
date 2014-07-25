@@ -1,3 +1,5 @@
+import numpy
+from matplotlib import pyplot
 from django.db.models import Count
 
 from event_cal.models import CalendarEvent
@@ -47,7 +49,7 @@ def get_distribution(cls,**kwargs):
     return cls.objects.filter(memberprofile__in=members).annotate(num_members=Count('memberprofile'))
 
 def get_major_distribution(**kwargs):
-    return get_distribution(Major,**kwargs).values('name','acronym','num_members')
+    return get_distribution(Major,**kwargs)
 
 def get_gender_distribution(**kwargs):
     members = get_members(**kwargs)
@@ -63,10 +65,10 @@ def get_meeting_interest_distribution(**kwargs):
     prefs= [{'name':pref,'num_members':members.filter(meeting_speak=pref).distinct().count()} for pref in [True,False]]
     return prefs
 def get_status_distribution(**kwargs):
-    return get_distribution(Status,**kwargs).values('name','num_members')
+    return get_distribution(Status,**kwargs)
 
 def get_standing_distribution(**kwargs):
-    return get_distribution(Standing,**kwargs).values('name','num_members')
+    return get_distribution(Standing,**kwargs)
 
 def get_distinction_distribution(**kwargs):
     term = kwargs.pop('term',None)
@@ -75,7 +77,7 @@ def get_distinction_distribution(**kwargs):
     if term:
         distinctions=distinctions.filter(term=term)
         
-    return DistinctionType.objects.filter(distinction__in=distinctions).annotate(num_members=Count('distinction')).values('name','num_members')
+    return DistinctionType.objects.filter(distinction__in=distinctions).annotate(num_members=Count('distinction'))
 
 def get_event_led_distribution(**kwargs):
     term=kwargs.pop('term',None)
@@ -106,9 +108,9 @@ def get_was_officer_distribution(**kwargs):
     return output
 
 def get_shirt_size_distribution(**kwargs):
-    return get_distribution(ShirtSize,**kwargs).values('name','acronym','num_members')
+    return get_distribution(ShirtSize,**kwargs)
 def get_init_chapter_distribution(**kwargs):
-    return [{'name':chap.state+'-'+chap.letter,'num_members':chap.num_members} for chap in get_distribution(TBPChapter,**kwargs)]
+    return get_distribution(TBPChapter,**kwargs)
 
 def get_year_when_join_distribution(**kwargs):
     distribution = {}
@@ -133,3 +135,5 @@ def get_year_when_join_distribution(**kwargs):
     dist_list = [{'name':key,'num_members':value} for key,value in distribution.iteritems()]
     return dist_list
 
+def get_area_chart_of_distribution(dist):
+    pass

@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import ModelForm,Form,ValidationError
-from django.forms.models import inlineformset_factory, BaseInlineFormSet
+from django.forms.models import inlineformset_factory, BaseInlineFormSet,BaseFormSet
 from django.forms.formsets import formset_factory#BaseInlineFormSet
 from django.contrib.admin import widgets
 from requirements.models import EventCategory
@@ -34,6 +34,33 @@ EventShiftEditFormset.form.base_fields['start_time']=forms.SplitDateTimeField(in
 EventShiftEditFormset.form.base_fields['end_time']=forms.SplitDateTimeField(input_time_formats=valid_time_formats)
 EventShiftEditFormset.form.base_fields['start_time'].label='Select a start date and time'
 EventShiftEditFormset.form.base_fields['end_time'].label='Select a end date and time'
+
+class InterviewShiftForm(Form):
+    date =forms.DateField()
+    start_time = forms.TimeField(input_formats=valid_time_formats)
+    end_time = forms.TimeField(input_formats=valid_time_formats)
+    duration = forms.IntegerField(min_value=1,label='Interview Shift Length (min)')
+    location = forms.CharField()
+    grads_only = forms.BooleanField(required=False,label="Undergrads only (interviewer and interviewee)",initial=False)
+    ugrads_only=  forms.BooleanField(required=False,label='Grads only (interviewer and interviewee)',initial=False)
+
+    def clean(self):
+        cleaned_data = super(InterviewShiftForm,self).clean()
+        grads_only = cleaned_data.get('grads_only')
+        ugrads_only = cleaned_data.get('ugrads_only')
+        start_time = cleaned_data.get('start_time')
+        end_time=cleaned_data.get('end_time')
+
+        if grads_only and ugrads_only:
+            raise forms.ValidationError('An interview cannot be both grads only and undergrads only')
+        if start_time and end_time:
+            if start_time>end_time:
+                raise forms.ValidationError('An interview window cannot end before it has begun')
+        return cleaned_data
+InterviewShiftFormset = formset_factory(InterviewShiftForm)
+
+
+
 class CompleteEventForm(Form):
     attendee = forms.ModelChoiceField(UserProfile.objects.all().order_by('last_name'),required=True)
     hours = forms.DecimalField(required=True)
