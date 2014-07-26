@@ -705,7 +705,7 @@ def download_grad_el_progress(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition']='attachment; filename="GradElecteeProgress.csv"'
 
-    writer = csv.writer(response)
+    writer = UnicodeWriter(response)
     distinctions_grad_el = DistinctionType.objects.filter(status_type__name="Electee").filter(standing_type__name="Graduate").distinct()
     query = Q()
     for distinction in distinctions_grad_el:
@@ -740,11 +740,14 @@ def download_grad_el_progress(request):
                 amount_req=amount_req+amount_req_temp
             has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
             close_dist = (amount_has/amount_req)>.75
-            dist_progress.append(has_dist)
-            dist_progress.append(close_dist)
+            dist_progress.append(unicode(has_dist))
+            dist_progress.append(unicode(close_dist))
         row["distinctions"]=dist_progress
         progress_rows_grad_el.append(row)
-    first_row = ['Name','uniqname']+grad_electees_reqs
+    grad_el_reqs_unicode = []
+    for req in grad_electees_reqs:
+        grad_el_reqs_unicode.append(unicode(req))
+    first_row = ['Name','uniqname']+grad_el_reqs_unicode
     for distinction in distinctions_grad_el.order_by('name'):
         first_row.append('Has '+unicode(distinction)+' status?')
         first_row.append('Is close ?')
@@ -752,7 +755,7 @@ def download_grad_el_progress(request):
     for row in progress_rows_grad_el:
         progress_temp = []
         for item in row["progress"]:
-            progress_temp.append(item['full'])
+            progress_temp.append(unicode(item['full']))
         row_to_write = [row["member"].get_full_name(),row["member"].uniqname]+progress_temp+row["distinctions"]
         writer.writerow(row_to_write)
 
@@ -764,7 +767,7 @@ def download_ugrad_el_progress(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition']='attachment; filename="UndergradElecteeProgress.csv"'
 
-    writer = csv.writer(response)
+    writer = UnicodeWriter(response)
     distinctions_ugrad_el = DistinctionType.objects.filter(status_type__name="Electee").filter(standing_type__name="Undergraduate").distinct()
     query = Q()
     for distinction in distinctions_ugrad_el:
@@ -799,11 +802,14 @@ def download_ugrad_el_progress(request):
                 amount_req=amount_req+amount_req_temp
             has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
             close_dist = (amount_has/amount_req)>.75
-            dist_progress.append(has_dist)
-            dist_progress.append(close_dist)
+            dist_progress.append(unicode(has_dist))
+            dist_progress.append(unicode(close_dist))
         row["distinctions"]=dist_progress
         progress_rows_ugrad_el.append(row)
-    first_row = ['Name',"uniqname"]+ugrad_electees_reqs
+    ugrad_el_reqs_unicode = []
+    for req in ugrad_electees_reqs:
+        ugrad_el_reqs_unicode.append(unicode(req))
+    first_row = ['Name','uniqname']+ugrad_el_reqs_unicode
     for distinction in distinctions_ugrad_el.order_by('name'):
         first_row.append('Has '+unicode(distinction)+' status?')
         first_row.append('Is close ?')
@@ -811,7 +817,7 @@ def download_ugrad_el_progress(request):
     for row in progress_rows_ugrad_el:
         progress_temp = []
         for item in row["progress"]:
-            progress_temp.append(item['full'])
+            progress_temp.append(unicode(item['full']))
         row_to_write = [row["member"].get_full_name(),row["member"].uniqname]+progress_temp+row["distinctions"]
         writer.writerow(row_to_write)
 
