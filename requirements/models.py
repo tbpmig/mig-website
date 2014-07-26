@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from django.core.validators import  RegexValidator,MinValueValidator
 
 # Create your models here.
@@ -66,6 +67,21 @@ class EventCategory(models.Model):
     name            = models.CharField(max_length=30)
     def __unicode__(self):
         return self.name
+    def get_children(self,query):
+        for child in self.eventcategory_set.all():
+            query|=child.get_children(query)
+        return query|Q(event_type=self)
+    @classmethod
+    def flatten_category_tree(cls):
+        category_array=[]
+        for parentless_category in cls.objects.filter(parent_category=None):
+            category_array+=parentless_category.flatten_tree(1)
+        return category_array
+    def flatten_tree(category,depth):
+        category_array=[{'category':category,'depth':depth}]
+        for child in category.eventcategory_set.all():
+            category_array+=child.flatten_tree(depth+1)
+        return category_array
 
 class MembershipAchievement(models.Model):
     distinction = models.ForeignKey(DistinctionType)

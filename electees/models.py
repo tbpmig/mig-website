@@ -19,16 +19,13 @@ def electee_stopped_electing(profile):
         group.members.remove(profile)
         group.save()
 
-def get_event_category_children(query,category):
-    for child in category.eventcategory_set.all():
-        query|=get_event_category_children(query,child)
-    return query|Q(event_type=category)
-
 def add_group_threshold_pts(grp):
     evts = CalendarEvent.objects.filter(completed=True,term=grp.term)
     num_members = grp.members.all().count()
-    service_query = get_event_category_children(Q(),EventCategory.objects.get(name='Service Hours'))
-    social_query = get_event_category_children(Q(),EventCategory.objects.get(name='Social Credits'))
+    service_cat = EventCategory.objects.get(name='Service Hours')
+    social_cat = EventCategory.objects.get(name='Social Credits')
+    service_query = service_cat.get_children(Q())
+    social_query = social_cat.get_children(Q())
 
     threshold_evts = grp.electeegroupevent_set.filter(~Q(related_event_id=None))
     threshold_evts.delete()

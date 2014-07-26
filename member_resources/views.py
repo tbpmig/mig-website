@@ -20,7 +20,7 @@ from django.core.urlresolvers import reverse
 
 from corporate.views import update_resume_zips
 from electees.models import ElecteeGroup, electee_stopped_electing, EducationalBackgroundForm
-from event_cal.models import CalendarEvent, MeetingSignInUserData,get_pending_events,get_events_w_o_reports
+from event_cal.models import CalendarEvent, MeetingSignInUserData
 from history.models import Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport
 from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet
 from member_resources.forms import MeetingMinutesForm,ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditFormSet,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet
@@ -1069,9 +1069,9 @@ def project_reports_list(request):
     pending_events=None
     old_reports = None
     if Permissions.can_view_missing_reports(tmp_user):
-        events_w_o_reports = get_events_w_o_reports(get_current_term())
+        events_w_o_reports = CalendarEvent.get_events_w_o_reports(get_current_term())
     if Permissions.can_view_pending_events(tmp_user):
-        pending_events=get_pending_events()
+        pending_events=CalendarEvent.get_pending_events()
     if tmp_user.is_superuser:
         old_reports=CompiledProjectReport.objects.filter(is_full=False)
     else:

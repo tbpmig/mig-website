@@ -3,6 +3,7 @@ from datetime import date
 
 from django.db.models import Q
 from django.shortcuts import redirect
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 
 
@@ -259,6 +260,15 @@ class Permissions:
         if current_positions.filter(query).exists():
             return True
         else:
+            return False
+    @classmethod
+    def can_edit_event(cls,event,user):
+        try:
+            if hasattr(user,'userprofile') and user.userprofile.memberprofile in event.leaders.all():
+                return True
+            else:
+                return cls.can_delete_events(user)
+        except ObjectDoesNotExist:
             return False
     @classmethod
     def can_update_mindset_materials(cls,user):

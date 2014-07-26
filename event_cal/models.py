@@ -1,24 +1,15 @@
 from datetime import date,timedelta
+from markdown import markdown
 
 from django.db import models
-from django.db.models import Max,Min
+from django.db.models import Max,Min,Q
 from django.utils import timezone
+from django.utils.encoding import force_unicode
 from stdimage import StdImageField
 
+from event_cal.gcal_functions import get_credentials,get_authorized_http,get_service
 from mig_main.default_values import get_current_term
 from requirements.models import Requirement
-def get_pending_events():
-    """
-    Finds all events where all the shifts have passed but the event is not marked as completed yet.
-    """
-    now = timezone.localtime(timezone.now())
-    return CalendarEvent.objects.annotate(latest_shift=Max('eventshift__end_time')).filter(latest_shift__lte=now,completed=False)
-def get_events_w_o_reports(term):
-    """
-    Finds all events for the given term that have been marked as completed but for which there is no project report.
-    """
-    events = CalendarEvent.objects.filter(term=term,project_report=None,completed=True)
-    return events
 # Create your models here.
 
 class GoogleCalendar(models.Model):
@@ -52,6 +43,42 @@ class CalendarEvent(models.Model):
     use_sign_in     = models.BooleanField(default=False)
     allow_advance_sign_up = models.BooleanField(default=True)
     needs_facebook_event = models.BooleanField(default=False)
+    
+    before_grace = timedelta(minutes=-30)
+    after_grace = timedelta(hours = 1)
+    @classmethod
+    def get_pending_events(cls):
+        """
+        Finds all events where all the shifts have passed but the event is not marked as completed yet.
+        """
+        now = timezone.localtime(timezone.now())
+        return cls.objects.annotate(latest_shift=Max('eventshift__end_time')).filter(latest_shift__lte=now,completed=False)
+    @classmethod
+    def get_events_w_o_reports(cls,term):
+        """
+        Finds all events for the given term that have been marked as completed but for which there is no project report.
+        """
+        events = cls.objects.filter(term=term,project_report=None,completed=True)
+        return events
+    @classmethod
+    def get_current_meeting_query(cls):
+        """
+        Gets the query that will find meetings currently happening.
+        """
+        now = timezone.localtime(timezone.now())
+        return Q(use_sign_in=True)&Q(eventshift__end_time__gte=(now-cls.after_grace))&Q(eventshift__start_time__lte=(now-cls.before_grace))
+    @classmethod
+    def get_upcoming_events(cls):
+        """
+        Returns all events that are upcoming or are happening now and have sign-in enabled.
+        """
+        now = timezone.localtime(timezone.now())
+        today=date.today()
+        non_meeting_query = Q(eventshift__start_time__gte=now)&Q(announce_start__lte=today)
+        meeting_query = cls.get_current_meeting_query()
+        not_officer_meeting = ~Q(event_type__name='Officer Meetings')
+        upcoming_events = cls.objects.filter((non_meeting_query|meeting_query)&not_officer_meeting).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
+        return upcoming_events
     def __unicode__(self):
         """
         For use in the admin or in times the event is interpreted as a string.
@@ -180,7 +207,74 @@ class CalendarEvent(models.Model):
             hours+=(end_time-start_time).seconds/3600.0
             count+=1
         return hours
+    def notify_publicity(self):
+        if self.needs_facebook_event:
+            publicity_officer = OfficerPosition.objects.filter(name='Publicity Officer')
+            if publicity_officer.exists():
+                publicity_email = publicity_officer[0].email
+                body = r'''Hello Publicity Officer,
 
+    An event has been created that requires a facebook event to be created. The event information can be found at https://tbp.engin.umich.edu%(event_link)s
+
+    Regards,
+    The Website
+
+    Note: This is an automated email. Please do not reply to it as responses are not checked.'''%{'event_link':reverse('event_cal:event_detail',args=(self.id,))}
+                send_mail('[TBP] Event Needs Facebook Event.',body,'tbp.mi.g@gmail.com',[publicity_email],fail_silently=False)
+
+    def delete_gcal_event(self):
+        c = get_credentials()
+        h = get_authorized_http(c)
+        if h:
+            service = get_service(h)
+            for shift in self.eventshift_set.all():
+                if shift.google_event_id:
+                    try:
+                        service.events().delete(calendarId=self.google_cal.calendar_id,eventId=shift.google_event_id).execute()
+                    except:
+                        pass
+    def add_event_to_gcal(self):
+        c = get_credentials()
+        h = get_authorized_http(c)
+        if h:
+            service = get_service(h)
+            for shift in self.eventshift_set.all():
+                new_event = True
+                if shift.google_event_id:
+                    try:
+                        gcal_event = service.events().get(calendarId=self.google_cal.calendar_id,eventId=shift.google_event_id).execute()
+                        if gcal_event['status']=='cancelled':
+                            gcal_event={}
+                            new_event = True
+                        else:
+                            gcal_event['sequence']=gcal_event['sequence']+1
+                            new_event = False
+                    except:
+                        gcal_event = {}
+                else:
+                    gcal_event = {}
+                gcal_event['summary']=self.name
+                gcal_event['location']=shift.location
+                gcal_event['start']={'dateTime':shift.start_time.isoformat('T'),'timeZone':'America/Detroit'}
+                gcal_event['end']={'dateTime':shift.end_time.isoformat('T'),'timeZone':'America/Detroit'}
+                gcal_event['recurrence']=[]
+                gcal_event['description']=markdown(force_unicode(self.description),['nl2br'],safe_mode=True,enable_attributes=False)
+                if not new_event :
+                    service.events().update(calendarId=self.google_cal.calendar_id,eventId=shift.google_event_id,body=gcal_event).execute()
+                else:
+                    submitted_event=service.events().insert(calendarId=self.google_cal.calendar_id,body=gcal_event).execute()
+                    shift.google_event_id=submitted_event['id']
+                    shift.save()
+    def can_complete_event(self):
+        s = self.eventshift_set
+        now = timezone.now()
+        s_future = s.filter(end_time__gte=now)
+        if self.completed:
+            return False
+        if s_future:
+            return False
+        else:
+            return True
 class EventShift(models.Model):
     event = models.ForeignKey(CalendarEvent)
     start_time      = models.DateTimeField()
@@ -212,10 +306,8 @@ class EventShift(models.Model):
 
     def is_now(self):
         now=timezone.now()
-        before_grace = timedelta(minutes=-30)
-        after_grace = timedelta(hours=1)
-        if now> (self.start_time+before_grace):
-            if now < (self.end_time+after_grace):
+        if now> (self.start_time+self.event.before_grace):
+            if now < (self.end_time+self.event.after_grace):
                 return True
         return False
     def is_before_start(self):
@@ -244,6 +336,64 @@ class EventShift(models.Model):
         if not res_string:
             return None
         return res_string.lstrip()+'s'
+    def delete_gcal_event_shift(self):
+        c = get_credentials()
+        h = get_authorized_http(c)
+        if h:
+            event=self.event
+            service = get_service(h)
+            if self.google_event_id:
+                try:
+                    service.events().delete(calendarId=event.google_cal.calendar_id,eventId=self.google_event_id).execute()
+                except:
+                    pass
+    def add_attendee_to_gcal(self,name,email):
+        c = get_credentials()
+        h = get_authorized_http(c)
+        if h:
+            service = get_service(h)
+            event=self.event
+            if not self.google_event_id:
+                return
+            gcal_event = service.events().get(calendarId=event.google_cal.calendar_id,eventId=self.google_event_id).execute()
+            if gcal_event['status']=='cancelled':
+                return
+            else:
+                gcal_event['sequence']+=1
+                if 'attendees' in gcal_event:
+                    gcal_event['attendees'].append(
+                        {
+                            'email':email,
+                            'displayName':name,
+                        })
+                else:
+                    gcal_event['attendees']=[{
+                            'email':email,
+                            'displayName':name,
+                        }]
+                    
+                service.events().update(calendarId=event.google_cal.calendar_id,eventId=self.google_event_id,body=gcal_event).execute()
+                
+    def delete_gcal_attendee(self,email):
+        c = get_credentials()
+        h = get_authorized_http(c)
+        if h:
+            service = get_service(h)
+            event=self.event
+            if not self.google_event_id:
+                return
+            try:
+                gcal_event = service.events().get(calendarId=event.google_cal.calendar_id,eventId=self.google_event_id).execute()
+                if gcal_event['status']=='cancelled':
+                    return
+                else:
+                    gcal_event['sequence']+=1
+                    if 'attendees' in gcal_event:
+                        gcal_event['attendees'][:]=[a for a in gcal_event['attendees'] if a.get('email') !=email]
+                        service.events().update(calendarId=event.google_cal.calendar_id,eventId=self.google_event_id,body=gcal_event).execute()
+            except:
+                return        
+
 class InterviewShift(models.Model):
     interviewer_shift = models.ForeignKey(EventShift,related_name='shift_interviewer')
     interviewee_shift = models.ForeignKey(EventShift,related_name='shift_interviewee')

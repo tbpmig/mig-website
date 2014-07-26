@@ -9,7 +9,6 @@ from django.template import RequestContext, loader
 from django.utils import timezone
 
 from event_cal.models import CalendarEvent
-from event_cal.views import get_upcoming_events,get_current_meeting_query
 from history.models   import WebsiteArticle
 from mig_main.models import SlideShowPhoto
 from mig_main.utility import get_quick_links, get_message_dict
@@ -27,7 +26,7 @@ def home(request):
     slideshow_photos = SlideShowPhoto.objects.filter(active=True)
     now = timezone.localtime(timezone.now())
     today=date.today()
-    upcoming_events = get_upcoming_events()
+    upcoming_events = CalendarEvent.get_upcoming_events()
     web_articles    = WebsiteArticle.objects.order_by('-date_posted').exclude(date_posted__gt=today)[:3]
     template = loader.get_template('home.html')
     context_dict = {
@@ -37,7 +36,7 @@ def home(request):
         'request':request,
         'quick_links':get_quick_links(request.user),
         'slideshow_photos':slideshow_photos,
-        'current_meetings':CalendarEvent.objects.filter(get_current_meeting_query()),
+        'current_meetings':CalendarEvent.objects.filter(CalendarEvent.get_current_meeting_query()),
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))

@@ -2,11 +2,11 @@ from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
 from django.core.urlresolvers import reverse
 
-from event_cal.models import CalendarEvent,get_pending_events
+from event_cal.models import CalendarEvent
 
 class Command(BaseCommand):
     def handle(self,*args,**options):
-        pending_events = get_pending_events()
+        pending_events = CalendarEvent.get_pending_events()
         body_template = r'''Hi %(leaders)s,
 This is a friendly reminder that since %(event)s has finished, you now need to assign hours and mark the event as complete. This can be done by visiting https://tbp.engin.umich.edu%(link)s  and following the instructions for completing the event.
 

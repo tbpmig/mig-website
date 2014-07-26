@@ -2,7 +2,6 @@
 from datetime import datetime,date,timedelta
 
 from django.utils import timezone
-from django.utils.encoding import force_unicode
 from django.http import HttpResponse#, Http404, HttpResponseRedirect
 from django.shortcuts import redirect, get_object_or_404
 from django.template import RequestContext, loader
@@ -13,7 +12,6 @@ from django.core.mail import send_mail
 from django import forms
 from django.forms.models import modelformset_factory,modelform_factory
 from django.db.models import Min,Q
-from markdown import markdown
 
 from event_cal.forms import  EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset,MultiShiftFormset
 from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift
@@ -23,162 +21,14 @@ from mig_main.models import OfficerPosition,PREFERENCES,UserPreference,MemberPro
 from mig_main.utility import get_previous_page, Permissions, get_message_dict
 from outreach.models import TutoringRecord
 from requirements.models import ProgressItem, EventCategory
-#from requirements.models import SemesterType
 
-from event_cal.gcal_functions import initialize_gcal, process_auth,get_credentials,get_authorized_http,get_service
+from event_cal.gcal_functions import initialize_gcal, process_auth,get_credentials
 
 GCAL_USE_PREF = [d for d in PREFERENCES if d.get('name') == 'google_calendar_add'][0]
 GCAL_ACCT_PREF = [d for d in PREFERENCES if d.get('name') == 'google_calendar_account'][0]
 
-before_grace = timedelta(minutes=-30)
-after_grace = timedelta(hours = 1)
-def notify_publicity(event):
-    if event.needs_facebook_event:
-        publicity_officer = OfficerPosition.objects.filter(name='Publicity Officer')
-        if publicity_officer.exists():
-            publicity_email = publicity_officer[0].email
-            body = r'''Hello Publicity Officer,
 
-An event has been created that requires a facebook event to be created. The event information can be found at https://tbp.engin.umich.edu%(event_link)s
 
-Regards,
-The Website
-
-Note: This is an automated email. Please do not reply to it as responses are not checked.'''%{'event_link':reverse('event_cal:event_detail',args=(event.id,))}
-            send_mail('[TBP] Event Needs Facebook Event.',body,'tbp.mi.g@gmail.com',[publicity_email],fail_silently=False)
-
-def delete_gcal_event(event):
-    c = get_credentials()
-    h = get_authorized_http(c)
-    if h:
-        service = get_service(h)
-        for shift in event.eventshift_set.all():
-            if shift.google_event_id:
-                try:
-                    service.events().delete(calendarId=event.google_cal.calendar_id,eventId=shift.google_event_id).execute()
-                except:
-                    pass
-def delete_gcal_event_shift(event,shift):
-    c = get_credentials()
-    h = get_authorized_http(c)
-    if h:
-        service = get_service(h)
-        if shift.google_event_id:
-            try:
-                service.events().delete(calendarId=event.google_cal.calendar_id,eventId=shift.google_event_id).execute()
-            except:
-                pass
-def add_event_to_gcal(event):
-    c = get_credentials()
-    h = get_authorized_http(c)
-    if h:
-        service = get_service(h)
-        for shift in event.eventshift_set.all():
-            new_event = True
-            if shift.google_event_id:
-                try:
-                    gcal_event = service.events().get(calendarId=event.google_cal.calendar_id,eventId=shift.google_event_id).execute()
-                    if gcal_event['status']=='cancelled':
-                        gcal_event={}
-                        new_event = True
-                    else:
-                        gcal_event['sequence']=gcal_event['sequence']+1
-                        new_event = False
-                except:
-                    gcal_event = {}
-            else:
-                gcal_event = {}
-            gcal_event['summary']=event.name
-            gcal_event['location']=shift.location
-            gcal_event['start']={'dateTime':shift.start_time.isoformat('T'),'timeZone':'America/Detroit'}
-            gcal_event['end']={'dateTime':shift.end_time.isoformat('T'),'timeZone':'America/Detroit'}
-            gcal_event['recurrence']=[]
-            gcal_event['description']=markdown(force_unicode(event.description),['nl2br'],safe_mode=True,enable_attributes=False)
-            if not new_event :
-                service.events().update(calendarId=event.google_cal.calendar_id,eventId=shift.google_event_id,body=gcal_event).execute()
-            else:
-                submitted_event=service.events().insert(calendarId=event.google_cal.calendar_id,body=gcal_event).execute()
-                shift.google_event_id=submitted_event['id']
-                shift.save()
-#TODO remove in favor of copied event in event model
-def get_attendee_hours_at_event(profile,event):
-    shifts=event.eventshift_set.filter(attendees=profile).order_by('start_time') 
-    n=shifts.count()
-    count = 0
-    hours=0
-    if not shifts.exists():
-        return 0
-    if event.is_fixed_progress():
-        return 1
-    while count< n:
-        start_time = shifts[count].start_time
-        end_time = shifts[count].end_time
-        while count<(n-1) and shifts[count+1].start_time<end_time:
-            count+=1
-            end_time=shifts[count].end_time
-        hours+=(end_time-start_time).seconds/3600.0
-        count+=1
-    return hours
-def add_attendee_to_gcal(name,email,event,shift):
-    c = get_credentials()
-    h = get_authorized_http(c)
-    if h:
-        service = get_service(h)
-        if not shift.google_event_id:
-            return
-        gcal_event = service.events().get(calendarId=event.google_cal.calendar_id,eventId=shift.google_event_id).execute()
-        if gcal_event['status']=='cancelled':
-            return
-        else:
-            gcal_event['sequence']+=1
-            if 'attendees' in gcal_event:
-                gcal_event['attendees'].append(
-                    {
-                        'email':email,
-                        'displayName':name,
-                    })
-            else:
-                gcal_event['attendees']=[{
-                        'email':email,
-                        'displayName':name,
-                    }]
-                
-            service.events().update(calendarId=event.google_cal.calendar_id,eventId=shift.google_event_id,body=gcal_event).execute()
-            
-def delete_gcal_attendee(email,event,shift):
-    c = get_credentials()
-    h = get_authorized_http(c)
-    if h:
-        service = get_service(h)
-        if not shift.google_event_id:
-            return
-        try:
-            gcal_event = service.events().get(calendarId=event.google_cal.calendar_id,eventId=shift.google_event_id).execute()
-            if gcal_event['status']=='cancelled':
-                return
-            else:
-                gcal_event['sequence']+=1
-                if 'attendees' in gcal_event:
-                    gcal_event['attendees'][:]=[a for a in gcal_event['attendees'] if a.get('email') !=email]
-                    service.events().update(calendarId=event.google_cal.calendar_id,eventId=shift.google_event_id,body=gcal_event).execute()
-        except:
-            return        
-
-def get_event_category_children(query,category):
-    for child in category.eventcategory_set.all():
-        query|=get_event_category_children(query,child)
-    return query|Q(event_type=category)
-
-def flatten_category_tree(category,depth):
-    if category:
-        category_array=[{'category':category,'depth':depth}]
-        for child in category.eventcategory_set.all():
-            category_array+=flatten_category_tree(child,depth+1)
-    else:
-        category_array=[]
-        for parentless_category in EventCategory.objects.filter(parent_category=None):
-            category_array+=flatten_category_tree(parentless_category,depth+1)
-    return category_array
 
     
 def get_permissions(user):
@@ -191,44 +41,12 @@ def get_common_context(request):
     context_dict.update({
         'request':request,
         'now':timezone.localtime(timezone.now()),
-        'upcoming_events':get_upcoming_events(),
-        'before_grace':before_grace,
-        'after_grace':after_grace,
+        'upcoming_events':CalendarEvent.get_upcoming_events(),
         'edit_page':False,
         'main_nav':'cal',
-        'new_bootstrap':True,
         })
     return context_dict
 
-def can_complete_event(event):
-    s = event.eventshift_set
-    now = timezone.now()
-    s_future = s.filter(end_time__gte=now)
-    if event.completed:
-        return False
-    if s_future:
-        return False
-    else:
-        return True
-def can_edit_event(user,event):
-    try:
-        if hasattr(user,'userprofile') and user.userprofile.memberprofile in event.leaders.all():
-            return True
-        else:
-            return Permissions.can_delete_events(user)
-    except ObjectDoesNotExist:
-        return False
-def get_current_meeting_query():
-    now = timezone.localtime(timezone.now())
-    return Q(use_sign_in=True)&Q(eventshift__end_time__gte=(now-after_grace))&Q(eventshift__start_time__lte=(now-before_grace))
-def get_upcoming_events():
-    now = timezone.localtime(timezone.now())
-    today=date.today()
-    non_meeting_query = Q(eventshift__start_time__gte=now)&Q(announce_start__lte=today)
-    meeting_query = get_current_meeting_query()
-    not_officer_meeting = ~Q(event_type__name='Officer Meetings')
-    upcoming_events = CalendarEvent.objects.filter((non_meeting_query|meeting_query)&not_officer_meeting).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
-    return upcoming_events
 #VIEWS
 def index(request):
     request.session['current_page']=request.path
@@ -372,9 +190,9 @@ def event_detail(request,event_id):
         'has_profile':hasattr(request.user,'userprofile'),
         'event_signed_up':event_signed_up,
         'is_member':user_is_member,
-        'can_edit_event':can_edit_event(request.user,event),
+        'can_edit_event':Permissions.can_edit_event(event,request.user),
         'can_add_sign_in':(Permissions.can_create_events(request.user) and not MeetingSignIn.objects.filter(event=event).exists() and event.use_sign_in),
-        'can_complete':(can_complete_event(event) and can_edit_event(request.user,event)),
+        'can_complete':(event.can_complete_event() and Permissions.can_edit_event(event,request.user)),
         'subnav':'list',
         }
     context_dict.update(get_permissions(request.user))
@@ -420,7 +238,7 @@ def sign_up(request, event_id, shift_id):
                             email_to_use = request.user.userprofile.uniqname+'@umich.edu'
                         else:
                             email_to_use = request.user.userprofile.memberprofile.alt_email
-                        add_attendee_to_gcal(request.user.userprofile.get_firstlast_name(),email_to_use,event,shift)
+                        shift.add_attendee_to_gcal(request.user.userprofile.get_firstlast_name(),email_to_use)
 
                     request.session['success_message']='You have successfully signed up for the event'
                     if event.needs_carpool:
@@ -451,7 +269,7 @@ def unsign_up(request, event_id, shift_id):
                 email_to_use = request.user.userprofile.uniqname+'@umich.edu'
             else:
                 email_to_use = request.user.userprofile.memberprofile.alt_email
-            delete_gcal_attendee(email_to_use,event,shift)
+            shift.delete_gcal_attendee(email_to_use)
             CarpoolPerson.objects.filter(event=event,person=request.user.userprofile).delete()
 
             request.session['success_message']='You have successfully unsigned up from the event.'
@@ -576,7 +394,7 @@ def list(request):
             event_categories = form.cleaned_data['event_reqs']
             for category in event_categories:
                 selected_boxes.append(category.id)
-                query_event_type=get_event_category_children(query_event_type,category)
+                query_event_type=category.get_children(query_event_type)
     else:
         now = timezone.localtime(timezone.now())
         starting_after_text=date.today().isoformat()
@@ -589,7 +407,7 @@ def list(request):
     template = loader.get_template('event_cal/list.html')
     packed_events=[]
     for event in events.annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift'):
-        packed_events.append({'event':event,'can_edit':can_edit_event(request.user,event)})
+        packed_events.append({'event':event,'can_edit':Permissions.can_edit_event(event,request.user)})
     context_dict = {
         'events':packed_events,
         'user_is_member':user_is_member,
@@ -597,7 +415,7 @@ def list(request):
         'event_signed_up':event_signed_up,
         'form':form,
         'dp_ids':['dp_before','dp_after'],
-        'sorted_event_categories':flatten_category_tree(None,0),
+        'sorted_event_categories':EventCategory.flatten_category_tree(),
         'selected_boxes':selected_boxes,
         'subnav':'list',
         }
@@ -621,7 +439,7 @@ def my_events(request):
     template = loader.get_template('event_cal/my_events.html')
     packed_events=[]
     for event in my_events:
-        packed_events.append({'event':event,'can_edit':can_edit_event(request.user,event)})
+        packed_events.append({'event':event,'can_edit':Permissions.can_edit_event(event,request.user)})
     context_dict = {
         "my_events":packed_events,
         "events_im_leading":events_im_leading,
@@ -671,8 +489,8 @@ def create_multishift_event(request):
                     event_shift.event = event    
                     event_shift.save()
                 request.session['success_message']='Event created successfully'
-                add_event_to_gcal(event)
-                notify_publicity(event)
+                event.add_event_to_gcal()
+                event.notify_publicity()
                 return redirect('event_cal:list')
             else:
                 request.session['error_message']='There were errors in your shifts.'
@@ -772,8 +590,8 @@ def create_electee_interviews(request):
                     interview_shift.save()
                     
                 request.session['success_message']='Event created successfully'
-                add_event_to_gcal(active_event)
-                add_event_to_gcal(electee_event)
+                active_event.add_event_to_gcal()
+                electee_event.add_event_to_gcal()
                 return redirect('event_cal:list')
             else:
                 request.session['error_message']='There were errors in your shifts.'
@@ -827,8 +645,8 @@ def create_event(request):
                 form.save_m2m()
                 formset.save()
                 request.session['success_message']='Event created successfully'
-                add_event_to_gcal(event)
-                notify_publicity(event)
+                event.add_event_to_gcal()
+                event.notify_publicity()
                 if event.use_sign_in:
                     request.session['info_message']='Please create a sign-in for %s'%(unicode(event),)
                     event_id=int(event.id)
@@ -909,8 +727,8 @@ def create_meeting_signin(request, event_id):
 
 def delete_event(request, event_id):
     e= get_object_or_404(CalendarEvent,id=event_id)
-    if can_edit_event(request.user,e) and not e.completed:
-        delete_gcal_event(e)
+    if Permissions.can_edit_event(e,request.user) and not e.completed:
+        e.delete_gcal_event()
         e.delete()
         request.session['success_message']='Event deleted successfully'
         return redirect('event_cal:list')
@@ -921,8 +739,8 @@ def delete_event(request, event_id):
 def delete_shift(request,event_id, shift_id):
     e= get_object_or_404(CalendarEvent,id=event_id)
     s= get_object_or_404(EventShift,id=shift_id)
-    if can_edit_event(request.user,e):
-        delete_gcal_event_shift(e,s)
+    if Permissions.can_edit_event(e,request.user):
+        s.delete_gcal_event_shift()
         s.delete()
         request.session['event_signed_up']=int(event_id)
         request.session['success_message']='Event shift deleted successfully'
@@ -934,7 +752,7 @@ def delete_shift(request,event_id, shift_id):
 
 def edit_event(request, event_id):
     e= get_object_or_404(CalendarEvent,id=event_id)
-    if not can_edit_event(request.user,e):
+    if not Permissions.can_edit_event(e,request.user):
         request.session['error_message']='You are not authorized to edit this event'
         return get_previous_page(request,alternate='event_cal:list')
     request.session['current_page']=request.path
@@ -953,7 +771,7 @@ def edit_event(request, event_id):
                 event.save()
                 form.save_m2m()
                 formset.save()
-                add_event_to_gcal(event)
+                event.add_event_to_gcal()
                 request.session['success_message']='Event updated successfully'
                 return redirect('event_cal:event_detail',event_id)
             else:
@@ -988,10 +806,10 @@ def edit_event(request, event_id):
 
 def update_completed_event(request, event_id):
     e = get_object_or_404(CalendarEvent,id=event_id)
-    if not can_edit_event(request.user,e):
+    if not Permissions.can_edit_event(e,request.user):
         request.session['error_message']='You are not authorized to edit this event'
         return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
-    if can_complete_event(e):
+    if e.can_complete_event():
         request.session['error_message'] = 'This event hasn\'t been completed yet. Do that first.'
         return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
     if e.is_fixed_progress():
@@ -1055,10 +873,10 @@ def update_completed_event(request, event_id):
 # include the attendees as options as well
 def complete_event(request, event_id):
     e = get_object_or_404(CalendarEvent,id=event_id)
-    if not can_edit_event(request.user,e):
+    if not Permissions.can_edit_event(e,request.user):
         request.session['error_message']='You are not authorized to edit this event'
         return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
-    if not can_complete_event(e):
+    if not e.can_complete_event():
         request.session['error_message'] = 'This event can\'t be completed yet.'
         return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
     if e.is_fixed_progress():
@@ -1120,7 +938,7 @@ def complete_event(request, event_id):
             if is_fixed:
                 initial.append({'member':attendee.memberprofile})
             else:
-                initial.append({'member':attendee.memberprofile,'amount_completed':round(get_attendee_hours_at_event(attendee,e),2)})
+                initial.append({'member':attendee.memberprofile,'amount_completed':round(e.get_attendee_hours_at_event(attendee),2)})
         form_type.extra=len(initial)+1
         formset = form_type(prefix=form_prefix,queryset=ProgressItem.objects.none(),initial=initial)
     template = loader.get_template('generic_formset.html')
@@ -1394,7 +1212,7 @@ Note: This is an automated email. Please do not reply to it as responses are not
 
 def add_project_report_to_event(request,event_id):
     event=get_object_or_404(CalendarEvent,id=event_id)
-    if not can_edit_event(request.user,event):
+    if not Permissions.can_edit_event(event,request.user):
         request.session['error_message']='You are not authorized to edit this event'
         return get_previous_page(request,alternate='event_cal:index')
 
