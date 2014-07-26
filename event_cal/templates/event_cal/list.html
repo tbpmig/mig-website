@@ -30,6 +30,10 @@
         <div class="text-danger">{{form.on_campus.errors}}</div>
         <label for="id_on_campus">Only events that are on campus? {{form.on_campus}}</label>
     </div>
+    <div class="fieldWrapper">
+        <div class="text-danger">{{form.can_attend.errors}}</div>
+        <label for="id_on_campus">Only events that are open to me? {{form.can_attend}}</label>
+    </div>
     <p>And that will fulfill one of the following requirements</p>
     <div class="fieldWrapper">
         {{form.event_reqs.errors}}

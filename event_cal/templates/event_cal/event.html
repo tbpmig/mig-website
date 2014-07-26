@@ -13,9 +13,9 @@
 </div>
 {% endif %}
 {% if has_profile and user.userprofile.is_member %}
-    {% if user.userprofile.memberprofile.status.name == 'Active' %}
+    {% if user.userprofile.is_active %}
     <p><b>Event/Requirement Type:</b> {{event.get_relevant_active_event_type}}</p>
-    {% elif user.userprofile.memberprofile.standing.name == 'Undergraduate' %}
+    {% elif user.userprofile.is_ugrad %}
         <p><b>Event/Requirement Type:</b> {{event.get_relevant_ugrad_electee_event_type}}</p>
     {% else %}
         <p><b>Event/Requirement Type:</b> {{event.get_relevant_grad_electee_event_type}}</p>
@@ -59,6 +59,30 @@
             {% else %}
                 <p>You cannot unsign-up after the event has started</p>
             {% endif %}
+        {% endif %}
+    {% elif shift.ugrads_only and not user.userprofile.is_ugrad %}
+        {% if user.userprofile.is_member %}
+        <p>Shift is for {{shift.get_restrictions}} only</p>
+        {% else %}
+        <p>Shift is members-only</p>
+        {% endif %}
+    {% elif shift.grads_only and not user.userprofile.is_grad %}
+        {% if user.userprofile.is_member %}
+        <p>Shift is for {{shift.get_restrictions}} only</p>
+        {% else %}
+        <p>Shift is members-only</p>
+        {% endif %}
+    {% elif shift.electees_only and not user.userprofile.is_electee %}
+        {% if user.userprofile.is_member %}
+        <p>Shift is for {{shift.get_restrictions}} only</p>
+        {% else %}
+        <p>Shift is members-only</p>
+        {% endif %}
+    {% elif shift.actives_only and not user.userprofile.is_active %}
+        {% if user.userprofile.is_member %}
+        <p>Shift is for {{shift.get_restrictions}} only</p>
+        {% else %}
+        <p>Shift is members-only</p>
         {% endif %}
     {% else %}
         {% if shift.can_sign_in %}
@@ -193,6 +217,30 @@
             {% else %}
                 <td>You cannot unsign-up after the shift has started</td>
             {% endif %}
+        {% endif %}
+    {% elif shift.ugrads_only and not user.userprofile.is_ugrad %}
+        {% if user.userprofile.is_member %}
+        <td>Shift is for {{shift.get_restrictions}} only</td>
+        {% else %}
+        <td>Shift is members-only</td>
+        {% endif %}
+    {% elif shift.grads_only and not user.userprofile.is_grad %}
+        {% if user.userprofile.is_member %}
+        <td>Shift is for {{shift.get_restrictions}} only</td>
+        {% else %}
+        <td>Shift is members-only</td>
+        {% endif %}
+    {% elif shift.electees_only and not user.userprofile.is_electee %}
+        {% if user.userprofile.is_member %}
+        <td>Shift is for {{shift.get_restrictions}} only</td>
+        {% else %}
+        <td>Shift is members-only</td>
+        {% endif %}
+    {% elif shift.actives_only and not user.userprofile.is_active %}
+        {% if user.userprofile.is_member %}
+        <td>Shift is for {{shift.get_restrictions}} only</td>
+        {% else %}
+        <td>Shift is members-only</td>
         {% endif %}
     {% else %}
         {% if shift.can_sign_in %}

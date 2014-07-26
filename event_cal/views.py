@@ -15,7 +15,7 @@ from django.forms.models import modelformset_factory,modelform_factory
 from django.db.models import Min,Q
 from markdown import markdown
 
-from event_cal.forms import  EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset
+from event_cal.forms import  EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset,MultiShiftFormset
 from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift
 from history.models import ProjectReport, Officer,NonEventProject
 from mig_main.default_values import get_current_term
@@ -32,6 +32,20 @@ GCAL_ACCT_PREF = [d for d in PREFERENCES if d.get('name') == 'google_calendar_ac
 
 before_grace = timedelta(minutes=-30)
 after_grace = timedelta(hours = 1)
+def notify_publicity(event):
+    if event.needs_facebook_event:
+        publicity_officer = OfficerPosition.objects.filter(name='Publicity Officer')
+        if publicity_officer.exists():
+            publicity_email = publicity_officer[0].email
+            body = r'''Hello Publicity Officer,
+
+An event has been created that requires a facebook event to be created. The event information can be found at https://tbp.engin.umich.edu%(event_link)s
+
+Regards,
+The Website
+
+Note: This is an automated email. Please do not reply to it as responses are not checked.'''%{'event_link':reverse('event_cal:event_detail',args=(event.id,))}
+            send_mail('[TBP] Event Needs Facebook Event.',body,'tbp.mi.g@gmail.com',[publicity_email],fail_silently=False)
 
 def delete_gcal_event(event):
     c = get_credentials()
@@ -264,6 +278,18 @@ def meeting_sign_in(request,event_id,shift_id):
         return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
     else:
         profile = request.user.userprofile
+        if shift.ugrads_only and not profile.is_ugrad():
+            request.session['error_message']='Shift is for undergrads only'
+            return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+        elif shift.grads_only and not profile.is_grad():
+            request.session['error_message']='Shift is for grads only'
+            return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+        elif shift.electees_only and not profile.is_electee():
+            request.session['error_message']='Shift is for electees only'
+            return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+        elif shift.actives_only and not profile.is_active():
+            request.session['error_message']='Shift is for actives only'
+            return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
         if request.method =='POST':
             if not sign_in_sheet:
                 form = MeetingSignInForm(request.POST)
@@ -367,29 +393,39 @@ def sign_up(request, event_id, shift_id):
         request.session['error_message']='Shift is full'
     else:
         if hasattr(request.user,'userprofile'):
-            if request.user.userprofile.is_member or not event.members_only: 
-                shift.attendees.add(request.user.userprofile)
-                gcal_pref = UserPreference.objects.filter(user=request.user.userprofile,preference_type='google_calendar_add')
-                if gcal_pref.exists():
-                    use_cal_pref = gcal_pref[0].preference_value
+            profile = request.user.userprofile
+            if profile.is_member or not event.members_only:
+                if shift.ugrads_only and not profile.is_ugrad():
+                    request.session['error_message']='Shift is for undergrads only'
+                elif shift.grads_only and not profile.is_grad():
+                    request.session['error_message']='Shift is for grads only'
+                elif shift.electees_only and not profile.is_electee():
+                    request.session['error_message']='Shift is for electees only'
+                elif shift.actives_only and not profile.is_active():
+                    request.session['error_message']='Shift is for actives only'
                 else:
-                    use_cal_pref = GCAL_USE_PREF['default']
-                if use_cal_pref == 'always':
-                    email_pref = UserPreference.objects.filter(user=request.user.userprofile,preference_type='google_calendar_account')
-                    if email_pref.exists():
-                        cal_email_pref = email_pref[0].preference_value
+                    shift.attendees.add(request.user.userprofile)
+                    gcal_pref = UserPreference.objects.filter(user=request.user.userprofile,preference_type='google_calendar_add')
+                    if gcal_pref.exists():
+                        use_cal_pref = gcal_pref[0].preference_value
                     else:
-                        cal_email_pref = GCAL_ACCT_PREF['default']
-                    if cal_email_pref =='umich' or not request.user.userprofile.is_member() or not request.user.userprofile.memberprofile.alt_email:
-                        email_to_use = request.user.userprofile.uniqname+'@umich.edu'
-                    else:
-                        email_to_use = request.user.userprofile.memberprofile.alt_email
-                    add_attendee_to_gcal(request.user.userprofile.get_firstlast_name(),email_to_use,event,shift)
+                        use_cal_pref = GCAL_USE_PREF['default']
+                    if use_cal_pref == 'always':
+                        email_pref = UserPreference.objects.filter(user=request.user.userprofile,preference_type='google_calendar_account')
+                        if email_pref.exists():
+                            cal_email_pref = email_pref[0].preference_value
+                        else:
+                            cal_email_pref = GCAL_ACCT_PREF['default']
+                        if cal_email_pref =='umich' or not request.user.userprofile.is_member() or not request.user.userprofile.memberprofile.alt_email:
+                            email_to_use = request.user.userprofile.uniqname+'@umich.edu'
+                        else:
+                            email_to_use = request.user.userprofile.memberprofile.alt_email
+                        add_attendee_to_gcal(request.user.userprofile.get_firstlast_name(),email_to_use,event,shift)
 
-                request.session['success_message']='You have successfully signed up for the event'
-                if event.needs_carpool:
-                    request.session['info_message']='If you need or can give a ride, please also sign up for the carpool'
-                    return redirect('event_cal:carpool_sign_up',event_id)
+                    request.session['success_message']='You have successfully signed up for the event'
+                    if event.needs_carpool:
+                        request.session['info_message']='If you need or can give a ride, please also sign up for the carpool'
+                        return redirect('event_cal:carpool_sign_up',event_id)
             else:
                 request.session['error_message']='This event is members-only'
         else:
@@ -501,7 +537,6 @@ def add_event_photo(request):
     return HttpResponse(template.render(context))
         
 def list(request):
-    # add a form to filter the events
     request.session['current_page']=request.path
     user_is_member = False
     has_profile = False
@@ -509,8 +544,8 @@ def list(request):
     query_members = Q(members_only=False) 
     query_event_type=Q()
     query_location=Q()
+    query_can_attend=Q()
     selected_boxes = []
-    request.session['info_message']='Only events in the current semester are shown. To view other events consult with the website officer.'
     if hasattr(request.user,'userprofile'):  
         has_profile = True
         if request.user.userprofile.is_member():
@@ -531,6 +566,13 @@ def list(request):
             on_campus = form.cleaned_data['on_campus']
             if on_campus:
                 query_location=Q(eventshift__on_campus=True)
+            can_attend = form.cleaned_data['can_attend']
+            if can_attend and user_is_member:
+                profile = request.user.userprofile
+                query_can_attend=Q(eventshift__ugrads_only=profile.is_ugrad)|Q(eventshift__ugrads_only=False)
+                query_can_attend&=Q(eventshift__grads_only=profile.is_grad)|Q(eventshift__grads_only=False)
+                query_can_attend&=Q(eventshift__actives_only=profile.is_active)|Q(eventshift__actives_only=False)
+                query_can_attend&=Q(eventshift__electees_only=profile.is_electee)|Q(eventshift__electees_only=False)
             event_categories = form.cleaned_data['event_reqs']
             for category in event_categories:
                 selected_boxes.append(category.id)
@@ -543,7 +585,7 @@ def list(request):
             query_event_type = ~Q(event_type__name='Officer Meetings')
         initial={'after_date':starting_after_text}
         form = EventFilterForm(initial=initial)
-    events = CalendarEvent.objects.filter(query_members&query_date&query_event_type&query_location).distinct()
+    events = CalendarEvent.objects.filter(query_members&query_date&query_event_type&query_location&query_can_attend).distinct()
     template = loader.get_template('event_cal/list.html')
     packed_events=[]
     for event in events.annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift'):
@@ -592,6 +634,77 @@ def my_events(request):
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
 
+def create_multishift_event(request):
+    if not Permissions.can_create_events(request.user):
+        request.session['error_message']='You are not authorized to create events'
+        return get_previous_page(request,alternate='event_cal:list')
+    request.session['current_page']=request.path
+    EventForm = modelform_factory(CalendarEvent,exclude=('completed','google_event_id','project_report','use_sign_in'))
+    EventForm.base_fields['assoc_officer'].queryset=OfficerPosition.objects.filter(enabled=True)
+    EventForm.base_fields['leaders'].queryset=get_members().order_by('last_name')
+    EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
+    if request.method == 'POST':
+        form = EventForm(request.POST,prefix='event')
+        formset = MultiShiftFormset(request.POST,prefix='shift')
+        if form.is_valid() and formset.is_valid():
+            event = form.save()
+            for shift_form in formset:
+                if not shift_form.is_valid():
+                    continue
+                cleaned_data=shift_form.cleaned_data
+                shift_date=cleaned_data['date']
+                shifts_start = cleaned_data['start_time']
+                mid_time =datetime.combine(shift_date,shifts_start)
+                end_time = datetime.combine(shift_date,shift_form.cleaned_data['end_time']) 
+                while mid_time<end_time:
+                    start_time = mid_time
+                    mid_time +=timedelta(minutes=shift_form.cleaned_data['duration'])
+                    event_shift = EventShift()
+                    event_shift.start_time = start_time
+                    event_shift.end_time = mid_time
+                    event_shift.location = shift_form.cleaned_data['location']
+                    event_shift.ugrads_only = shift_form.cleaned_data['ugrads_only']
+                    event_shift.grads_only = shift_form.cleaned_data['grads_only']
+                    event_shift.max_attendance = shift_form.cleaned_data['max_attendance']
+                    event_shift.electees_only = shift_form.cleaned_data['electees_only']
+                    event_shift.actives_only = shift_form.cleaned_data['actives_only']
+                    event_shift.event = event    
+                    event_shift.save()
+                request.session['success_message']='Event created successfully'
+                add_event_to_gcal(event)
+                notify_publicity(event)
+                return redirect('event_cal:list')
+            else:
+                request.session['error_message']='There were errors in your shifts.'
+        else:
+            request.session['error_message']='There were errors in the submitted event, please correct the errors noted below.'
+    else:
+        form = EventForm(prefix='event')
+        formset= MultiShiftFormset(prefix='shift')
+    dp_ids=['id_event-announce_start']
+    for count in range(len(formset)):
+        dp_ids.append('id_shift-%d-date'%(count))
+    template = loader.get_template('event_cal/create_event.html')
+    context_dict = {
+        'form':form,
+        'formset':formset,
+        'dp_ids':dp_ids,
+        'dp_ids_dyn':['date'],
+        'prefix':'shift',
+        'subnav':'admin',
+        'submit_name':'Create Event',
+        'form_title':'Multiple shift event creation',
+        'help_text':'Easily create shifts with multiple, regularly spaced events. Simply specify the start and end time for each block of time and the shift length. Do not use this for electee interview creation, use the intended form.',
+        'shift_title':'Shift days and time windows',
+        'shift_help_text':'Shifts will be automatically created within the window you specify, for the duration you give. Note that if your duration does not line up with the end time, you may go longer than you planned.',
+        'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
+#        'date_prefixes':[{'id_shift':['start_time_0','end_time_0']}],
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context_dict['edit']=True
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))
 def create_electee_interviews(request):
     if not Permissions.can_manage_electee_progress(request.user):
         request.session['error_message']='You are not authorized to create electee interviews'
@@ -715,19 +828,7 @@ def create_event(request):
                 formset.save()
                 request.session['success_message']='Event created successfully'
                 add_event_to_gcal(event)
-                if event.needs_facebook_event:
-                    publicity_officer = OfficerPosition.objects.filter(name='Publicity Officer')
-                    if publicity_officer.exists():
-                        publicity_email = publicity_officer[0].email
-                        body = r'''Hello Publicity Officer,
-
-An event has been created that requires a facebook event to be created. The event information can be found at https://tbp.engin.umich.edu%(event_link)s
-
-Regards,
-The Website
-
-Note: This is an automated email. Please do not reply to it as responses are not checked.'''%{'event_link':reverse('event_cal:event_detail',args=(event.id,))}
-                        send_mail('[TBP] Event Needs Facebook Event.',body,'tbp.mi.g@gmail.com',[publicity_email],fail_silently=False)
+                notify_publicity(event)
                 if event.use_sign_in:
                     request.session['info_message']='Please create a sign-in for %s'%(unicode(event),)
                     event_id=int(event.id)
@@ -1337,6 +1438,7 @@ def calendar_admin(request):
     links=[]
     if Permissions.can_create_events(request.user):
         links.append({'link':reverse('event_cal:create_event'),'name':'Add Event'})
+        links.append({'link':reverse('event_cal:create_multishift_event'),'name':'Add Event with many shifts'})
     if Permissions.can_add_announcements(request.user):
         links.append({'link':reverse('event_cal:add_announcement'),'name':'Add Announcement'})
     if Permissions.can_generate_announcements(request.user):

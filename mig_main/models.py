@@ -230,6 +230,22 @@ class UserProfile(models.Model):
         except ObjectDoesNotExist:
             return False
 
+    def is_electee(self):
+        if not self.is_member():
+            return False
+        return self.memberprofile.status.name=='Electee'
+    def is_active(self):
+        if not self.is_member():
+            return False
+        return self.memberprofile.status.name=='Active'
+    def is_ugrad(self):
+        if not self.is_member():
+            return False
+        return self.memberprofile.standing.name=='Undergraduate'
+    def is_grad(self):
+        if not self.is_member():
+            return False
+        return self.memberprofile.standing.name=='Graduate'
 class MemberProfile(UserProfile):
     
     

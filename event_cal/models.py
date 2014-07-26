@@ -231,7 +231,19 @@ class EventShift(models.Model):
         if self.event.allow_advance_sign_up and not self.is_full() and self.is_before_start():
             return True
         return False
-
+    def get_restrictions(self):
+        res_string = ''
+        if self.ugrads_only:
+            res_string += 'Undergrad'
+        if self.grads_only:
+            res_string +='Grad'
+        if self.electees_only:
+            res_string +=' Electee'
+        if self.actives_only:
+            res_string+=' Active'
+        if not res_string:
+            return None
+        return res_string.lstrip()+'s'
 class InterviewShift(models.Model):
     interviewer_shift = models.ForeignKey(EventShift,related_name='shift_interviewer')
     interviewee_shift = models.ForeignKey(EventShift,related_name='shift_interviewee')
