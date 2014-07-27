@@ -31,7 +31,7 @@
                         {% endif %}
                         {% for team_data in officers.officers|dictsort:"order" %}
                         <h3>{{team_data.name}}</h3>
-                        {% if team_data.lead %}
+                        {% if team_data.lead_name %}
                         <p>Team Lead: {{team_data.lead_name}}</p>
                         {% endif %}
                         {% for officer in team_data.officers %}

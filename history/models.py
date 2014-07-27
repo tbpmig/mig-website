@@ -32,6 +32,20 @@ class Distinction(models.Model):
     term            = models.ForeignKey('mig_main.AcademicTerm')
     distinction_type= models.ForeignKey('requirements.DistinctionType')
     gift            = models.CharField(max_length=128)
+
+    @classmethod
+    def add_statuses(cls,uniqnames,distinction_type,term=None,gift='N/A'):
+        if not term:
+            term = get_current_term()
+        no_profiles=[]
+        for uniqname in uniqnames:
+            profiles = MemberProfile.objects.filter(uniqname=uniqname)
+            if not profiles.exists():
+                no_profiles.append(uniqname)
+                continue
+            dist = cls(member=profiles[0],term=term,gift=gift,distinction_type=distinction_type)
+            dist.save()
+        return no_profiles
     def __unicode__(self):
         return unicode(self.term)+' '+unicode(self.distinction_type)+' for '+unicode(self.member)
         

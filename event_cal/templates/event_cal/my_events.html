@@ -29,6 +29,14 @@
     {% with can_edit_event=True %}
 <li>
 {% include 'event_cal/event.html' %}
+    {% if event.can_complete_event %}
+        <a class="btn btn-success btn-sm" href="{% url 'event_cal:complete_event' event.id %}">Complete Event and Assign Hours</a>
+    {% endif %}
+    {% if event.completed %}
+    <a class="btn btn-info btn-sm" href="{% url 'event_cal:event_project_report' event.id %}">Add/Update Project Report</a>
+    <a class="btn btn-warning btn-sm" href="{% url 'event_cal:update_completed_event' event.id %}">Update Event Progress</a>
+    <a class="btn btn-info btn-sm" href="{% url 'event_cal:add_project_report_to_event' event.id %}">Add/Swap Existing Project Report</a>
+    {% endif %}
 </li>
 {% endwith %}
 {% endfor %}

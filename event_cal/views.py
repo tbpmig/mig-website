@@ -432,17 +432,17 @@ def my_events(request):
     has_profile = False
     if hasattr(request.user,'userprofile'):
         has_profile = True
-        my_events = CalendarEvent.objects.filter(eventshift__attendees__uniqname=request.user.userprofile.uniqname).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
+        my_events = CalendarEvent.objects.filter(term=get_current_term(),eventshift__attendees__uniqname=request.user.userprofile.uniqname).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
 
-        events_im_leading = CalendarEvent.objects.filter(leaders__uniqname=request.user.userprofile.uniqname).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
+        events_im_leading = CalendarEvent.objects.filter(term=get_current_term(),leaders__uniqname=request.user.userprofile.uniqname).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
 
     template = loader.get_template('event_cal/my_events.html')
     packed_events=[]
     for event in my_events:
         packed_events.append({'event':event,'can_edit':Permissions.can_edit_event(event,request.user)})
     context_dict = {
-        "my_events":packed_events,
-        "events_im_leading":events_im_leading,
+        'my_events':packed_events,
+        'events_im_leading':events_im_leading,
         'has_profile':has_profile,
         'event_signed_up':event_signed_up,
         'subnav':'my_events',
