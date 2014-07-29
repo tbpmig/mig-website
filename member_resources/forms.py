@@ -5,7 +5,11 @@ from django.core.exceptions import ValidationError
 from django.forms.models import modelformset_factory
 from django.db.models import Q
 
-from mig_main.models import MemberProfile, UserProfile,UserPreference,PREFERENCES,get_members,get_actives,get_electees
+from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,ModelSelect2Field,Select2Widget
+
+from electees.models import ElecteeGroup
+from mig_main.default_values import get_current_term
+from mig_main.models import AcademicTerm,Major,MemberProfile, TBPChapter,UserProfile,UserPreference,PREFERENCES
 from history.models import MeetingMinutes, Officer,Distinction
 from requirements.models import Requirement,EventCategory,ProgressItem,DistinctionType
 def max_peer_interviews_validator(value):
@@ -21,21 +25,28 @@ def max_essays_validator(value):
             raise ValidationError(u'This value cannot exceed %s'%requirement[0].amount_required)
 
 class MemberProfileForm(ModelForm):
+    major = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'element','placeholder':'Select Major(s)','closeOnSelect':True}),queryset=Major.objects.all().order_by('name'))
     class Meta:
         model = MemberProfile
-        exclude=('user','uniqname','status','init_chapter','UMID','init_term','still_electing','edu_bckgrd_form')
+        exclude=('user','uniqname','status','UMID','still_electing','edu_bckgrd_form')
+        #exclude=('user','uniqname','status','init_chapter','UMID','init_term','still_electing','edu_bckgrd_form')
 
 class ElecteeProfileForm(ModelForm):
+    major = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'element','placeholder':'Select Major(s)','closeOnSelect':True}),queryset=Major.objects.all().order_by('name'))
     class Meta:
         model = MemberProfile
         exclude=('user','uniqname','status','init_chapter','UMID','init_term','still_electing','standing', 'alum_mail_freq','job_field','employer','meeting_speak','edu_bckgrd_form')
 
 class MemberProfileNewActiveForm(ModelForm):
+    major = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'element','placeholder':'Select Major(s)','closeOnSelect':True}),queryset=Major.objects.all().order_by('name'))
+    init_term = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'12em','placeholder':'Select Term','closeOnSelect':True}),queryset=AcademicTerm.get_rchron(),label='Initiation Term')
+    init_chapter = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'10em','placeholder':'Select Chapter','closeOnSelect':True}),queryset=TBPChapter.objects.all(),label='Initiating Chapter')
     class Meta:
         model = MemberProfile
         exclude=('user','uniqname','status','edu_bckgrd_form','still_electing')
 
 class MemberProfileNewElecteeForm(ModelForm):
+    major = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'element','placeholder':'Select Major(s)','closeOnSelect':True}),queryset=Major.objects.all().order_by('name'))
     class Meta:
         model = MemberProfile
         exclude=('user','uniqname','status','standing','init_chapter','alum_mail_freq','job_field','employer','meeting_speak','init_term','still_electing','edu_bckgrd_form')
@@ -46,6 +57,7 @@ class NonMemberProfileForm(ModelForm):
         exclude = ('user','uniqname')
 
 class MeetingMinutesForm(ModelForm):
+    semester = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'10em','placeholder':'Select Term','closeOnSelect':True}),queryset=AcademicTerm.get_rchron(),initial=get_current_term())
     class Meta:
         model = MeetingMinutes
 
@@ -63,7 +75,7 @@ class ManageDuesForm(Form):
 ManageDuesFormSet = formset_factory(ManageDuesForm,extra=0)
 
 class ManageInterviewForm(Form):
-    member=forms.ModelChoiceField(queryset=get_actives().order_by('last_name'))
+    member=forms.ModelChoiceField(queryset=MemberProfile.get_actives().order_by('last_name'))
     interview_type=forms.ModelChoiceField(queryset=EventCategory.objects.filter(parent_category__name='Conducted Interviews'))
     number_of_interviews = forms.IntegerField(min_value=0)
 ManageInterviewsFormSet = formset_factory(ManageInterviewForm,extra=1)
@@ -80,7 +92,7 @@ class ManageUgradPaperWorkForm(Form):
 ManageUgradPaperWorkFormSet = formset_factory(ManageUgradPaperWorkForm,extra=0)
     
 class ManageActiveGroupMeetingsForm(Form):
-    member=forms.ModelChoiceField(queryset=get_actives().filter(~Q(electee_group_leaders=None,electee_group_officers=None)).distinct().order_by('last_name'))
+    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=ElecteeGroup.get_current_leaders())
     group_meetings = forms.IntegerField(min_value=0)
 
 ManageActiveGroupMeetingsFormSet = formset_factory(ManageActiveGroupMeetingsForm,extra=1)
@@ -94,7 +106,7 @@ class ManageGradPaperWorkForm(Form):
 ManageGradPaperWorkFormSet = formset_factory(ManageGradPaperWorkForm,extra=0)
 
 class ManageProjectLeaderForm(Form):
-    member = forms.ModelChoiceField(queryset=get_members().order_by('last_name'))
+    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=MemberProfile.get_members())
     is_project_leader = forms.BooleanField(required=False)
 ManageProjectLeadersFormSet = formset_factory(ManageProjectLeaderForm,extra=3)
 
@@ -111,6 +123,7 @@ class PreferenceForm(Form):
             self.fields[pref['name']].label = pref['verbose']
 
 class LeadershipCreditForm(forms.ModelForm):
+    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=MemberProfile.get_members())
     approve= forms.BooleanField(required=False)
 
     class Meta:
@@ -125,6 +138,21 @@ class LeadershipCreditForm(forms.ModelForm):
             return None
 
 class AddActiveStatusForm(forms.ModelForm):
+    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=MemberProfile.get_actives())
+    approve= forms.BooleanField(required=False)
+
+    class Meta:
+        model = Distinction
+        exclude= ('term',)
+
+    def save(self,commit=True):
+        approved=self.cleaned_data.pop('approve',False)
+        if approved:
+            return super(AddActiveStatusForm, self).save(commit=commit)
+        else:
+            return None
+class AddElecteeStatusForm(forms.ModelForm):
+    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=MemberProfile.get_electees())
     approve= forms.BooleanField(required=False)
 
     class Meta:
@@ -138,14 +166,14 @@ class AddActiveStatusForm(forms.ModelForm):
         else:
             return None
 LeadershipCreditFormSet = modelformset_factory(ProgressItem,form=LeadershipCreditForm)
-ManageActiveCurrentStatusFormSet = modelformset_factory(Distinction,form=AddActiveStatusForm)
-ManageActiveCurrentStatusFormSet.form.base_fields['member'].queryset=get_actives()
-ManageActiveCurrentStatusFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Active')
 
-ManageElecteeDAPAFormSet = modelformset_factory(Distinction,form=AddActiveStatusForm)
-ManageElecteeDAPAFormSet.form.base_fields['member'].queryset=get_electees()
+ManageElecteeDAPAFormSet = modelformset_factory(Distinction,form=AddElecteeStatusForm)
 ManageElecteeDAPAFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Electee').filter(Q(name__contains='DA')|Q(name__contains='PA'))
 
-ElecteeToActiveFormSet = modelformset_factory(Distinction,form=AddActiveStatusForm)
-ElecteeToActiveFormSet.form.base_fields['member'].queryset=get_electees().order_by('last_name')
-ElecteeToActiveFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Electee')
+ElecteeToActiveFormSet = modelformset_factory(Distinction,form=AddElecteeStatusForm)
+ElecteeToActiveFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Electee').exclude(Q(name__contains='DA')|Q(name__contains='PA'))
+
+
+ManageActiveCurrentStatusFormSet = modelformset_factory(Distinction,form=AddActiveStatusForm)
+ManageActiveCurrentStatusFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Active')
+

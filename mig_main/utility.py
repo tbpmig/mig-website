@@ -9,7 +9,7 @@ from django.core.urlresolvers import reverse
 
 from electees.models import ElecteeGroup
 from event_cal.models import CalendarEvent
-from mig_main.models import AcademicTerm, OfficerPosition, MemberProfile,get_members,get_actives,get_electees
+from mig_main.models import AcademicTerm, OfficerPosition, MemberProfile
 from requirements.models import SemesterType
 from history.models import Officer,ProjectReport,OfficerPositionRelationship
 from member_resources.models import ProjectLeaderList
@@ -83,9 +83,6 @@ def get_project_report_term():
         return AcademicTerm.objects.filter(this_winter|last_summer|last_fall)
 
 
-def get_current_officers():
-    current_officers = Officer.objects.filter(term=get_current_term())
-    return MemberProfile.objects.filter(officer__in = current_officers).distinct()
 def get_previous_officers():
     previous_officers = Officer.objects.filter(term=get_previous_term())
     return MemberProfile.objects.filter(officer__in=previous_officers).distinct()
@@ -441,7 +438,7 @@ class Permissions:
     @classmethod
     def profiles_you_can_view(cls,user):
         if user.is_superuser:
-            return get_members()
+            return MemberProfile.get_members()
         current_positions = cls.get_current_officer_positions(user) 
         query_all = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Graduate Student Vice President')
         query_actives = Q(position__name='Membership Officer')
@@ -450,11 +447,11 @@ class Permissions:
         query_out = MemberProfile.objects.none()
         if current_positions:
             if current_positions.filter(query_all).exists():
-                return get_members()
+                return MemberProfile.get_members()
             if current_positions.filter(query_actives).exists():
-                query_out = query_out | get_actives()
+                query_out = query_out | MemberProfile.get_actives()
             if current_positions.filter(query_electees).exists():
-                query_out = query_out | get_electees()
+                query_out = query_out | MemberProfile.get_electees()
         
         electee_groups_led = ElecteeGroup.objects.filter(query_electee_groups)
         for electee_group in electee_groups_led:

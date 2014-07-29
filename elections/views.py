@@ -17,7 +17,7 @@ from markdown import markdown
 from elections.models import Election, Nomination
 from member_resources.views import get_permissions as get_member_permissions
 from mig_main.models import UserProfile, OfficerPosition, AcademicTerm, MemberProfile, OfficerTeam
-from mig_main.utility import get_message_dict,Permissions,get_members
+from mig_main.utility import get_message_dict,Permissions
 
 
 def get_permissions(user):
@@ -119,7 +119,7 @@ def nominate(request,election_id):
     nomination.nominator = request.user.userprofile
     NominationForm = modelform_factory(Nomination,exclude=('nominator','accepted','election'))
     NominationForm.base_fields['position'].queryset=e.officers_for_election.all().order_by('id')
-    NominationForm.base_fields['nominee'].queryset=get_members().order_by('last_name')
+    NominationForm.base_fields['nominee'].queryset=MemberProfile.get_members().order_by('last_name')
     if request.method =='POST':
         form = NominationForm(request.POST,instance=nomination)
         if form.is_valid():

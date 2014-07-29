@@ -7,23 +7,13 @@ from django.db import models
 from django.utils.text import slugify
 from localflavor.us.models import PhoneNumberField
 from stdimage import StdImageField
+
 from mig_main.pdf_field import ContentTypeRestrictedFileField,pdf_types
 
-def get_actives():
-    query = models.Q(status__name='Active')
-    return MemberProfile.objects.filter(query)
-
-def get_electees():
-    query = models.Q(status__name='Electee',still_electing=True)
-    return MemberProfile.objects.filter(query)
-
-def get_members():
-    query = models.Q(status__name='Active')|models.Q(status__name='Electee',still_electing=True)
-    return MemberProfile.objects.filter(query)
 
 def resume_file_name(instance,filename):
     return '/'.join([u"resumes",instance.uniqname+u'.pdf'])
-#need table of project leaders...probably a permissions group
+
 PREFERENCES = [
         {
             'name':'google_calendar_add',
@@ -63,7 +53,9 @@ class SlideShowPhoto(models.Model):
 class AcademicTerm(models.Model):
     year            = models.PositiveSmallIntegerField(validators = [MinValueValidator(1960)])
     semester_type   = models.ForeignKey('requirements.SemesterType')
-    
+    @classmethod
+    def get_rchron(cls):
+        return cls.objects.all().order_by('-year','-semester_type')
     def get_abbreviation(self):
         return self.semester_type.name[0]+str(self.year)
     def __unicode__(self):
@@ -126,6 +118,10 @@ class OfficerPosition(models.Model):
     email           = models.EmailField(max_length=254)
     enabled         = models.BooleanField(default=True)
     display_order   = models.PositiveIntegerField(default=0)
+
+    @classmethod
+    def get_current(cls):
+        return cls.objects.filter(enabled=True).order_by('display_order')
     def __unicode__(self):
         return self.name
 
@@ -325,6 +321,18 @@ class MemberProfile(UserProfile):
     
     
     #Methods
+    @classmethod
+    def get_members(cls):
+        query = models.Q(status__name='Active')|models.Q(status__name='Electee',still_electing=True)
+        return cls.objects.filter(query).order_by('last_name','first_name','uniqname')
+    @classmethod
+    def get_actives(cls):
+        query = models.Q(status__name='Active')
+        return cls.objects.filter(query).order_by('last_name','first_name','uniqname')
+    @classmethod
+    def get_electees(cls):
+        query = models.Q(status__name='Electee',still_electing=True)
+        return cls.objects.filter(query).order_by('last_name','first_name','uniqname')
     def get_num_terms_distinction(self,distinction):
         distinctions = self.distinction_set.filter(distinction_type = distinction)
         return distinctions.count()

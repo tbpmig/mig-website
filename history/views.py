@@ -35,8 +35,9 @@ def get_article_view(request,article_id):
     today = date.today()
     web_articles    = WebsiteArticle.objects.order_by('-date_posted').exclude(date_posted__gt=today)
     if Permissions.can_post_web_article(request.user):
+        NewArticleForm = modelform_factory(WebsiteArticle,form=WebArticleForm)
         if request.method == 'POST':
-            form = WebArticleForm(request.POST)
+            form = NewArticleForm(request.POST)
             if form.is_valid():
                 a=form.save()
                 if hasattr(request.user,'userprofile') and request.user.userprofile.is_member():
@@ -47,7 +48,7 @@ def get_article_view(request,article_id):
             else:
                 request.session['error_message']='There were errors in your submission. Please correct the noted errors.'
         else:
-            form = WebArticleForm(initial={'date_posted':today})
+            form = NewArticleForm(initial={'date_posted':today})
     else:
         form = None
     template = loader.get_template('history/publications.html')

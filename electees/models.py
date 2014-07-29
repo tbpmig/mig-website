@@ -5,6 +5,7 @@ from django.core.validators import  RegexValidator
 from event_cal.models import CalendarEvent
 from mig_main.pdf_field import ContentTypeRestrictedFileField,pdf_types
 from requirements.models import EventCategory
+from mig_main.models import MemberProfile
 from mig_main.default_values import get_current_term
 
 def electee_stopped_electing(profile):
@@ -83,6 +84,10 @@ class ElecteeGroup(models.Model):
                                           related_name ="electee_group_members")
     points      = models.PositiveSmallIntegerField(default=0)
     term        = models.ForeignKey('mig_main.AcademicTerm')
+    @classmethod
+    def get_current_leaders(cls):
+        current_groups = cls.objects.filter(term=get_current_term())
+        return MemberProfile.objects.filter(Q(electee_group_leaders__in=current_groups)|Q(electee_group_officers__in=current_groups)).distinct().order_by('last_name','first_name','uniqname')
     def __unicode__(self):
         return unicode(self.term)+": "+self.group_name
     def add_threshold_attendance_points(self):  

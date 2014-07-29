@@ -13,11 +13,11 @@ from django import forms
 from django.forms.models import modelformset_factory,modelform_factory
 from django.db.models import Min,Q
 
-from event_cal.forms import  EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset,MultiShiftFormset
+from event_cal.forms import  BaseAnnouncementForm,BaseEventForm,EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset,MultiShiftFormset
 from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift
 from history.models import ProjectReport, Officer,NonEventProject
 from mig_main.default_values import get_current_term
-from mig_main.models import OfficerPosition,PREFERENCES,UserPreference,MemberProfile,UserProfile,get_members
+from mig_main.models import OfficerPosition,PREFERENCES,UserPreference,MemberProfile,UserProfile
 from mig_main.utility import get_previous_page, Permissions, get_message_dict
 from outreach.models import TutoringRecord
 from requirements.models import ProgressItem, EventCategory
@@ -457,9 +457,8 @@ def create_multishift_event(request):
         request.session['error_message']='You are not authorized to create events'
         return get_previous_page(request,alternate='event_cal:list')
     request.session['current_page']=request.path
-    EventForm = modelform_factory(CalendarEvent,exclude=('completed','google_event_id','project_report','use_sign_in'))
+    EventForm = modelform_factory(CalendarEvent,form=BaseEventForm,exclude=('completed','google_event_id','project_report','use_sign_in'))
     EventForm.base_fields['assoc_officer'].queryset=OfficerPosition.objects.filter(enabled=True)
-    EventForm.base_fields['leaders'].queryset=get_members().order_by('last_name')
     EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
     if request.method == 'POST':
         form = EventForm(request.POST,prefix='event')
@@ -528,9 +527,8 @@ def create_electee_interviews(request):
         request.session['error_message']='You are not authorized to create electee interviews'
         return get_previous_page(request,alternate='event_cal:list')
     request.session['current_page']=request.path
-    EventForm = modelform_factory(CalendarEvent,exclude=('completed','google_event_id','project_report','event_type','members_only','needs_carpool','use_sign_in','allow_advance_sign_up','needs_facebook_event'))
+    EventForm = modelform_factory(CalendarEvent,form=BaseEventForm,exclude=('completed','google_event_id','project_report','event_type','members_only','needs_carpool','use_sign_in','allow_advance_sign_up','needs_facebook_event'))
     EventForm.base_fields['assoc_officer'].queryset=OfficerPosition.objects.filter(enabled=True)
-    EventForm.base_fields['leaders'].queryset=get_members().order_by('last_name')
     EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
     active_type = EventCategory.objects.get(name='Conducted Interviews')
     electee_type = EventCategory.objects.get(name='Attended Interviews')
@@ -629,9 +627,8 @@ def create_event(request):
         request.session['error_message']='You are not authorized to create events'
         return get_previous_page(request,alternate='event_cal:list')
     request.session['current_page']=request.path
-    EventForm = modelform_factory(CalendarEvent,exclude=('completed','google_event_id','project_report'))
+    EventForm = modelform_factory(CalendarEvent,form=BaseEventForm,exclude=('completed','google_event_id','project_report'))
     EventForm.base_fields['assoc_officer'].queryset=OfficerPosition.objects.filter(enabled=True)
-    EventForm.base_fields['leaders'].queryset=get_members().order_by('last_name')
     EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
     if request.method == 'POST':
         form = EventForm(request.POST,prefix='event')
@@ -756,10 +753,9 @@ def edit_event(request, event_id):
         request.session['error_message']='You are not authorized to edit this event'
         return get_previous_page(request,alternate='event_cal:list')
     request.session['current_page']=request.path
-    EventForm = modelform_factory(CalendarEvent,exclude=('completed','google_event_id','project_report'))
+    EventForm = modelform_factory(CalendarEvent,form=BaseEventForm,exclude=('completed','google_event_id','project_report'))
     EventForm.base_fields['assoc_officer'].queryset=OfficerPosition.objects.filter(enabled=True)
     EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
-    EventForm.base_fields['leaders'].queryset=get_members().order_by('last_name')
     if request.method == 'POST':
         form = EventForm(request.POST,prefix='event',instance=e)
         formset = EventShiftEditFormset(request.POST,prefix='shift',instance=e)
@@ -886,7 +882,7 @@ def complete_event(request, event_id):
         form_type = modelformset_factory(ProgressItem,exclude=('term','event_type','date_completed','related_event','name',),can_delete=True)
         is_fixed = False
     form_prefix='complete_event'
-    form_type.form.base_fields['member'].queryset=get_members().order_by('last_name')
+    form_type.form.base_fields['member'].queryset=MemberProfile.get_members().order_by('last_name')
     if request.method == 'POST':
         formset = form_type(request.POST,prefix=form_prefix,queryset=ProgressItem.objects.none())
         if formset.is_valid():
@@ -981,8 +977,7 @@ def add_announcement(request):
     if not Permissions.can_add_announcements(request.user):
         request.session['error_message']='You are not authorized to contribute weekly announcements.'
         return get_previous_page(request,alternate='event_cal:index')
-    AnnouncementForm = modelform_factory(AnnouncementBlurb)
-    AnnouncementForm.base_fields['contacts'].queryset=get_members().order_by('last_name') 
+    AnnouncementForm = modelform_factory(AnnouncementBlurb,form=BaseAnnouncementForm)
     if request.method =='POST':
         form = AnnouncementForm(request.POST)
         if form.is_valid():

@@ -83,11 +83,6 @@ class EventCategory(models.Model):
             category_array+=child.flatten_tree(depth+1)
         return category_array
 
-class MembershipAchievement(models.Model):
-    distinction = models.ForeignKey(DistinctionType)
-    term        = models.ForeignKey('mig_main.AcademicTerm')
-    member      = models.ForeignKey('mig_main.MemberProfile')
-    
 class Requirement(models.Model):
     distinction_type    = models.ForeignKey(DistinctionType)
     name                = models.CharField(max_length=30)

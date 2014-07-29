@@ -33,11 +33,15 @@ FLOW = OAuth2WebServerFlow(
     access_type='offline')
 
 def initialize_gcal():
+    """
+    Starts the OAuth authorization chain. This function would be called from a view function and will redirect the page to a page where the user can authorize the website for use with the google calendars.
+    """
     auth_uri = FLOW.step1_get_authorize_url()
     return redirect(auth_uri)
 def get_credentials():
-    # To disable the local server feature, uncomment the following line:
-
+    """
+    Retrieves the locally stored credentials. If they are invalid/expired, get a new set using the refresh token and store them locally.
+    """
     # If the Credentials don't exist or are invalid, run through the native client
     # flow. The Storage object will ensure that if successful the good
     # Credentials will get written back to a file.
@@ -47,6 +51,9 @@ def get_credentials():
         credentials = run(FLOW,storage)
     return credentials
 def process_auth(code):
+    """
+    The second step in the authorization chain. After the first step finished, a code was passed back to the website from google. This function exchanges that code for credentials, including a refresh token that can be used to get credentials without further authorization. It stores the credentials and returns them to the caller.
+    """
     credentials=FLOW.step2_exchange(code)
     storage = Storage(CALENDAR_DATA)
     storage.put(credentials)
@@ -63,32 +70,3 @@ def get_service(http):
     if http:
         return build(serviceName='calendar', version='v3',http=http,
                      developerKey=migweb.local_settings.gcal_developerKey)
-
-#Event Format
-event = {
-    'summary': 'Test',
-    'location': 'Somewhere',
-    'start': {
-        'dateTime': '2013-10-08T10:00:00.000-07:00',
-        'timeZone': 'America/Detroit'
-    },
-    'end': {
-        'dateTime': '2013-10-08T10:25:00.000-07:00',
-        'timeZone': 'America/Detroit'
-    },
-#  'recurrence': [
-#   # 'RRULE:FREQ=WEEKLY;UNTIL=20110701T100000-07:00',
-#  ],
-#  'attendees': [
-#   # {
-#   #   'email': 'attendeeEmail',
-#      # Other attendee's data...
-#   # },
-#    # ...
-#  ],
-}
-#print event
-#Set calendarId appropriately
-#recurring_event = service.events().insert(calendarId='7sh4sos0nfm3av7cqelg6n9m1o@group.calendar.google.com', body=event).execute()
-#
-#print recurring_event['id']

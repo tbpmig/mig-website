@@ -120,6 +120,7 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
     #'dbsettings',
+    'django_select2',
     'stdimage',
 	'mig_main',
 	'elections',
@@ -176,3 +177,7 @@ LOGGING = {
 
 ### email settings in local_settings ###
 
+
+## Select2 Settings
+
+SELECT2_BOOTSTRAP=True

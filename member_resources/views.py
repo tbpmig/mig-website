@@ -21,14 +21,15 @@ from django.core.urlresolvers import reverse
 from corporate.views import update_resume_zips
 from electees.models import ElecteeGroup, electee_stopped_electing, EducationalBackgroundForm
 from event_cal.models import CalendarEvent, MeetingSignInUserData
+from history.forms import BaseNEPForm,BaseNEPParticipantForm
 from history.models import Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport
 from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet
 from member_resources.forms import MeetingMinutesForm,ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditFormSet,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
 from migweb.context_processors import profile_setup
 from mig_main.default_values import get_current_term
-from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,TBPraise,PREFERENCES,get_members,get_actives,get_electees
-from mig_main.utility import  Permissions, get_previous_page,get_next_term, get_next_full_term,get_current_event_leaders,get_current_officers,get_current_group_leaders,get_message_dict,UnicodeWriter,get_officer_positions_predecessors
+from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,TBPraise,PREFERENCES
+from mig_main.utility import  Permissions, get_previous_page,get_next_term, get_next_full_term,get_current_event_leaders,get_current_group_leaders,get_message_dict,UnicodeWriter,get_officer_positions_predecessors
 from outreach.models import TutoringRecord
 from requirements.models import DistinctionType, Requirement, ProgressItem, EventCategory
 
@@ -61,7 +62,7 @@ def get_electees_with_status(distinction):
     dist_standing = distinction.standing_type.all()
     requirements = Requirement.objects.filter(query)
     unflattened_reqs = package_requirements(requirements)
-    electee_profiles = get_electees().filter(standing=dist_standing) 
+    electee_profiles = MemberProfile.get_electees().filter(standing=dist_standing) 
     electees_with_status = []
     for profile in electee_profiles:
         packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=get_current_term()))
@@ -75,7 +76,7 @@ def get_actives_with_status(distinction):
     query =  Q(distinction_type=distinction)& Q(term=get_current_term().semester_type)
     requirements = Requirement.objects.filter(query)
     unflattened_reqs = package_requirements(requirements)
-    active_profiles = get_actives() 
+    active_profiles = MemberProfile.get_actives() 
     actives_with_status = []
     for profile in active_profiles:
         packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=get_current_term()))
@@ -95,8 +96,8 @@ def get_electees_who_completed_reqs():
     grad_reqs = Requirement.objects.filter(grad_query)
     unflattened_ugrad_reqs = package_requirements(ugrad_reqs)
     unflattened_grad_reqs = package_requirements(grad_reqs)
-    ugrad_profiles = get_electees().filter(standing__name='Undergraduate').order_by('last_name')
-    grad_profiles = get_electees().filter(standing__name='Graduate').order_by('last_name')
+    ugrad_profiles = MemberProfile.get_electees().filter(standing__name='Undergraduate').order_by('last_name')
+    grad_profiles = MemberProfile.get_electees().filter(standing__name='Graduate').order_by('last_name')
     electees_with_status = []
     for profile in ugrad_profiles:
         packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=get_current_term()))
@@ -317,7 +318,7 @@ def member_profiles(request):
         return redirect('member_resources:index')
     template = loader.get_template('member_resources/userprofiles.html')
     context_dict = {
-        'profiles':get_members(),
+        'profiles':MemberProfile.get_members(),
         'subnav':'member_profiles',
         }
     context_dict.update(get_common_context(request))
@@ -1356,7 +1357,8 @@ def add_active_statuses(request):
                     gift='Not specified'
                 initial.append({'member':active,'distinction_type':distinction,'gift':gift})
         ManageActiveCurrentStatusFormSet.extra=len(initial)+1
-        formset = ManageActiveCurrentStatusFormSet(queryset=Distinction.objects.none(),initial=initial,prefix='current_status')
+        formset = ManageActiveCurrentStatusFormSet(queryset=Distinction.objects.none(),prefix='current_status')
+#        formset = ManageActiveCurrentStatusFormSet(queryset=Distinction.objects.none(),initial=initial,prefix='current_status')
     template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
@@ -1380,7 +1382,7 @@ def manage_active_statuses(request):
         request.session['error_message']='You are not authorized to manage active progress.'
         return redirect('member_resources:index')
     ManageActiveCurrentStatusFormSet = modelformset_factory(Distinction,can_delete=True)
-    ManageActiveCurrentStatusFormSet.form.base_fields['member'].queryset=get_actives()
+    ManageActiveCurrentStatusFormSet.form.base_fields['member'].queryset=MemberProfile.get_actives()
     ManageActiveCurrentStatusFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Active')
     if request.method =='POST':
         formset = ManageActiveCurrentStatusFormSet(request.POST,prefix='active_status')
@@ -1540,7 +1542,7 @@ def add_leadership_credit(request):
         initial=[]
         group_leaders = get_current_group_leaders()
         event_leaders = get_current_event_leaders()
-        officers = get_current_officers()
+        officers = Officer.get_current_members()
         leader_list = group_leaders |event_leaders |officers
         for leader in leader_list:
             if ProgressItem.objects.filter(member=leader,term=term,event_type=leadership_category).exists():
@@ -1736,7 +1738,7 @@ def add_external_service(request):
         request.session['error_message']='You are not authorized to manage external service hours.'
         return redirect('member_resources:index')
     ExternalServiceFormSet = modelformset_factory(ProgressItem,exclude=('term','date_completed','event_type','related_event'),can_delete=True)
-    ExternalServiceFormSet.form.base_fields['member'].queryset=get_electees()
+    ExternalServiceFormSet.form.base_fields['member'].queryset=MemberProfile.get_electees()
     if request.method ==  'POST':
         formset = ExternalServiceFormSet(request.POST,queryset=ProgressItem.objects.filter(term=get_current_term(),event_type__name='External Service Hours'),prefix='external_service')
         if formset.is_valid():
@@ -1819,7 +1821,7 @@ def manage_dues(request):
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
         initial_data = []
-        electee_profiles = get_electees().order_by('last_name')
+        electee_profiles = MemberProfile.get_electees()
         dues_progress = ProgressItem.objects.filter(event_type__name='Dues',term=get_current_term())
         for electee in electee_profiles:
             has_paid_dues = dues_progress.filter(member=electee).exists()
@@ -2139,7 +2141,7 @@ def manage_ugrad_paperwork(request):
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
         initial_data = []
-        electee_profiles = get_electees().filter(standing__name='Undergraduate').order_by('last_name')
+        electee_profiles = MemberProfile.get_electees().filter(standing__name='Undergraduate').order_by('last_name')
         electee_exam_progress = ProgressItem.objects.filter(event_type__name='Electee Exam',term=get_current_term())
         char_interviews_progress = ProgressItem.objects.filter(event_type__name='Attended Interviews',term=get_current_term())
         peer_interview_progress = ProgressItem.objects.filter(event_type__name='Peer Interviews',term=get_current_term())
@@ -2228,7 +2230,7 @@ def manage_grad_paperwork(request):
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
         initial_data = []
-        electee_profiles = get_electees().filter(standing__name='Graduate').order_by('last_name')
+        electee_profiles = MemberProfile.get_electees().filter(standing__name='Graduate').order_by('last_name')
         advisor_form_progress = ProgressItem.objects.filter(event_type__name='Advisor Form',term=get_current_term())
         background_form_progress = ProgressItem.objects.filter(event_type__name='Educational Background Form',term=get_current_term())
         char_interviews_progress = ProgressItem.objects.filter(event_type__name='Attended Interviews',term=get_current_term())
@@ -2551,12 +2553,11 @@ def new_non_event_project(request):
 
 def non_event_project_meta_data(request,ne_report):
     if ne_report:
-        NonEventProjectForm = modelform_factory(NonEventProject, exclude=('term','project_report'))
+        NonEventProjectForm = modelform_factory(NonEventProject,form=BaseNEPForm, exclude=('term','project_report'))
     else:
-        NonEventProjectForm = modelform_factory(NonEventProject, exclude=('project_report',))
+        NonEventProjectForm = modelform_factory(NonEventProject, form=BaseNEPForm,exclude=('project_report',))
         ne_report = None
 
-    NonEventProjectForm.base_fields['leaders'].queryset=get_members().order_by('last_name')
     if request.method =='POST':
         if ne_report:
             form = NonEventProjectForm(request.POST,instance=ne_report)
@@ -2593,8 +2594,7 @@ def non_event_project_meta_data(request,ne_report):
 
 def non_event_project_participants(request,ne_id):
     ne = get_object_or_404(NonEventProject,id=ne_id)
-    NonEventFormSet = modelformset_factory(NonEventProjectParticipant,exclude=('project',))
-    NonEventFormSet.form.base_fields['participant'].queryset=get_members().order_by('last_name')
+    NonEventFormSet = modelformset_factory(NonEventProjectParticipant,form = BaseNEPParticipantForm,exclude=('project',))
 
     if request.method =='POST':
         formset = NonEventFormSet(request.POST,queryset=NonEventProjectParticipant.objects.filter(project=ne).order_by('participant__last_name'),prefix='nep_parts')

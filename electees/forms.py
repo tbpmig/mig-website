@@ -4,15 +4,16 @@ from django.forms.formsets import formset_factory
 from django.core.exceptions import ValidationError
 from django.forms.models import inlineformset_factory, BaseInlineFormSet
 
+from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,ModelSelect2Field,Select2Widget
+
 from electees.models import ElecteeGroup,EducationalBackgroundForm,BackgroundInstitution
-from mig_main.models import get_electees
+from mig_main.models import MemberProfile
 from history.models import Officer
-from mig_main.utility import get_current_officers
 from mig_main.default_values import get_current_term
 
 def get_unassigned_electees():
     current_electee_groups = ElecteeGroup.objects.filter(term=get_current_term())
-    current_electees = get_electees()
+    current_electees = MemberProfile.get_electees()
     for group in current_electee_groups.all():
         current_electees=current_electees.exclude(pk__in=group.members.all())
     return current_electees.order_by('standing','last_name')
@@ -28,3 +29,10 @@ class BaseInstituteFormSet(BaseInlineFormSet):
 
 InstituteFormset = inlineformset_factory(EducationalBackgroundForm, BackgroundInstitution,formset=BaseInstituteFormSet,extra=1)
 
+class BaseElecteeGroupForm(forms.ModelForm):
+#    tagged_members = ModelSelect2MultipleField()
+    leaders = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'26em','placeholder':'Select leader(s)','closeOnSelect':True}),queryset=MemberProfile.get_actives())
+    officers = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'26em','placeholder':'Select officer liaison(s)','closeOnSelect':True}),queryset=Officer.get_current_members())
+    class Meta:
+        model = ElecteeGroup
+        exclude= ('term','members','points',)

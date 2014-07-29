@@ -13,12 +13,6 @@ class Election(models.Model):
     def __unicode__(self):
         return str(self.term)+" Election"
         
-#class TempNomination(models.Model):
-#    name        = models.CharField(max_length=50,verbose_name='Nominee\'s name')
-#    election    = models.ForeignKey(Election)
-#    nominee     = models.CharField(max_length=8,verbose_name='Nominee\'s uniqname')
-#    position    = models.ForeignKey('mig_main.OfficerPosition')
-#    accepted    = models.NullBooleanField(default=None)
 
 class Nomination(models.Model): 
     election    = models.ForeignKey(Election)

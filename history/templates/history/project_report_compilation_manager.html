@@ -8,7 +8,7 @@
     <div class="col-md-6">
         <h3>Fall Term Checkpoint Reports</h3>
         {% if pr_fall %}
-        <p><a class="btn btn-success" href={% url 'history:start_project_report_compilation' winter_term.id %}>Edit Overview Information</a></p>
+        <p><a class="btn btn-success" href={% url 'history:start_project_report_compilation' fall_term.id %}>Edit Overview Information</a></p>
             
             {% if pr_fall.finished_processing %}
                 <p><a class="btn btn-success" href={% url 'history:process_project_reports' pr_fall.id 0 %}>Process Reports from beginning</a></p>
@@ -38,7 +38,7 @@
                 
             {% endif %}
         {% else %}
-        <p><a type="button" class="btn btn-primary" href={% url 'history:start_project_report_compilation' winter_term.id %}>Start Project Report Compilation</a></p>
+        <p><a type="button" class="btn btn-primary" href={% url 'history:start_project_report_compilation' fall_term.id %}>Start Project Report Compilation</a></p>
             <p><button type="button" class="btn btn-default" disabled="disabled">Process Individual Reports</button></p>
             <p><button type="button" class="btn btn-default" disabled="disabled">Process Report Photos</button></p>
             <p><button type="button" class="btn btn-default" disabled="disabled">Compile Reports</button></p>

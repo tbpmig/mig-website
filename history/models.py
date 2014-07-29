@@ -24,6 +24,10 @@ class Officer(models.Model):
                                         on_delete=models.PROTECT)
     website_bio     = models.TextField()
     website_photo   = StdImageField(upload_to='officer_photos',variations={'thumbnail':(555,775)})
+    @classmethod
+    def get_current_members(cls):
+        current_officers = cls.objects.filter(term=get_current_term())
+        return MemberProfile.objects.filter(officer__in = current_officers).distinct().order_by('last_name','first_name','uniqname')
     def __unicode__(self):
         return self.user.get_full_name()+': '+self.position.name
 
@@ -57,7 +61,7 @@ class WebsiteArticle(models.Model):
     body            = models.TextField()
     date_posted     = models.DateField()
     tagged_members  = models.ManyToManyField('mig_main.MemberProfile', blank=True,
-                                            null=True,default=None,related_name='article_tagged_members')
+                                            null=True,related_name='article_tagged_members')
     def __unicode__(self):
         return self.title+' ('+str(self.date_posted)+')'
 

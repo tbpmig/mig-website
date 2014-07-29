@@ -10,12 +10,12 @@ from django.forms.models import modelformset_factory,modelform_factory
 from django.forms import CheckboxSelectMultiple
 
 from electees.models import ElecteeGroup, ElecteeGroupEvent,ElecteeResource,EducationalBackgroundForm,BackgroundInstitution
-from mig_main.models import MemberProfile, AcademicTerm,get_actives
-from mig_main.utility import Permissions, get_previous_page, get_current_officers, get_message_dict
+from mig_main.models import MemberProfile, AcademicTerm
+from mig_main.utility import Permissions, get_previous_page,  get_message_dict
 from mig_main.default_values import get_current_term
 from member_resources.views import get_permissions as get_member_permissions
 from history.models import Officer
-from electees.forms import get_unassigned_electees,InstituteFormset
+from electees.forms import get_unassigned_electees,InstituteFormset,BaseElecteeGroupForm
 
 def user_is_member(user):
     if hasattr(user,'userprofile'):
@@ -57,10 +57,7 @@ def edit_electee_groups(request):
         request.session['error_message']='You are not authorized to edit electee groups'
         return redirect('electees:view_electee_groups')
     e_groups = ElecteeGroup.objects.filter(term=get_current_term())
-    ElecteeGroupFormSet = modelformset_factory(ElecteeGroup,exclude=('term','members','points',),can_delete=True,widgets={'leaders':CheckboxSelectMultiple,'officers':CheckboxSelectMultiple})
-    ElecteeGroupFormSet.form.base_fields['leaders'].queryset=get_actives().order_by('last_name','first_name')
-    #ElecteeGroupFormSet.form.base_fields['leaders'].widget=CheckboxSelectMultiple
-    ElecteeGroupFormSet.form.base_fields['officers'].queryset=get_current_officers().order_by('last_name','first_name')
+    ElecteeGroupFormSet = modelformset_factory(ElecteeGroup,form =BaseElecteeGroupForm,can_delete=True)
     if request.method =='POST':
         formset = ElecteeGroupFormSet(request.POST,prefix='groups')
         if formset.is_valid():

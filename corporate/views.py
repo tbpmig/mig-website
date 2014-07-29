@@ -13,7 +13,7 @@ from django.template.defaultfilters import slugify
 
 from corporate.models import CorporateTextField,CorporateResourceGuide
 from migweb.settings import PROJECT_PATH, MEDIA_ROOT
-from mig_main.models import Major, MemberProfile, Standing,get_members
+from mig_main.models import Major, MemberProfile, Standing
 from mig_main.utility import get_message_dict,Permissions
 
 RESUMES_BY_MAJOR_LOCATION = os.path.sep.join([MEDIA_ROOT,'Resumes_by_major'])
@@ -45,7 +45,7 @@ def compile_resumes():
         shutil.copy(PROJECT_PATH+resource_guides[0].resource_guide.url,os.path.sep.join([RESUMES_BY_MAJOR_LOCATION,slugify(resource_guides[0].name)+'.pdf']))
     for resume_major in Major.objects.all():
         query=Q(major=resume_major)
-        users_in_major = get_members().filter(query)
+        users_in_major = MemberProfile.get_members().filter(query)
         for user in users_in_major:
             if user.resume:
                 major_dir = os.path.sep.join([RESUMES_BY_MAJOR_LOCATION,slugify(resume_major.name)])
@@ -60,7 +60,7 @@ def compile_resumes():
         shutil.copy(PROJECT_PATH+resource_guides[0].resource_guide.url,os.path.sep.join([RESUMES_BY_YEAR_LOCATION,slugify(resource_guides[0].name)+'.pdf']))
     not_alum = ~Q(name='Alumni')
     for standing in Standing.objects.all():
-        members = get_members().filter(standing=standing)
+        members = MemberProfile.get_members().filter(standing=standing)
         if standing.name == 'Alumni':
             status_dir = os.path.sep.join([RESUMES_BY_YEAR_LOCATION,slugify(standing.name)])
         else:
