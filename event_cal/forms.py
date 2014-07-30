@@ -6,12 +6,23 @@ from django.forms.models import modelformset_factory,inlineformset_factory, Base
 from django.forms.formsets import formset_factory
 from django.utils.translation import ugettext as _
 
-from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget
+from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,ModelSelect2Field,Select2Widget
 
 from requirements.models import EventCategory
-from event_cal.models import CalendarEvent, EventShift,AnnouncementBlurb
+from event_cal.models import CalendarEvent, EventShift,AnnouncementBlurb,EventPhoto
 from mig_main.models import UserProfile,MemberProfile
 from history.models import ProjectReport
+class BaseEventPhotoForm(ModelForm):
+    event = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Event','closeOnSelect':True}),queryset=CalendarEvent.objects.all(),required=False)
+    project_report = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Report','closeOnSelect':True}),queryset=ProjectReport.objects.all(),required=False)
+    class Meta:
+        model = EventPhoto
+
+class BaseEventPhotoFormAlt(ModelForm):
+    event = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Event','closeOnSelect':True}),queryset=CalendarEvent.objects.all(),required=False)
+    class Meta:
+        model = EventPhoto
+        exclude = ('project_report',)
 
 class BaseAnnouncementForm(ModelForm):
     contacts = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'element','placeholder':'Select Contact Person/People','closeOnSelect':True}), queryset=MemberProfile.get_members())
@@ -158,7 +169,7 @@ class AddProjectReportForm(Form):
     """
     A form for selecting a project report to associate with a particular event.
     """
-    report = forms.ModelChoiceField(ProjectReport.objects.all())
+    report = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Report','closeOnSelect':True}), queryset=ProjectReport.objects.all())
 
 class MeetingSignInForm(Form):
     """

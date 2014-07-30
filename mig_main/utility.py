@@ -419,11 +419,11 @@ class Permissions:
     def project_reports_you_can_view(cls,user):
         terms=get_project_report_term()
         if user.is_superuser:
-            return ProjectReport.objects.filter(term__in=terms).distinct()
+            return ProjectReport.objects.filter(term__in=terms).distinct().order_by('name')
         current_positions=cls.get_current_officer_positions(user)
         previous_positions=cls.get_previous_officer_positions(user)
         if current_positions.filter(position__name='Secretary').exists() or previous_positions.filter(position__name='Secretary').exists():
-            return ProjectReport.objects.filter(term__in=terms).distinct()
+            return ProjectReport.objects.filter(term__in=terms).distinct().order_by('name')
         profile =cls.get_profile(user)
         if not profile:
             return ProjectReport.objects.none()
@@ -434,7 +434,7 @@ class Permissions:
         query=query|Q(leaders=profile)
         events =events.filter(query)
         project_reports= ProjectReport.objects.filter(calendarevent__in=events).distinct()
-        return project_reports
+        return project_reports.order_by('name')
     @classmethod
     def profiles_you_can_view(cls,user):
         if user.is_superuser:

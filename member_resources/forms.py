@@ -165,7 +165,6 @@ class AddElecteeStatusForm(forms.ModelForm):
             return super(AddActiveStatusForm, self).save(commit=commit)
         else:
             return None
-LeadershipCreditFormSet = modelformset_factory(ProgressItem,form=LeadershipCreditForm)
 
 ManageElecteeDAPAFormSet = modelformset_factory(Distinction,form=AddElecteeStatusForm)
 ManageElecteeDAPAFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Electee').filter(Q(name__contains='DA')|Q(name__contains='PA'))
@@ -176,4 +175,9 @@ ElecteeToActiveFormSet.form.base_fields['distinction_type'].queryset=Distinction
 
 ManageActiveCurrentStatusFormSet = modelformset_factory(Distinction,form=AddActiveStatusForm)
 ManageActiveCurrentStatusFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Active')
+class ExternalServiceForm(forms.ModelForm):
+    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=MemberProfile.get_electees())
 
+    class Meta:
+        model = ProgressItem
+        exclude = ('term','date_completed','event_type','related_event')

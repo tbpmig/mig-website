@@ -13,7 +13,7 @@ from django import forms
 from django.forms.models import modelformset_factory,modelform_factory
 from django.db.models import Min,Q
 
-from event_cal.forms import  BaseAnnouncementForm,BaseEventForm,EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset,MultiShiftFormset
+from event_cal.forms import BaseEventPhotoForm,BaseEventPhotoFormAlt, BaseAnnouncementForm,BaseEventForm,EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset,MultiShiftFormset
 from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift
 from history.models import ProjectReport, Officer,NonEventProject
 from mig_main.default_values import get_current_term
@@ -325,12 +325,17 @@ def add_event_photo(request):
     if not hasattr(request.user,'userprofile') and request.user.userprofile.is_member():
         request.session['error_message']='You must create  profile before adding photos'
         return get_previous_page(request,alternate='event_cal:index')
-    if Permissions.can_create_events(request.user):
-        EventPhotoForm = modelform_factory(EventPhoto)
+    if Permissions.can_create_events(request.user):# and not request.user.is_superuser:
+        EventPhotoForm = modelform_factory(EventPhoto,form=BaseEventPhotoForm)
+        has_pr=True
     else:
-        EventPhotoForm = modelform_factory(EventPhoto,exclude=('project_report',))
+        EventPhotoForm = modelform_factory(EventPhoto,form=BaseEventPhotoFormAlt)
+        has_pr=False
     if request.method =='POST':
         form = EventPhotoForm(request.POST,request.FILES)
+        form.fields['event'].queryset = CalendarEvent.get_current_term_events_alph()
+        if has_pr:
+            form.fields['project_report'].queryset = Permissions.project_reports_you_can_view(request.user)
         if form.is_valid():
             form.save()
             request.session['success_message']='Photo successfully submitted'
@@ -339,6 +344,9 @@ def add_event_photo(request):
             request.session['warning_message']='There were errors in your submission'
     else:
         form = EventPhotoForm()
+        form.fields['event'].queryset = CalendarEvent.get_current_term_events_alph()
+        if has_pr:
+            form.fields['project_report'].queryset = Permissions.project_reports_you_can_view(request.user)
     template = loader.get_template('generic_form.html')
     context_dict = {
         'form':form,

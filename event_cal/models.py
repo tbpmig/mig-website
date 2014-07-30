@@ -47,6 +47,18 @@ class CalendarEvent(models.Model):
     before_grace = timedelta(minutes=-30)
     after_grace = timedelta(hours = 1)
     @classmethod
+    def get_current_term_events_alph(cls):
+        """
+        Gets the current term events ordered alphabetically.
+        """
+        return cls.objects.filter(term=get_current_term()).order_by('name')
+    @classmethod
+    def get_current_term_events_rchron(cls):
+        """
+        Gets the current term events ordered reverse-chronologically.
+        """
+        return cls.objects.filter(term=get_current_term()).annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
+    @classmethod
     def get_pending_events(cls):
         """
         Finds all events where all the shifts have passed but the event is not marked as completed yet.

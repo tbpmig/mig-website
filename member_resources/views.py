@@ -21,10 +21,10 @@ from django.core.urlresolvers import reverse
 from corporate.views import update_resume_zips
 from electees.models import ElecteeGroup, electee_stopped_electing, EducationalBackgroundForm
 from event_cal.models import CalendarEvent, MeetingSignInUserData
-from history.forms import BaseNEPForm,BaseNEPParticipantForm
+from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm
 from history.models import Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport
-from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet
-from member_resources.forms import MeetingMinutesForm,ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditFormSet,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet
+from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet,ExternalServiceForm
+from member_resources.forms import MeetingMinutesForm,ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
 from migweb.context_processors import profile_setup
 from mig_main.default_values import get_current_term
@@ -1230,7 +1230,7 @@ def manage_officers(request,term_id):
     if not Permissions.can_manage_officers(request.user):
         request.session['error_message']='You are not authorized to manage chapter officers.'
         return redirect('member_resources:index')
-    ManageOfficersFormSet = modelformset_factory(Officer,exclude=('term',))
+    ManageOfficersFormSet = modelformset_factory(Officer,form=OfficerForm)
     term =get_object_or_404(AcademicTerm,id=term_id)
     if request.method =='POST':
         formset = ManageOfficersFormSet(request.POST,request.FILES,prefix='officers',queryset=Officer.objects.filter(term=term))
@@ -1499,6 +1499,7 @@ def add_leadership_credit(request):
     error_list=[]
     term = get_current_term()
     leadership_category = EventCategory.objects.get(name='Leadership')
+    LeadershipCreditFormSet = modelformset_factory(ProgressItem,form=LeadershipCreditForm)
     if request.method == 'POST':
         if 'submit' in request.POST:
             formset = LeadershipCreditFormSet(request.POST,queryset=ProgressItem.objects.none(),prefix='leadership')
@@ -1737,8 +1738,7 @@ def add_external_service(request):
     if not Permissions.can_add_external_service(request.user):
         request.session['error_message']='You are not authorized to manage external service hours.'
         return redirect('member_resources:index')
-    ExternalServiceFormSet = modelformset_factory(ProgressItem,exclude=('term','date_completed','event_type','related_event'),can_delete=True)
-    ExternalServiceFormSet.form.base_fields['member'].queryset=MemberProfile.get_electees()
+    ExternalServiceFormSet = modelformset_factory(ProgressItem,form = ExternalServiceForm,can_delete=True)
     if request.method ==  'POST':
         formset = ExternalServiceFormSet(request.POST,queryset=ProgressItem.objects.filter(term=get_current_term(),event_type__name='External Service Hours'),prefix='external_service')
         if formset.is_valid():
