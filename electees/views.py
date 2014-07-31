@@ -12,7 +12,6 @@ from django.forms import CheckboxSelectMultiple
 from electees.models import ElecteeGroup, ElecteeGroupEvent,ElecteeResource,EducationalBackgroundForm,BackgroundInstitution
 from mig_main.models import MemberProfile, AcademicTerm
 from mig_main.utility import Permissions, get_previous_page,  get_message_dict
-from mig_main.default_values import get_current_term
 from member_resources.views import get_permissions as get_member_permissions
 from history.models import Officer
 from electees.forms import get_unassigned_electees,InstituteFormset,BaseElecteeGroupForm
@@ -38,9 +37,9 @@ def get_common_context(request):
     })
     return context_dict
 def view_electee_groups(request):
-    e_groups = ElecteeGroup.objects.filter(term=get_current_term()).order_by('points')
-    packets = ElecteeResource.objects.filter(term=get_current_term(),resource_type__is_packet=True).order_by('resource_type')
-    resources = ElecteeResource.objects.filter(term=get_current_term(),resource_type__is_packet=False).order_by('resource_type')
+    e_groups = ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term()).order_by('points')
+    packets = ElecteeResource.objects.filter(term=AcademicTerm.get_current_term(),resource_type__is_packet=True).order_by('resource_type')
+    resources = ElecteeResource.objects.filter(term=AcademicTerm.get_current_term(),resource_type__is_packet=False).order_by('resource_type')
     template = loader.get_template('electees/view_electee_groups.html')
     context_dict = {
         'groups':e_groups,
@@ -56,7 +55,7 @@ def edit_electee_groups(request):
     if not Permissions.can_manage_electee_progress(request.user):
         request.session['error_message']='You are not authorized to edit electee groups'
         return redirect('electees:view_electee_groups')
-    e_groups = ElecteeGroup.objects.filter(term=get_current_term())
+    e_groups = ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term())
     ElecteeGroupFormSet = modelformset_factory(ElecteeGroup,form =BaseElecteeGroupForm,can_delete=True)
     if request.method =='POST':
         formset = ElecteeGroupFormSet(request.POST,prefix='groups')
@@ -64,7 +63,7 @@ def edit_electee_groups(request):
             instances=formset.save(commit=False)
             for instance in instances:
                 if not instance.id:
-                    instance.term = get_current_term()
+                    instance.term = AcademicTerm.get_current_term()
                     instance.points = 0
                 instance.save()
             formset.save_m2m()
@@ -107,7 +106,7 @@ def edit_electee_group_membership(request):
                 group.members.add(MemberProfile.objects.get(uniqname=member))
         request.session['success_message']='Your changes have been saved'
 
-    e_groups = ElecteeGroup.objects.filter(term=get_current_term())
+    e_groups = ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term())
     template = loader.get_template('electees/edit_electee_group_membership.html')
     context_dict = {
         'electee_groups':e_groups,
@@ -124,7 +123,7 @@ def edit_electee_group_points(request):
         request.session['error_message']='You are not authorized to edit electee group points.'
         return redirect('electees:view_electee_groups')
     GroupPointsFormSet = modelformset_factory(ElecteeGroupEvent,exclude=('related_event_id',),can_delete=True)
-    term =get_current_term()
+    term =AcademicTerm.get_current_term()
     if request.method =='POST':
         formset = GroupPointsFormSet(request.POST,prefix='group_points',queryset=ElecteeGroupEvent.objects.filter(related_event_id=None,electee_group__term=term))
         if formset.is_valid():
@@ -193,7 +192,7 @@ def edit_electee_resources(request):
         request.session['error_message']='You are not authorized to edit electee resources.'
         return redirect('electees:view_electee_groups')
     ResourceFormSet = modelformset_factory(ElecteeResource,exclude=('term',),can_delete=True)
-    term =get_current_term()
+    term =AcademicTerm.get_current_term()
     if request.method =='POST':
         formset = ResourceFormSet(request.POST,request.FILES,prefix='resources',queryset=ElecteeResource.objects.filter(term=term))
         if formset.is_valid():

@@ -7,12 +7,11 @@ from django.forms.models import inlineformset_factory, BaseInlineFormSet
 from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,ModelSelect2Field,Select2Widget
 
 from electees.models import ElecteeGroup,EducationalBackgroundForm,BackgroundInstitution
-from mig_main.models import MemberProfile
+from mig_main.models import MemberProfile,AcademicTerm
 from history.models import Officer
-from mig_main.default_values import get_current_term
 
 def get_unassigned_electees():
-    current_electee_groups = ElecteeGroup.objects.filter(term=get_current_term())
+    current_electee_groups = ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term())
     current_electees = MemberProfile.get_electees()
     for group in current_electee_groups.all():
         current_electees=current_electees.exclude(pk__in=group.members.all())

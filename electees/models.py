@@ -5,8 +5,7 @@ from django.core.validators import  RegexValidator
 from event_cal.models import CalendarEvent
 from mig_main.pdf_field import ContentTypeRestrictedFileField,pdf_types
 from requirements.models import EventCategory
-from mig_main.models import MemberProfile
-from mig_main.default_values import get_current_term
+from mig_main.models import AcademicTerm,MemberProfile
 
 def electee_stopped_electing(profile):
     profile.still_electing=False
@@ -16,7 +15,7 @@ def electee_stopped_electing(profile):
         for shift in event.eventshift_set.all():
             shift.attendees.remove(profile)
             shift.save()
-    for group in ElecteeGroup.objects.filter(term=get_current_term(),members=profile):
+    for group in ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term(),members=profile):
         group.members.remove(profile)
         group.save()
 
@@ -86,7 +85,7 @@ class ElecteeGroup(models.Model):
     term        = models.ForeignKey('mig_main.AcademicTerm')
     @classmethod
     def get_current_leaders(cls):
-        current_groups = cls.objects.filter(term=get_current_term())
+        current_groups = cls.objects.filter(term=AcademicTerm.get_current_term())
         return MemberProfile.objects.filter(Q(electee_group_leaders__in=current_groups)|Q(electee_group_officers__in=current_groups)).distinct().order_by('last_name','first_name','uniqname')
     def __unicode__(self):
         return unicode(self.term)+": "+self.group_name

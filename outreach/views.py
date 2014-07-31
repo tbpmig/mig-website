@@ -8,9 +8,8 @@ from django.utils import timezone
 
 from event_cal.models import CalendarEvent
 from history.models import Officer
-from mig_main.models import OfficerPosition
+from mig_main.models import OfficerPosition, AcademicTerm
 from mig_main.utility import get_message_dict, Permissions
-from mig_main.default_values import get_current_term
 from outreach.models import OutreachPhoto,MindSETModule,VolunteerFile,TutoringPageSection,OutreachEventType
 
 def get_permissions(user):
@@ -27,7 +26,7 @@ def get_common_context(request):
             user_is_member = True
     context_dict.update({
         'request':request,
-        'term':get_current_term(),
+        'term':AcademicTerm.get_current_term(),
         'user_is_member':user_is_member,
         'has_profile':has_profile,
         'event_signed_up':event_signed_up,
@@ -55,7 +54,7 @@ def mindset(request):
     officers_unique=[]
     id_set = set()
     positions=OfficerPosition.objects.filter(name='K-12 Outreach Officer')
-    current_officers=k_12_officers.filter(term=get_current_term())
+    current_officers=k_12_officers.filter(term=AcademicTerm.get_current_term())
 
     if positions.exists:
         position=positions[0]
@@ -80,7 +79,7 @@ def mindset(request):
         parking_photo=mindset_parking_photo[0]
     else:
         parking_photo=None
-    events = CalendarEvent.objects.filter(term=get_current_term(),event_type__name='MindSET').annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
+    events = CalendarEvent.objects.filter(term=AcademicTerm.get_current_term(),event_type__name='MindSET').annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
     context_dict = {
             'events':events,
             'main_photo':main_photo,
@@ -165,7 +164,7 @@ def update_mindset_photos(request):
 
 def tutoring(request):
     request.session['current_page']=request.path
-    events = CalendarEvent.objects.filter(term=get_current_term(),event_type__name='Tutoring Hours').order_by('announce_start')
+    events = CalendarEvent.objects.filter(term=AcademicTerm.get_current_term(),event_type__name='Tutoring Hours').order_by('announce_start')
     officers = Officer.objects.filter(position__name='Campus Outreach Officer')
     template = loader.get_template('outreach/tutoring.html')
     tutoring_pages = TutoringPageSection.objects.all().order_by('page_order')
@@ -181,36 +180,10 @@ def tutoring(request):
     return HttpResponse(template.render(context))
 
 
-#def townhalls(request):
-#    request.session['current_page']=request.path
-#    events = CalendarEvent.objects.filter(term=get_current_term(),event_type__name='Town Hall').annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
-#    template = loader.get_template('outreach/townhalls.html')
-#    context_dict = {
-#        'events':events,
-#        'subnav':'townhalls',
-#        }
-#    context_dict.update(get_common_context(request))
-#    context_dict.update(get_permissions(request.user))
-#    context = RequestContext(request, context_dict)
-#    return HttpResponse(template.render(context))
-
-#def puesdays(request):
-#    request.session['current_page']=request.path
-#    events = CalendarEvent.objects.filter(term=get_current_term(),event_type__name='Breakfast Outreach').annotate(earliest_shift=Min('eventshift__start_time')).order_by('-earliest_shift')
-#    template = loader.get_template('outreach/puesdays.html')
-#    context_dict = {
-#        'events':events,
-#        'subnav':'puesdays',
-#        }
-#    context_dict.update(get_common_context(request))
-#    context_dict.update(get_permissions(request.user))
-#    context = RequestContext(request, context_dict)
-#    return HttpResponse(template.render(context))
-
 def outreach_event(request,url_stem):
     request.session['current_page']=request.path
     outreach_event = get_object_or_404(OutreachEventType,url_stem=url_stem)
-    events = CalendarEvent.objects.filter(term=get_current_term(),event_type=outreach_event.event_category,eventshift__end_time__gte=timezone.now()).annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
+    events = CalendarEvent.objects.filter(term=AcademicTerm.get_current_term(),event_type=outreach_event.event_category,eventshift__end_time__gte=timezone.now()).annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
     template = loader.get_template('outreach/outreach_template.html')
     context_dict = {
         'events':events,

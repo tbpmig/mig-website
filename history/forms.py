@@ -3,9 +3,8 @@ from django.forms.models import modelformset_factory
 
 from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,ModelSelect2Field,Select2Widget
 
-from history.models import Publication, WebsiteArticle,NonEventProject,NonEventProjectParticipant, Officer
+from history.models import Publication, WebsiteArticle,NonEventProject,NonEventProjectParticipant, Officer,ProjectReportHeader
 from event_cal.models import EventPhoto
-from mig_main.default_values import get_current_term
 from mig_main.models import MemberProfile,AcademicTerm,OfficerPosition
 
 class OfficerForm(forms.ModelForm):
@@ -61,10 +60,17 @@ class ProjectPhotoForm(forms.ModelForm):
 
 ProjectPhotoFormset = modelformset_factory(EventPhoto,form = ProjectPhotoForm,extra=0)
 
+class BaseProjectReportHeaderForm(forms.ModelForm):
+    terms = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'26em','placeholder':'Select Term(s)','closeOnSelect':True}),queryset=AcademicTerm.get_rchron())
+    preparer = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'26em'}),queryset=MemberProfile.get_actives())
+
+    class Meta:
+        model = ProjectReportHeader
+        exclude=('finished_processing','finished_photos','last_processed','last_photo')
 
 class BaseNEPForm(forms.ModelForm):
     leaders = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'26em','placeholder':'Select Leader(s)','closeOnSelect':True}),queryset=MemberProfile.get_members())
-    term = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'26em'}),queryset=AcademicTerm.get_rchron(),initial=get_current_term())
+    term = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'26em'}),queryset=AcademicTerm.get_rchron(),initial=AcademicTerm.get_current_term())
     assoc_officer = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'26em','placeholder':'Select Officer Position','closeOnSelect':True}),queryset=OfficerPosition.get_current(),label='Associated Officer')
     class Meta:
         model = NonEventProject

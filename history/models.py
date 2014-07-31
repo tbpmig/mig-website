@@ -10,8 +10,7 @@ from localflavor.us.models import PhoneNumberField
 from stdimage import StdImageField
 
 from mig_main.pdf_field import ContentTypeRestrictedFileField,pdf_types
-from mig_main.default_values import get_current_term
-from mig_main.models import MemberProfile,UserProfile,OfficerPosition
+from mig_main.models import MemberProfile,UserProfile,OfficerPosition,AcademicTerm
 
 from event_cal.models import EventShift,EventPhoto
 from requirements.models import ProgressItem
@@ -26,7 +25,7 @@ class Officer(models.Model):
     website_photo   = StdImageField(upload_to='officer_photos',variations={'thumbnail':(555,775)})
     @classmethod
     def get_current_members(cls):
-        current_officers = cls.objects.filter(term=get_current_term())
+        current_officers = cls.objects.filter(term=AcademicTerm.get_current_term())
         return MemberProfile.objects.filter(officer__in = current_officers).distinct().order_by('last_name','first_name','uniqname')
     def __unicode__(self):
         return self.user.get_full_name()+': '+self.position.name
@@ -40,7 +39,7 @@ class Distinction(models.Model):
     @classmethod
     def add_statuses(cls,uniqnames,distinction_type,term=None,gift='N/A'):
         if not term:
-            term = get_current_term()
+            term = AcademicTerm.get_current_term()
         no_profiles=[]
         for uniqname in uniqnames:
             profiles = MemberProfile.objects.filter(uniqname=uniqname)
@@ -164,7 +163,7 @@ class NonEventProject(models.Model):
     assoc_officer   = models.ForeignKey('mig_main.OfficerPosition')
     project_report  = models.ForeignKey('history.ProjectReport',null=True,blank=True,
                                         on_delete = models.SET_NULL)
-    term            = models.ForeignKey('mig_main.AcademicTerm', default=get_current_term)    
+    term            = models.ForeignKey('mig_main.AcademicTerm', default=AcademicTerm.get_current_term)    
     start_date      = models.DateField()
     end_date        = models.DateField()
     location        = models.CharField(max_length=100,blank=True,null=True)

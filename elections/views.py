@@ -15,6 +15,7 @@ from django.utils.encoding import force_unicode
 from markdown import markdown
 
 from elections.models import Election, Nomination
+from elections.forms import NominationForm
 from member_resources.views import get_permissions as get_member_permissions
 from mig_main.models import UserProfile, OfficerPosition, AcademicTerm, MemberProfile, OfficerTeam
 from mig_main.utility import get_message_dict,Permissions
@@ -67,21 +68,10 @@ def list(request,election_id):
 
 def positions(request,election_id):
     request.session['current_page']=request.path
-    positions=OfficerPosition.objects.filter(enabled=True).order_by('members')
-    election = get_object_or_404(Election,id=election_id)
-    teams = OfficerTeam.objects.filter(start_term__lte=election.term).filter(Q(end_term=None)|Q(end_term__gte=election.term))
-    packed_positions=[]
-    for team in teams:
-        for position in team.members.all():
-            if team.name == 'Executive Committee':
-                order=0
-            else:
-                order=1
-            temp_pos={'order':order,'position':position,'teams':position.members.filter(start_term__lte=election.term).filter(Q(end_term=None)|Q(end_term__gte=election.term)),'leads':position.team_lead.filter(start_term__lte=election.term).filter(Q(end_term=None)|Q(end_term__gte=election.term))}
-            packed_positions.append(temp_pos)
+    positions=OfficerPosition.get_current()
     context_dict = {
             'subsubnav':'positions',
-            'positions':packed_positions,
+            'positions':positions,
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -117,11 +107,8 @@ def nominate(request,election_id):
     e=get_object_or_404(Election,id=election_id)
     nomination = Nomination(election=e)
     nomination.nominator = request.user.userprofile
-    NominationForm = modelform_factory(Nomination,exclude=('nominator','accepted','election'))
-    NominationForm.base_fields['position'].queryset=e.officers_for_election.all().order_by('id')
-    NominationForm.base_fields['nominee'].queryset=MemberProfile.get_members().order_by('last_name')
     if request.method =='POST':
-        form = NominationForm(request.POST,instance=nomination)
+        form = NominationForm(request.POST,instance=nomination,election=e)
         if form.is_valid():
             existing_nominations = Nomination.objects.filter(nominee=form.cleaned_data['nominee'],position=form.cleaned_data['position'],election=e)
             instance = form.save(commit=False)
@@ -186,7 +173,7 @@ tbp-elections@umich.edu'''%{'name':recipient.get_casual_name(),'position':positi
         else:
             request.session['error_message']='There were errors in your submission'
     else:
-        form = NominationForm(instance=nomination)
+        form = NominationForm(instance=nomination,election=e)
     context_dict = {
         'form':form,
         'has_files':False,

@@ -14,7 +14,6 @@ from django.db.models import Q,Count
 from about.models import AboutSlideShowPhoto,JoiningTextField
 from history.models import Officer
 from mig_main.models import OfficerPosition, OfficerTeam, AcademicTerm
-from mig_main.default_values import get_current_term
 from mig_main.utility import get_message_dict,Permissions
 from history.models import GoverningDocument, GoverningDocumentType
 #from requirements.models import SemesterType
@@ -42,7 +41,7 @@ def get_terms():
     """
     This gets all of the full terms prior to, and including, the current one. While AcademicTerm objects do have a defined sort order, and thus sorted() could be used, this method is actually faster and allows for more ready exclusion of summer terms.
     """
-    current = get_current_term()
+    current = AcademicTerm.get_current_term()
     query = Q(year__lte=current.year)&~Q(semester_type__name='Summer')
     if current.semester_type.name=='Winter':
         query = query &~(Q(semester_type__name='Fall')&Q(year=current.year))
@@ -179,7 +178,7 @@ def leadership(request):
     """
     Shows the leadership page for the current term. Convenience function so that /leadership/ goes somewhere meaningful.
     """
-    return leadership_for_term(request,get_current_term().id)
+    return leadership_for_term(request,AcademicTerm.get_current_term().id)
 
 def leadership_for_term(request,term_id):
     """
@@ -193,7 +192,7 @@ def leadership_for_term(request,term_id):
         'request':request,
         'terms':get_terms()[:5],
         'requested_term':term,
-        'is_current':(term_id==get_current_term().id),
+        'is_current':(term_id==AcademicTerm.get_current_term().id),
         'subnav':'leadership',
         }
     context_dict.update(get_common_context(request))

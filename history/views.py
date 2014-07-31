@@ -7,9 +7,8 @@ from django.http import HttpResponse#, Http404, HttpResponseRedirect
 from django.shortcuts import  get_object_or_404,redirect
 from django.template import RequestContext, loader
 
-from history.forms  import ArticleForm, WebArticleForm,ProjectDescriptionForm,ProjectPhotoFormset
+from history.forms  import ArticleForm, WebArticleForm,ProjectDescriptionForm,ProjectPhotoFormset,BaseProjectReportHeaderForm
 from history.models import WebsiteArticle, Publication,ProjectReportHeader,ProjectReport,CompiledProjectReport
-from mig_main.default_values import get_current_term
 from mig_main.models import AcademicTerm
 from mig_main.utility import Permissions, get_previous_page,get_message_dict,get_previous_full_term
 from event_cal.models import EventPhoto
@@ -147,7 +146,7 @@ def alumninews_view(request):
 def process_project_report_compilation(request):
     if not Permissions.can_process_project_reports(request.user):
         raise PermissionDenied()
-    current_term = get_current_term()
+    current_term = AcademicTerm.get_current_term()
     if current_term.semester_type.name=='Summer':
         #Likely the whole one
         winter_term = get_previous_full_term(current_term)
@@ -190,7 +189,7 @@ def start_project_report_compilation(request,term_id):
     if not Permissions.can_process_project_reports(request.user):
         raise PermissionDenied()
     term = get_object_or_404(AcademicTerm,id=term_id)
-    ProjectForm =modelform_factory(ProjectReportHeader,exclude=('finished_processing','finished_photos','last_processed','last_photo'))
+    ProjectForm =modelform_factory(ProjectReportHeader,form=BaseProjectReportHeaderForm)
     pr = ProjectReportHeader.objects.filter(terms=term).distinct()
     if request.method=='POST':
         if pr.exists():

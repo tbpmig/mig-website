@@ -14,7 +14,6 @@ from requirements.models import SemesterType
 from history.models import Officer,ProjectReport,OfficerPositionRelationship
 from member_resources.models import ProjectLeaderList
 
-from mig_main.default_values import get_current_term
 
 def get_officer_position_predecessor_helper(officer,term,officer_set):
     links = officer.officer_relationship_successor.exclude(id__in=officer_set,effective_term__gt=term).order_by('-effective_term')
@@ -28,7 +27,7 @@ def get_officer_position_predecessor_helper(officer,term,officer_set):
     return officer_set
 def get_officer_positions_predecessors(officers,term=None):
     if term is None:
-        term = get_current_term()
+        term = AcademicTerm.get_current_term()
     officer_set=OfficerPositionRelationship.objects.none()
     for officer in officers:
         officer_set|=get_officer_position_predecessor_helper(officer,term,officer_set)
@@ -70,7 +69,7 @@ def get_previous_full_term(term):
 
 def get_project_report_term():
     today = date.today()
-    current_term = get_current_term()
+    current_term = AcademicTerm.get_current_term()
     this_fall = Q(year=today.year,semester_type__name='Fall')
     last_fall = Q(year=today.year-1,semester_type__name='Fall')
     next_winter = Q(year=today.year+1,semester_type__name='Winter')
@@ -88,11 +87,11 @@ def get_previous_officers():
     return MemberProfile.objects.filter(officer__in=previous_officers).distinct()
 
 def get_current_group_leaders():
-    current_electee_groups = ElecteeGroup.objects.filter(term=get_current_term())
+    current_electee_groups = ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term())
     return MemberProfile.objects.filter(electee_group_leaders__in = current_electee_groups).distinct()
 
 def get_current_event_leaders():
-    current_events = CalendarEvent.objects.filter(term=get_current_term())
+    current_events = CalendarEvent.objects.filter(term=AcademicTerm.get_current_term())
     return MemberProfile.objects.filter(event_leader__in = current_events).distinct()
 
 
@@ -217,7 +216,7 @@ class Permissions:
         profile = cls.get_profile(user)
         if not profile:
             return Officer.objects.none()
-        term = get_previous_full_term(get_current_term())
+        term = get_previous_full_term(AcademicTerm.get_current_term())
         positions = Officer.objects.filter(user=profile,term = term)
         return positions
     
@@ -230,7 +229,7 @@ class Permissions:
         profile = cls.get_profile(user)
         if not profile:
             return Officer.objects.none()
-        term = get_current_term()
+        term = AcademicTerm.get_current_term()
         if term.semester_type.name=='Summer':
             term = get_next_full_term(term)
         current_positions = Officer.objects.filter(user=profile,term = term)

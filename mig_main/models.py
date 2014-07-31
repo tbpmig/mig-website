@@ -10,7 +10,6 @@ from stdimage import StdImageField
 
 from mig_main.pdf_field import ContentTypeRestrictedFileField,pdf_types
 
-
 def resume_file_name(instance,filename):
     return '/'.join([u"resumes",instance.uniqname+u'.pdf'])
 
@@ -56,6 +55,12 @@ class AcademicTerm(models.Model):
     @classmethod
     def get_rchron(cls):
         return cls.objects.all().order_by('-year','-semester_type')
+    @classmethod
+    def get_current_term(cls):
+        current_terms = CurrentTerm.objects.all()
+        if current_terms.count()!=1:
+            raise IntegrityError('There must be exactly 1 current term object')
+        return current_terms[0].current_term
     def get_abbreviation(self):
         return self.semester_type.name[0]+str(self.year)
     def __unicode__(self):
@@ -124,7 +129,10 @@ class OfficerPosition(models.Model):
         return cls.objects.filter(enabled=True).order_by('display_order')
     def __unicode__(self):
         return self.name
-
+    def get_teams_led(self):
+        return self.team_lead.exclude(end_term__lte=AcademicTerm.get_current_term())
+    def get_teams(self):
+        return self.members.exclude(end_term__lte=AcademicTerm.get_current_term())
 class OfficerTeam(models.Model):
     name    = models.CharField(max_length=80)
     lead    = models.ForeignKey(OfficerPosition,related_name='team_lead')
@@ -195,6 +203,9 @@ class UserProfile(models.Model):
                                        message="Your uniqname must be 3-8 characters, all lowercase.")
                                         ])
     #Methods
+    @classmethod
+    def get_users(cls):
+        return cls.objects.all().order_by('last_name','first_name','uniqname')
     def get_full_name(self):
         name = self.title+" " if self.title else ""
         name = name + self.first_name + " "

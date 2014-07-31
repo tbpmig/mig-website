@@ -8,7 +8,7 @@ from django.utils.encoding import force_unicode
 from stdimage import StdImageField
 
 from event_cal.gcal_functions import get_credentials,get_authorized_http,get_service
-from mig_main.default_values import get_current_term
+from mig_main.models import AcademicTerm
 from requirements.models import Requirement
 # Create your models here.
 
@@ -37,7 +37,7 @@ class CalendarEvent(models.Model):
     google_cal      = models.ForeignKey(GoogleCalendar)
     project_report  = models.ForeignKey('history.ProjectReport',null=True,blank=True,
                                         on_delete = models.SET_NULL)
-    term            = models.ForeignKey('mig_main.AcademicTerm', default=get_current_term)    
+    term            = models.ForeignKey('mig_main.AcademicTerm', default=AcademicTerm.get_current_term)    
     members_only    = models.BooleanField(default=True)
     needs_carpool   = models.BooleanField(default=False)
     use_sign_in     = models.BooleanField(default=False)
@@ -51,13 +51,13 @@ class CalendarEvent(models.Model):
         """
         Gets the current term events ordered alphabetically.
         """
-        return cls.objects.filter(term=get_current_term()).order_by('name')
+        return cls.objects.filter(term=AcademicTerm.get_current_term()).order_by('name')
     @classmethod
     def get_current_term_events_rchron(cls):
         """
         Gets the current term events ordered reverse-chronologically.
         """
-        return cls.objects.filter(term=get_current_term()).annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
+        return cls.objects.filter(term=AcademicTerm.get_current_term()).annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
     @classmethod
     def get_pending_events(cls):
         """

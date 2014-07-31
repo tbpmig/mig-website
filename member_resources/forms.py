@@ -8,8 +8,7 @@ from django.db.models import Q
 from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,ModelSelect2Field,Select2Widget
 
 from electees.models import ElecteeGroup
-from mig_main.default_values import get_current_term
-from mig_main.models import AcademicTerm,Major,MemberProfile, TBPChapter,UserProfile,UserPreference,PREFERENCES
+from mig_main.models import AcademicTerm,Major,MemberProfile, TBPChapter,UserProfile,UserPreference,PREFERENCES,TBPraise
 from history.models import MeetingMinutes, Officer,Distinction
 from requirements.models import Requirement,EventCategory,ProgressItem,DistinctionType
 def max_peer_interviews_validator(value):
@@ -57,7 +56,7 @@ class NonMemberProfileForm(ModelForm):
         exclude = ('user','uniqname')
 
 class MeetingMinutesForm(ModelForm):
-    semester = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'10em','placeholder':'Select Term','closeOnSelect':True}),queryset=AcademicTerm.get_rchron(),initial=get_current_term())
+    semester = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'10em','placeholder':'Select Term','closeOnSelect':True}),queryset=AcademicTerm.get_rchron(),initial=AcademicTerm.get_current_term())
     class Meta:
         model = MeetingMinutes
 
@@ -181,3 +180,10 @@ class ExternalServiceForm(forms.ModelForm):
     class Meta:
         model = ProgressItem
         exclude = ('term','date_completed','event_type','related_event')
+
+class TBPraiseForm(forms.ModelForm):
+    recipient = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=UserProfile.get_users())
+
+    class Meta:
+        model = TBPraise
+        exclude = ('giver','date_added','approved')

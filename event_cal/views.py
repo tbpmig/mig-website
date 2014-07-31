@@ -16,8 +16,7 @@ from django.db.models import Min,Q
 from event_cal.forms import BaseEventPhotoForm,BaseEventPhotoFormAlt, BaseAnnouncementForm,BaseEventForm,EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset,MultiShiftFormset
 from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift
 from history.models import ProjectReport, Officer,NonEventProject
-from mig_main.default_values import get_current_term
-from mig_main.models import OfficerPosition,PREFERENCES,UserPreference,MemberProfile,UserProfile
+from mig_main.models import OfficerPosition,PREFERENCES,UserPreference,MemberProfile,UserProfile,AcademicTerm
 from mig_main.utility import get_previous_page, Permissions, get_message_dict
 from outreach.models import TutoringRecord
 from requirements.models import ProgressItem, EventCategory
@@ -132,7 +131,7 @@ def meeting_sign_in(request,event_id,shift_id):
                         hours = (shift.end_time-shift.start_time).seconds/3600.0
                         if event.is_fixed_progress():
                             hours = 1
-                        p=ProgressItem(member=profile.memberprofile,term=get_current_term(),amount_completed=hours,event_type=event.event_type,related_event=event,date_completed=date.today(),name=event.name)
+                        p=ProgressItem(member=profile.memberprofile,term=AcademicTerm.get_current_term(),amount_completed=hours,event_type=event.event_type,related_event=event,date_completed=date.today(),name=event.name)
                         p.save()
                         request.session['success_message']='You were signed in successfully'
                     elif profile.is_member():
@@ -440,9 +439,9 @@ def my_events(request):
     has_profile = False
     if hasattr(request.user,'userprofile'):
         has_profile = True
-        my_events = CalendarEvent.objects.filter(term=get_current_term(),eventshift__attendees__uniqname=request.user.userprofile.uniqname).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
+        my_events = CalendarEvent.objects.filter(term=AcademicTerm.get_current_term(),eventshift__attendees__uniqname=request.user.userprofile.uniqname).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
 
-        events_im_leading = CalendarEvent.objects.filter(term=get_current_term(),leaders__uniqname=request.user.userprofile.uniqname).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
+        events_im_leading = CalendarEvent.objects.filter(term=AcademicTerm.get_current_term(),leaders__uniqname=request.user.userprofile.uniqname).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
 
     template = loader.get_template('event_cal/my_events.html')
     packed_events=[]
@@ -837,7 +836,7 @@ def update_completed_event(request, event_id):
                     if not e.eventshift_set.filter(attendees=instance.member).exists():
                         first_shift.attendees.add(instance.member)
                         first_shift.save()
-                    instance.term=get_current_term()
+                    instance.term=AcademicTerm.get_current_term()
                     instance.event_type=e.event_type
                     instance.date_completed=date.today()
                     instance.related_event=e
@@ -907,7 +906,7 @@ def complete_event(request, event_id):
                 if ProgressItem.objects.filter(related_event=e,member=instance.member).exists():
                     duplicate_progress|=set([instance.member])
                     continue
-                instance.term=get_current_term()
+                instance.term=AcademicTerm.get_current_term()
                 instance.event_type=e.event_type
                 instance.date_completed=date.today()
                 instance.related_event=e
@@ -1153,7 +1152,7 @@ def submit_tutoring_form(request):
         return get_previous_page(request,alternate='event_cal:index')
     TutoringForm = modelform_factory(TutoringRecord, exclude=('approved','tutor',))
     tutoring_chair = OfficerPosition.objects.filter(name='Campus Outreach Officer')
-    current_chair = Officer.objects.filter(position__name='Campus Outreach Officer',term=get_current_term()).distinct()
+    current_chair = Officer.objects.filter(position__name='Campus Outreach Officer',term=AcademicTerm.get_current_term()).distinct()
     if current_chair.exists():
         tutoring_chair_name = current_chair[0].user.get_firstlast_name()+'\n'
     else:

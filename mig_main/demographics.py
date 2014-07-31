@@ -4,7 +4,6 @@ from django.db.models import Count
 
 from event_cal.models import CalendarEvent
 from history.models import Distinction,Officer
-from mig_main.default_values import get_current_term
 from mig_main.models import MemberProfile,Major,Status,Standing,AcademicTerm,ShirtSize,TBPChapter,ALUM_MAIL_FREQ_CHOICES,GENDER_CHOICES
 from mig_main.utility import get_previous_full_term
 from requirements.models import ProgressItem,DistinctionType,SemesterType
@@ -27,7 +26,7 @@ def get_members(init_term=None, include_electees=True,include_stopped_electing=F
         members=members.exclude(standing__name='Undergraduate')
     if not include_alums:
         members=members.exclude(standing__name='Alumni')
-    last_two_terms = [get_current_term(), get_previous_full_term(get_current_term())]
+    last_two_terms = [AcademicTerm.get_current_term(), get_previous_full_term(AcademicTerm.get_current_term())]
     if only_around:
         recent_progress=ProgressItem.objects.filter(term__in=last_two_terms)
         members=members.filter(progressitem__in=recent_progress)

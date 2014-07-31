@@ -24,10 +24,9 @@ from event_cal.models import CalendarEvent, MeetingSignInUserData
 from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm
 from history.models import Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport
 from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet,ExternalServiceForm
-from member_resources.forms import MeetingMinutesForm,ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet
+from member_resources.forms import MeetingMinutesForm,ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet,TBPraiseForm
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
 from migweb.context_processors import profile_setup
-from mig_main.default_values import get_current_term
 from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,TBPraise,PREFERENCES
 from mig_main.utility import  Permissions, get_previous_page,get_next_term, get_next_full_term,get_current_event_leaders,get_current_group_leaders,get_message_dict,UnicodeWriter,get_officer_positions_predecessors
 from outreach.models import TutoringRecord
@@ -58,14 +57,14 @@ INVALID_FORM_MESSAGE='The form is invalid. Please correct the noted errors.'
 
 def get_electees_with_status(distinction):
     
-    query =  Q(distinction_type=distinction)& Q(term=get_current_term().semester_type)
+    query =  Q(distinction_type=distinction)& Q(term=AcademicTerm.get_current_term().semester_type)
     dist_standing = distinction.standing_type.all()
     requirements = Requirement.objects.filter(query)
     unflattened_reqs = package_requirements(requirements)
     electee_profiles = MemberProfile.get_electees().filter(standing=dist_standing) 
     electees_with_status = []
     for profile in electee_profiles:
-        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=get_current_term()))
+        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
         amount_req = 0;
         amount_has = 0;
         has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
@@ -73,13 +72,13 @@ def get_electees_with_status(distinction):
             electees_with_status.append(profile)
     return electees_with_status
 def get_actives_with_status(distinction):
-    query =  Q(distinction_type=distinction)& Q(term=get_current_term().semester_type)
+    query =  Q(distinction_type=distinction)& Q(term=AcademicTerm.get_current_term().semester_type)
     requirements = Requirement.objects.filter(query)
     unflattened_reqs = package_requirements(requirements)
     active_profiles = MemberProfile.get_actives() 
     actives_with_status = []
     for profile in active_profiles:
-        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=get_current_term()))
+        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
         amount_req = 0;
         amount_has = 0;
         has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
@@ -89,8 +88,8 @@ def get_actives_with_status(distinction):
 def get_electees_who_completed_reqs():
     ugrad_distinction =DistinctionType.objects.get(status_type__name="Electee",standing_type__name="Undergraduate",name='Electee (undergrad)') 
     grad_distinction =DistinctionType.objects.get(status_type__name="Electee",standing_type__name="Graduate",name='Electee (grad)') 
-    ugrad_query = Q(distinction_type= ugrad_distinction)&Q(term=get_current_term().semester_type)
-    grad_query = Q(distinction_type=grad_distinction)&Q(term=get_current_term().semester_type)
+    ugrad_query = Q(distinction_type= ugrad_distinction)&Q(term=AcademicTerm.get_current_term().semester_type)
+    grad_query = Q(distinction_type=grad_distinction)&Q(term=AcademicTerm.get_current_term().semester_type)
     
     ugrad_reqs = Requirement.objects.filter(ugrad_query)
     grad_reqs = Requirement.objects.filter(grad_query)
@@ -100,12 +99,12 @@ def get_electees_who_completed_reqs():
     grad_profiles = MemberProfile.get_electees().filter(standing__name='Graduate').order_by('last_name')
     electees_with_status = []
     for profile in ugrad_profiles:
-        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=get_current_term()))
+        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
         has_dist = has_distinction_met(packaged_progress,ugrad_distinction,unflattened_ugrad_reqs)
         if has_dist:
             electees_with_status.append(profile)
     for profile in grad_profiles:
-        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=get_current_term()))
+        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
         has_dist = has_distinction_met(packaged_progress,grad_distinction,unflattened_grad_reqs)
         if has_dist:
             electees_with_status.append(profile)
@@ -452,7 +451,7 @@ def profile_create(request):
             else:
                 user_profile.standing = Standing.objects.get(name='Undergraduate')
             user_profile.init_chapter = TBPChapter.objects.get(state='MI',letter='G')
-            user_profile.init_term = get_current_term()
+            user_profile.init_term = AcademicTerm.get_current_term()
             form = MemberProfileNewElecteeForm(request.POST,request.FILES,instance=user_profile)
             if form.is_valid():
                 form.save()
@@ -500,7 +499,7 @@ def edit_progress(request,uniqname):
         if not Permissions.can_manage_electee_progress(request.user):
             request.session['error_message']='You are not authorized to edit this member\'s progress.'
             return redirect('member_resources:index')
-    term = get_current_term()
+    term = AcademicTerm.get_current_term()
     progress_formset = modelformset_factory(ProgressItem,exclude=('member','term'),can_delete=True)
     if request.method =='POST':
         formset = progress_formset(request.POST,prefix='edit_progress',queryset=ProgressItem.objects.filter(term=term,member=profile))
@@ -555,10 +554,10 @@ def view_progress(request,uniqname):
     query = Q()
     for distinction in distinctions:
         query = query | Q(distinction_type=distinction)
-    query = query & Q(term=get_current_term().semester_type)
+    query = query & Q(term=AcademicTerm.get_current_term().semester_type)
     requirements = Requirement.objects.filter(query)
     sorted_reqs = package_requirements(requirements)
-    progress = ProgressItem.objects.filter(member=profile,term=get_current_term())
+    progress = ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term())
     is_own_progress = False
     if request.user.username == uniqname:
         is_own_progress = True
@@ -644,14 +643,14 @@ def download_active_progress(request):
     query = Q()
     for distinction in distinctions_actives:
         query = query | Q(distinction_type=distinction)
-    query = query & Q(term=get_current_term().semester_type)
+    query = query & Q(term=AcademicTerm.get_current_term().semester_type)
     requirements = Requirement.objects.filter(query)
     unflattened_reqs = package_requirements(requirements)
     active_reqs = flatten_reqs(unflattened_reqs)
     progress_rows = []
     active_profiles = Permissions.profiles_you_can_view(request.user).filter(status__name="Active")
     for profile in active_profiles:
-        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=get_current_term()))
+        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
         row ={'member':profile,'progress':flatten_progress(packaged_progress,active_reqs)}
         dist_progress = []
         include_in_sheet = False
@@ -711,14 +710,14 @@ def download_grad_el_progress(request):
     query = Q()
     for distinction in distinctions_grad_el:
         query = query | Q(distinction_type=distinction)
-    query = query & Q(term=get_current_term().semester_type)
+    query = query & Q(term=AcademicTerm.get_current_term().semester_type)
     requirements = Requirement.objects.filter(query)
     unflattened_reqs = package_requirements(requirements)
     grad_electees_reqs = flatten_reqs(unflattened_reqs)
     progress_rows_grad_el = []
     grad_el_profiles = Permissions.profiles_you_can_view(request.user).filter(status__name="Electee").filter(standing__name="Graduate")
     for profile in grad_el_profiles:
-        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=get_current_term()))
+        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
         row ={'member':profile,'progress':flatten_progress(packaged_progress,grad_electees_reqs)}
         dist_progress = []
         for distinction in distinctions_grad_el.order_by('name'):
@@ -773,14 +772,14 @@ def download_ugrad_el_progress(request):
     query = Q()
     for distinction in distinctions_ugrad_el:
         query = query | Q(distinction_type=distinction)
-    query = query & Q(term=get_current_term().semester_type)
+    query = query & Q(term=AcademicTerm.get_current_term().semester_type)
     requirements = Requirement.objects.filter(query)
     unflattened_reqs = package_requirements(requirements)
     ugrad_electees_reqs = flatten_reqs(unflattened_reqs)
     progress_rows_ugrad_el = []
     ugrad_el_profiles = Permissions.profiles_you_can_view(request.user).filter(status__name="Electee").filter(standing__name="Undergraduate")
     for profile in ugrad_el_profiles:
-        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=get_current_term()))
+        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
         row ={'member':profile,'progress':flatten_progress(packaged_progress,ugrad_electees_reqs)}
         dist_progress = []
         for distinction in distinctions_ugrad_el.order_by('name'):
@@ -834,14 +833,14 @@ def view_progress_table(request):
         query = Q()
         for distinction in distinctions_actives:
             query = query | Q(distinction_type=distinction)
-        query = query & Q(term=get_current_term().semester_type)
+        query = query & Q(term=AcademicTerm.get_current_term().semester_type)
         requirements = Requirement.objects.filter(query)
         unflattened_reqs = package_requirements(requirements)
         active_reqs = flatten_reqs(unflattened_reqs)
         progress_rows = []
         active_profiles = Permissions.profiles_you_can_view(request.user).filter(status__name="Active")
         for profile in active_profiles:
-            packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=get_current_term()))
+            packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
             category_hours = get_events_signed_up_hours(profile.uniqname)
             packaged_future_progress=package_future_progress(packaged_progress,category_hours)
             row ={'member':profile,'progress':flatten_progress(packaged_progress,active_reqs),'future_progress':flatten_progress(packaged_future_progress,active_reqs)}
@@ -885,14 +884,14 @@ def view_progress_table(request):
         query = Q()
         for distinction in distinctions_ugrad_el:
             query = query | Q(distinction_type=distinction)
-        query = query & Q(term=get_current_term().semester_type)
+        query = query & Q(term=AcademicTerm.get_current_term().semester_type)
         requirements = Requirement.objects.filter(query)
         unflattened_reqs = package_requirements(requirements)
         ugrad_electees_reqs = flatten_reqs(unflattened_reqs)
         progress_rows_ugrad_el = []
         ugrad_el_profiles = Permissions.profiles_you_can_view(request.user).filter(status__name="Electee").filter(standing__name="Undergraduate")
         for profile in ugrad_el_profiles:
-            packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=get_current_term()))
+            packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
             category_hours = get_events_signed_up_hours(profile.uniqname)
             packaged_future_progress=package_future_progress(packaged_progress,category_hours)
             row ={'member':profile,'progress':flatten_progress(packaged_progress,ugrad_electees_reqs),'future_progress':flatten_progress(packaged_future_progress,ugrad_electees_reqs)}
@@ -931,14 +930,14 @@ def view_progress_table(request):
         query = Q()
         for distinction in distinctions_grad_el:
             query = query | Q(distinction_type=distinction)
-        query = query & Q(term=get_current_term().semester_type)
+        query = query & Q(term=AcademicTerm.get_current_term().semester_type)
         requirements = Requirement.objects.filter(query)
         unflattened_reqs = package_requirements(requirements)
         grad_electees_reqs = flatten_reqs(unflattened_reqs)
         progress_rows_grad_el = []
         grad_el_profiles = Permissions.profiles_you_can_view(request.user).filter(status__name="Electee").filter(standing__name="Graduate")
         for profile in grad_el_profiles:
-            packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=get_current_term()))
+            packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
             category_hours = get_events_signed_up_hours(profile.uniqname)
             packaged_future_progress=package_future_progress(packaged_progress,category_hours)
             row ={'member':profile,'progress':flatten_progress(packaged_progress,grad_electees_reqs),'future_progress':flatten_progress(packaged_future_progress,grad_electees_reqs)}
@@ -1076,7 +1075,7 @@ def project_reports_list(request):
     pending_events=None
     old_reports = None
     if Permissions.can_view_missing_reports(tmp_user):
-        events_w_o_reports = CalendarEvent.get_events_w_o_reports(get_current_term())
+        events_w_o_reports = CalendarEvent.get_events_w_o_reports(AcademicTerm.get_current_term())
     if Permissions.can_view_pending_events(tmp_user):
         pending_events=CalendarEvent.get_pending_events()
     if tmp_user.is_superuser:
@@ -1130,7 +1129,7 @@ def view_misc_reqs(request):
         return redirect('member_resources:index')
 
     template = loader.get_template('member_resources/manage_misc_reqs.html')
-    current_term = get_current_term()
+    current_term = AcademicTerm.get_current_term()
     if current_term.semester_type.name=='Summer':
         current_term = get_next_term(current_term)
     next_term = get_next_full_term(current_term)
@@ -1172,7 +1171,7 @@ def manage_website(request):
         return redirect('member_resources:index')
 
     template = loader.get_template('member_resources/manage_website.html')
-    term = get_current_term()
+    term = AcademicTerm.get_current_term()
     next_term = get_next_term(term)
     today = date.today() 
     should_warn = True
@@ -1218,7 +1217,7 @@ def advance_term(request):
     current_terms = CurrentTerm.objects.all()
     if current_terms.count()!=1:
         raise IntegrityError('There must be one and only one current term, inspect the database as there are %d current terms'%(current_terms.count()))
-    term = get_current_term()
+    term = AcademicTerm.get_current_term()
     next_term = get_next_term(term)
     c=current_terms[0]
     c.current_term = next_term
@@ -1266,7 +1265,7 @@ def add_electee_DA_PA_status(request):
     if not Permissions.can_manage_active_progress(request.user):
         request.session['error_message']='You are not authorized to manage electee DA/PA status.'
         return redirect('member_resources:index')
-    term = get_current_term()
+    term = AcademicTerm.get_current_term()
     if request.method =='POST':
         formset = ManageElecteeDAPAFormSet(request.POST,prefix='current_status')
         if formset.is_valid():
@@ -1289,7 +1288,7 @@ def add_electee_DA_PA_status(request):
         #electee DA
         for distinction in DistinctionType.objects.filter(status_type__name="Electee").filter(name__contains='DA'):
             related_distinction = DistinctionType.objects.get(name='Distinguished Active')
-            electees_already_received_distinction = MemberProfile.objects.filter(distinction__distinction_type=related_distinction,distinction__term=get_current_term())
+            electees_already_received_distinction = MemberProfile.objects.filter(distinction__distinction_type=related_distinction,distinction__term=AcademicTerm.get_current_term())
             electees = get_electees_with_status(distinction)
             for electee in electees:
                 if electee in electees_already_received_distinction:
@@ -1298,7 +1297,7 @@ def add_electee_DA_PA_status(request):
                 initial.append({'member':electee,'distinction_type':distinction,'gift':gift})
         for distinction in DistinctionType.objects.filter(status_type__name="Electee").filter(name__contains='PA'):
             related_distinction = DistinctionType.objects.get(name='Prestigious Active')
-            electees_already_received_distinction = MemberProfile.objects.filter(distinction__distinction_type=related_distinction,distinction__term=get_current_term())
+            electees_already_received_distinction = MemberProfile.objects.filter(distinction__distinction_type=related_distinction,distinction__term=AcademicTerm.get_current_term())
             electees = get_electees_with_status(distinction)
             for electee in electees:
                 if electee in electees_already_received_distinction:
@@ -1329,7 +1328,7 @@ def add_active_statuses(request):
     if not Permissions.can_manage_active_progress(request.user):
         request.session['error_message']='You are not authorized to manage active members.'
         return redirect('member_resources:index')
-    term = get_current_term()
+    term = AcademicTerm.get_current_term()
     if request.method =='POST':
         formset = ManageActiveCurrentStatusFormSet(request.POST,prefix='current_status')
         if formset.is_valid():
@@ -1346,7 +1345,7 @@ def add_active_statuses(request):
     else:
         initial=[]
         for distinction in DistinctionType.objects.filter(status_type__name="Active"):
-            actives_already_received_distinction = MemberProfile.objects.filter(distinction__distinction_type=distinction,distinction__term=get_current_term())
+            actives_already_received_distinction = MemberProfile.objects.filter(distinction__distinction_type=distinction,distinction__term=AcademicTerm.get_current_term())
             actives = get_actives_with_status(distinction)
             for active in actives:
                 if active in actives_already_received_distinction:
@@ -1497,7 +1496,7 @@ def add_leadership_credit(request):
         request.session['error_message']='You are not authorized to manage leadership credit.'
         return redirect('member_resources:index')
     error_list=[]
-    term = get_current_term()
+    term = AcademicTerm.get_current_term()
     leadership_category = EventCategory.objects.get(name='Leadership')
     LeadershipCreditFormSet = modelformset_factory(ProgressItem,form=LeadershipCreditForm)
     if request.method == 'POST':
@@ -1528,7 +1527,7 @@ def add_leadership_credit(request):
                     if members:
                         if ProgressItem.objects.filter(member=members[0],term=term,event_type=leadership_category).exists():
                             continue
-                        leadership_credit = ProgressItem(member=members[0],event_type=leadership_category,date_completed=date.today(),amount_completed=1,term=get_current_term(),name='Leadership Credit')
+                        leadership_credit = ProgressItem(member=members[0],event_type=leadership_category,date_completed=date.today(),amount_completed=1,term=AcademicTerm.get_current_term(),name='Leadership Credit')
                         leadership_credit.save()
                     else:
                         error_list.append(uniqname)
@@ -1626,7 +1625,7 @@ def move_electees_to_active(request):
         return redirect('member_resources:index')
     error_list=[]
     #should probably add extra checking here to ensure added members have correct distinction
-    term = get_current_term()
+    term = AcademicTerm.get_current_term()
     if request.method == 'POST':
         formset = ElecteeToActiveFormSet(request.POST,prefix='electee2active')
         if formset.is_valid():
@@ -1740,12 +1739,12 @@ def add_external_service(request):
         return redirect('member_resources:index')
     ExternalServiceFormSet = modelformset_factory(ProgressItem,form = ExternalServiceForm,can_delete=True)
     if request.method ==  'POST':
-        formset = ExternalServiceFormSet(request.POST,queryset=ProgressItem.objects.filter(term=get_current_term(),event_type__name='External Service Hours'),prefix='external_service')
+        formset = ExternalServiceFormSet(request.POST,queryset=ProgressItem.objects.filter(term=AcademicTerm.get_current_term(),event_type__name='External Service Hours'),prefix='external_service')
         if formset.is_valid():
             instances = formset.save(commit=False)
             for instance in instances:
                 if instance in formset.new_objects:
-                    instance.term = get_current_term()
+                    instance.term = AcademicTerm.get_current_term()
                     instance.date_completed= date.today()
                     instance.event_type=EventCategory.objects.get(name='External Service Hours')
                 prev_ext = ProgressItem.objects.filter(member=instance.member,term=instance.term,event_type__name='External Service Hours')
@@ -1763,7 +1762,7 @@ def add_external_service(request):
         else:
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
-        formset=ExternalServiceFormSet(queryset=ProgressItem.objects.filter(term=get_current_term(),event_type__name='External Service Hours'),prefix='external_service')
+        formset=ExternalServiceFormSet(queryset=ProgressItem.objects.filter(term=AcademicTerm.get_current_term(),event_type__name='External Service Hours'),prefix='external_service')
     
     template = loader.get_template('generic_formset.html')
     context_dict = {
@@ -1798,13 +1797,13 @@ def manage_dues(request):
                 if not profile:
                     continue
                 dues_paid = form.cleaned_data['dues_paid']
-                existing_progress = ProgressItem.objects.filter(member=profile,term=get_current_term(),event_type__name='Dues')
+                existing_progress = ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term(),event_type__name='Dues')
                 if not existing_progress:
                     if not dues_paid:
                         continue
                     p = ProgressItem()
                     p.member = profile
-                    p.term = get_current_term()
+                    p.term = AcademicTerm.get_current_term()
                     p.amount_completed = 1
                     p.date_completed = date.today()
                     p.name = 'Dues Paid'
@@ -1822,7 +1821,7 @@ def manage_dues(request):
     else:
         initial_data = []
         electee_profiles = MemberProfile.get_electees()
-        dues_progress = ProgressItem.objects.filter(event_type__name='Dues',term=get_current_term())
+        dues_progress = ProgressItem.objects.filter(event_type__name='Dues',term=AcademicTerm.get_current_term())
         for electee in electee_profiles:
             has_paid_dues = dues_progress.filter(member=electee).exists()
             initial_data.append({'electee':electee.get_full_name(),'uniqname':electee.uniqname,'dues_paid':has_paid_dues})
@@ -1870,8 +1869,8 @@ def manage_interview_credit(request):
                 progress=interview_progress[member]
                 first = True
                 for interview_type in interview_types:
-                    existing_progress = ProgressItem.objects.filter(member=member,term=get_current_term(),event_type=interview_type,name='Interview')
-                    existing_progress_extra = ProgressItem.objects.filter(member=member,term=get_current_term(),event_type=interview_type,name='Extra Interview')
+                    existing_progress = ProgressItem.objects.filter(member=member,term=AcademicTerm.get_current_term(),event_type=interview_type,name='Interview')
+                    existing_progress_extra = ProgressItem.objects.filter(member=member,term=AcademicTerm.get_current_term(),event_type=interview_type,name='Extra Interview')
                     mult=1
                     if interview_type.name=='Grad Interviews 30':
                         mult=2.0
@@ -1892,13 +1891,13 @@ def manage_interview_credit(request):
                                 else:
                                     existing_progress_extra.delete()
                             elif progress[interview_type]:
-                                p = ProgressItem(member=member,term=get_current_term(),date_completed=date.today(),name='Extra Interview')
+                                p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),date_completed=date.today(),name='Extra Interview')
                                 p.event_type = interview_type
                                 p.amount_completed =progress[interview_type]/mult
                                 p.save()
                         elif progress[interview_type]:
                             progress[interview_type]-=1
-                            p = ProgressItem(member=member,term=get_current_term(),date_completed=date.today(),name='Interview')
+                            p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),date_completed=date.today(),name='Interview')
                             p.event_type = interview_type
                             p.amount_completed =1
                             p.save()
@@ -1909,7 +1908,7 @@ def manage_interview_credit(request):
                                 else:
                                     existing_progress_extra.delete()
                             elif progress[interview_type]:
-                                p = ProgressItem(member=member,term=get_current_term(),date_completed=date.today(),name='Extra Interview')
+                                p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),date_completed=date.today(),name='Extra Interview')
                                 p.event_type = interview_type
                                 p.amount_completed =progress[interview_type]/mult
                                 p.save()
@@ -1922,7 +1921,7 @@ def manage_interview_credit(request):
                             else:
                                 existing_progress_extra.delete()
                         elif progress[interview_type]:
-                            p = ProgressItem(member=member,term=get_current_term(),date_completed=date.today(),name='Extra Interview')
+                            p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),date_completed=date.today(),name='Extra Interview')
                             p.event_type = interview_type
                             p.amount_completed =progress[interview_type]/mult
                             p.save()
@@ -1932,7 +1931,7 @@ def manage_interview_credit(request):
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
         initial_data=[]
-        progress_items = ProgressItem.objects.filter(term=get_current_term(),event_type__parent_category__name='Conducted Interviews').order_by('member__last_name','event_type')
+        progress_items = ProgressItem.objects.filter(term=AcademicTerm.get_current_term(),event_type__parent_category__name='Conducted Interviews').order_by('member__last_name','event_type')
         members_w_progress = sorted(list(set([progress_item.member for progress_item in progress_items])))
         for member in members_w_progress:
             progress=progress_items.filter(member=member)
@@ -1981,10 +1980,10 @@ def manage_active_group_meetings(request):
                     continue
                 member = form.cleaned_data['member']
                 group_meetings = form.cleaned_data['group_meetings']
-                existing_group_meetings = ProgressItem.objects.filter(member=member,term=get_current_term(),event_type__name='Group Meetings')
-                existing_extra_group_meetings = ProgressItem.objects.filter(member=member,term=get_current_term(),event_type__name='Extra Group Meetings')
+                existing_group_meetings = ProgressItem.objects.filter(member=member,term=AcademicTerm.get_current_term(),event_type__name='Group Meetings')
+                existing_extra_group_meetings = ProgressItem.objects.filter(member=member,term=AcademicTerm.get_current_term(),event_type__name='Extra Group Meetings')
                 dist=DistinctionType.objects.filter(status_type__name='Electee',standing_type__name='Undergraduate')
-                group_meeting_req = Requirement.objects.filter(distinction_type=dist,event_category__name='Group Meetings',term=get_current_term().semester_type)
+                group_meeting_req = Requirement.objects.filter(distinction_type=dist,event_category__name='Group Meetings',term=AcademicTerm.get_current_term().semester_type)
                 if group_meeting_req:
                     amount_group_req = group_meeting_req[0].amount_required
                 else:
@@ -1995,7 +1994,7 @@ def manage_active_group_meetings(request):
                             existing_extra_group_meetings[0].amount_completed=(group_meetings-amount_group_req)
                             existing_extra_group_meetings[0].save()
                         else:
-                            p = ProgressItem(member=member,term=get_current_term(),amount_completed=(group_meetings-amount_group_req),date_completed=date.today(),name='Extra Group Meetings')
+                            p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),amount_completed=(group_meetings-amount_group_req),date_completed=date.today(),name='Extra Group Meetings')
                             p.event_type = EventCategory.objects.get(name='Extra Group Meetings')
                             p.save()
                         group_meetings=amount_group_req
@@ -2009,10 +2008,10 @@ def manage_active_group_meetings(request):
                 else:
                     amt_group_meetings = min(group_meetings,amount_group_req)
                     amt_extra_meetings = max(0,group_meetings-amount_group_req)
-                    p = ProgressItem(member=member,term=get_current_term(),amount_completed=amt_group_meetings,date_completed=date.today(),name='Group Meetings')
+                    p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),amount_completed=amt_group_meetings,date_completed=date.today(),name='Group Meetings')
                     p.event_type = EventCategory.objects.get(name='Group Meetings')
                     p.save()
-                    p2 = ProgressItem(member=member,term=get_current_term(),amount_completed=amt_extra_meetings,date_completed=date.today(),name='Extra Group Meetings')
+                    p2 = ProgressItem(member=member,term=AcademicTerm.get_current_term(),amount_completed=amt_extra_meetings,date_completed=date.today(),name='Extra Group Meetings')
                     p2.event_type = EventCategory.objects.get(name='Extra Group Meetings')
                     p2.save()
             request.session['success_message']='Active Group Meeting Progress updated successfully'
@@ -2021,7 +2020,7 @@ def manage_active_group_meetings(request):
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
         initial_data = []
-        progress_items = ProgressItem.objects.filter(member__status__name='Active',term=get_current_term()).filter(Q(event_type__name='Group Meetings')|Q(event_type__name='Extra Group Meetings'))
+        progress_items = ProgressItem.objects.filter(member__status__name='Active',term=AcademicTerm.get_current_term()).filter(Q(event_type__name='Group Meetings')|Q(event_type__name='Extra Group Meetings'))
         members = list(set([p.member for p in progress_items]))
 
         for member in members:
@@ -2054,6 +2053,7 @@ def manage_ugrad_paperwork(request):
     if not Permissions.can_manage_ugrad_paperwork(request.user):
         request.session['error_message']='You are not authorized to manage completion of paperwork.'
         return redirect('member_resources:index')
+    current_term=AcademicTerm.get_current_term()
     if request.method ==  'POST':
         formset = ManageUgradPaperWorkFormSet(request.POST)
         if formset.is_valid():
@@ -2065,21 +2065,21 @@ def manage_ugrad_paperwork(request):
                 if not profile:
                     continue
                 exam = form.cleaned_data['electee_exam_completed']
-                existing_progress_exam = ProgressItem.objects.filter(member=profile,term=get_current_term(),event_type__name='Electee Exam')
+                existing_progress_exam = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Electee Exam')
                 char_interviews = form.cleaned_data['interviews_completed']
-                existing_progress_char_interviews = ProgressItem.objects.filter(member=profile,term=get_current_term(),event_type__name='Attended Interviews')
+                existing_progress_char_interviews = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Attended Interviews')
                 interviews = form.cleaned_data['peer_interviews_completed']
-                existing_progress_interviews = ProgressItem.objects.filter(member=profile,term=get_current_term(),event_type__name='Peer Interviews')
+                existing_progress_interviews = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Peer Interviews')
                 group_meetings = form.cleaned_data['group_meetings']
-                existing_group_meetings = ProgressItem.objects.filter(member=profile,term=get_current_term(),event_type__name='Group Meetings')
-                existing_extra_group_meetings = ProgressItem.objects.filter(member=profile,term=get_current_term(),event_type__name='Extra Group Meetings')
+                existing_group_meetings = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Group Meetings')
+                existing_extra_group_meetings = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Extra Group Meetings')
                 essays = form.cleaned_data['character_essays_completed']
-                existing_progress_essays = ProgressItem.objects.filter(member=profile,term=get_current_term(),event_type__name='Essays')
+                existing_progress_essays = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Essays')
                 if existing_progress_exam and not exam:
                     for e in existing_progress_exam:
                         e.delete()
                 if not existing_progress_exam and exam:
-                    p = ProgressItem(member=profile,term=get_current_term(),amount_completed=1,date_completed=date.today(),name='Electee Exam Completed')
+                    p = ProgressItem(member=profile,term=current_term,amount_completed=1,date_completed=date.today(),name='Electee Exam Completed')
                     p.event_type = EventCategory.objects.get(name='Electee Exam')
                     p.save()
                 if existing_progress_interviews:
@@ -2087,7 +2087,7 @@ def manage_ugrad_paperwork(request):
                     existing_progress_interviews[0].amount_completed=interviews
                     existing_progress_interviews[0].save()
                 else:
-                    p = ProgressItem(member=profile,term=get_current_term(),amount_completed=interviews,date_completed=date.today(),name='Peer Interviews Completed')
+                    p = ProgressItem(member=profile,term=current_term,amount_completed=interviews,date_completed=date.today(),name='Peer Interviews Completed')
                     p.event_type = EventCategory.objects.get(name='Peer Interviews')
                     p.save()
                 if existing_progress_essays:
@@ -2095,18 +2095,18 @@ def manage_ugrad_paperwork(request):
                     existing_progress_essays[0].amount_completed=essays
                     existing_progress_essays[0].save()
                 else:
-                    p = ProgressItem(member=profile,term=get_current_term(),amount_completed=interviews,date_completed=date.today(),name='Character Essays Completed')
+                    p = ProgressItem(member=profile,term=current_term,amount_completed=interviews,date_completed=date.today(),name='Character Essays Completed')
                     p.event_type = EventCategory.objects.get(name='Essays')
                     p.save()
                 if existing_progress_char_interviews and not char_interviews:
                     for e in existing_progress_char_interviews:
                         e.delete()
                 if not existing_progress_char_interviews and char_interviews:
-                    p = ProgressItem(member=profile,term=get_current_term(),amount_completed=2,date_completed=date.today(),name='Attended Interviews')
+                    p = ProgressItem(member=profile,term=current_term,amount_completed=2,date_completed=date.today(),name='Attended Interviews')
                     p.event_type = EventCategory.objects.get(name='Attended Interviews')
                     p.save()
                 dist=DistinctionType.objects.filter(status_type__name='Electee',standing_type__name='Undergraduate')
-                group_meeting_req = Requirement.objects.filter(distinction_type=dist,event_category__name='Group Meetings',term=get_current_term().semester_type)
+                group_meeting_req = Requirement.objects.filter(distinction_type=dist,event_category__name='Group Meetings',term=current_term.semester_type)
                 if group_meeting_req:
                     amount_group_req = group_meeting_req[0].amount_required
                 else:
@@ -2117,7 +2117,7 @@ def manage_ugrad_paperwork(request):
                             existing_extra_group_meetings[0].amount_completed=(group_meetings-amount_group_req)
                             existing_extra_group_meetings[0].save()
                         else:
-                            p = ProgressItem(member=profile,term=get_current_term(),amount_completed=(group_meetings-amount_group_req),date_completed=date.today(),name='Extra Group Meetings')
+                            p = ProgressItem(member=profile,term=current_term,amount_completed=(group_meetings-amount_group_req),date_completed=date.today(),name='Extra Group Meetings')
                             p.event_type = EventCategory.objects.get(name='Extra Group Meetings')
                             p.save()
                         group_meetings=amount_group_req
@@ -2129,10 +2129,10 @@ def manage_ugrad_paperwork(request):
                 else:
                     amt_group_meetings = min(group_meetings,amount_group_req)
                     amt_extra_meetings = max(0,group_meetings-amount_group_req)
-                    p = ProgressItem(member=profile,term=get_current_term(),amount_completed=amt_group_meetings,date_completed=date.today(),name='Group Meetings')
+                    p = ProgressItem(member=profile,term=current_term,amount_completed=amt_group_meetings,date_completed=date.today(),name='Group Meetings')
                     p.event_type = EventCategory.objects.get(name='Group Meetings')
                     p.save()
-                    p2 = ProgressItem(member=profile,term=get_current_term(),amount_completed=amt_extra_meetings,date_completed=date.today(),name='Extra Group Meetings')
+                    p2 = ProgressItem(member=profile,term=current_term,amount_completed=amt_extra_meetings,date_completed=date.today(),name='Extra Group Meetings')
                     p2.event_type = EventCategory.objects.get(name='Extra Group Meetings')
                     p2.save()
             request.session['success_message']='Electee paperwork updated successfully'
@@ -2142,12 +2142,12 @@ def manage_ugrad_paperwork(request):
     else:
         initial_data = []
         electee_profiles = MemberProfile.get_electees().filter(standing__name='Undergraduate').order_by('last_name')
-        electee_exam_progress = ProgressItem.objects.filter(event_type__name='Electee Exam',term=get_current_term())
-        char_interviews_progress = ProgressItem.objects.filter(event_type__name='Attended Interviews',term=get_current_term())
-        peer_interview_progress = ProgressItem.objects.filter(event_type__name='Peer Interviews',term=get_current_term())
-        essays_progress = ProgressItem.objects.filter(event_type__name='Essays',term=get_current_term())
-        existing_group_meetings = ProgressItem.objects.filter(term=get_current_term(),event_type__name='Group Meetings')
-        existing_extra_group_meetings = ProgressItem.objects.filter(term=get_current_term(),event_type__name='Extra Group Meetings')
+        electee_exam_progress = ProgressItem.objects.filter(event_type__name='Electee Exam',term=current_term)
+        char_interviews_progress = ProgressItem.objects.filter(event_type__name='Attended Interviews',term=current_term)
+        peer_interview_progress = ProgressItem.objects.filter(event_type__name='Peer Interviews',term=current_term)
+        essays_progress = ProgressItem.objects.filter(event_type__name='Essays',term=current_term)
+        existing_group_meetings = ProgressItem.objects.filter(term=current_term,event_type__name='Group Meetings')
+        existing_extra_group_meetings = ProgressItem.objects.filter(term=current_term,event_type__name='Extra Group Meetings')
 
         for electee in electee_profiles:
             exam = electee_exam_progress.filter(member=electee).exists()
@@ -2187,6 +2187,7 @@ def manage_grad_paperwork(request):
     if not Permissions.can_manage_grad_paperwork(request.user):
         request.session['error_message']='You are not authorized to manage completion of paperwork.'
         return redirect('member_resources:index')
+    current_term = AcademicTerm.get_current_term()
     if request.method ==  'POST':
         formset = ManageGradPaperWorkFormSet(request.POST)
         if formset.is_valid():
@@ -2199,29 +2200,29 @@ def manage_grad_paperwork(request):
                     continue
                 advisor_form = form.cleaned_data['advisor_form_completed']
                 background_form = form.cleaned_data['educational_background_form_completed']
-                existing_progress_advisor_form= ProgressItem.objects.filter(member=profile,term=get_current_term(),event_type__name='Advisor Form')
-                existing_progress_background_form= ProgressItem.objects.filter(member=profile,term=get_current_term(),event_type__name='Educational Background Form')
+                existing_progress_advisor_form= ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Advisor Form')
+                existing_progress_background_form= ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Educational Background Form')
                 char_interviews = form.cleaned_data['interviews_completed']
-                existing_progress_char_interviews = ProgressItem.objects.filter(member=profile,term=get_current_term(),event_type__name='Attended Interviews')
+                existing_progress_char_interviews = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Attended Interviews')
                 if existing_progress_advisor_form and not advisor_form:
                     for e in existing_progress_advisor_form:
                         e.delete()
                 if not existing_progress_advisor_form and advisor_form:
-                    p = ProgressItem(member=profile,term=get_current_term(),amount_completed=1,date_completed=date.today(),name='Advisor Form Completed')
+                    p = ProgressItem(member=profile,term=current_term,amount_completed=1,date_completed=date.today(),name='Advisor Form Completed')
                     p.event_type = EventCategory.objects.get(name='Advisor Form')
                     p.save()
                 if existing_progress_background_form and not background_form:
                     for e in existing_progress_background_form:
                         e.delete()
                 if not existing_progress_background_form and background_form:
-                    p = ProgressItem(member=profile,term=get_current_term(),amount_completed=1,date_completed=date.today(),name='Educational Background Form Completed')
+                    p = ProgressItem(member=profile,term=current_term,amount_completed=1,date_completed=date.today(),name='Educational Background Form Completed')
                     p.event_type = EventCategory.objects.get(name='Educational Background Form')
                     p.save()
                 if existing_progress_char_interviews and not char_interviews:
                     for e in existing_progress_char_interviews:
                         e.delete()
                 if not existing_progress_char_interviews and char_interviews:
-                    p = ProgressItem(member=profile,term=get_current_term(),amount_completed=1,date_completed=date.today(),name='Attended Interviews')
+                    p = ProgressItem(member=profile,term=current_term,amount_completed=1,date_completed=date.today(),name='Attended Interviews')
                     p.event_type = EventCategory.objects.get(name='Attended Interviews')
                     p.save()
             request.session['success_message']='Electee paperwork updated sucessfully.'
@@ -2231,9 +2232,9 @@ def manage_grad_paperwork(request):
     else:
         initial_data = []
         electee_profiles = MemberProfile.get_electees().filter(standing__name='Graduate').order_by('last_name')
-        advisor_form_progress = ProgressItem.objects.filter(event_type__name='Advisor Form',term=get_current_term())
-        background_form_progress = ProgressItem.objects.filter(event_type__name='Educational Background Form',term=get_current_term())
-        char_interviews_progress = ProgressItem.objects.filter(event_type__name='Attended Interviews',term=get_current_term())
+        advisor_form_progress = ProgressItem.objects.filter(event_type__name='Advisor Form',term=AcademicTerm.get_current_term())
+        background_form_progress = ProgressItem.objects.filter(event_type__name='Educational Background Form',term=AcademicTerm.get_current_term())
+        char_interviews_progress = ProgressItem.objects.filter(event_type__name='Attended Interviews',term=AcademicTerm.get_current_term())
         for electee in electee_profiles:
             char_interviews = char_interviews_progress.filter(member=electee).exists()
             advisor_form = advisor_form_progress.filter(member=electee).exists()
@@ -2352,7 +2353,7 @@ def view_meeting_feedback_for_term(request,term_id):
         return redirect('member_resources:index')
     terms = AcademicTerm.objects.filter(id=term_id)
     if not terms.exists():
-        term=get_current_term()
+        term=AcademicTerm.get_current_term()
     else:
         term=terms[0]
     completed_meetings = CalendarEvent.objects.filter(completed=True,term=term,event_type__name__contains='Meeting Attendance')
@@ -2372,7 +2373,7 @@ def view_meeting_feedback_for_term(request,term_id):
     return HttpResponse(template.render(context))
 
 def view_meeting_feedback(request):
-    return view_meeting_feedback_for_term(request,get_current_term().id)
+    return view_meeting_feedback_for_term(request,AcademicTerm.get_current_term().id)
 
 def approve_tutoring_forms(request):  
     if not Permissions.can_approve_tutoring(request.user):
@@ -2385,7 +2386,7 @@ def approve_tutoring_forms(request):
             instances = formset.save()
             tutoring_category = EventCategory.objects.get(name__contains='Tutoring')
             for tutoring_record in instances:
-                tutoring_credit = ProgressItem(member=tutoring_record.tutor,event_type=tutoring_category, date_completed=tutoring_record.date_tutored,amount_completed=tutoring_record.number_hours,term=get_current_term(),name='One-on-One Tutoring')
+                tutoring_credit = ProgressItem(member=tutoring_record.tutor,event_type=tutoring_category, date_completed=tutoring_record.date_tutored,amount_completed=tutoring_record.number_hours,term=AcademicTerm.get_current_term(),name='One-on-One Tutoring')
                 tutoring_credit.save()
             request.session['success_message']='Tutoring Forms successfully updated'
             return redirect('member_resources:view_misc_reqs')
@@ -2499,6 +2500,9 @@ def approve_praise(request,praise_id):
     if not request.user.userprofile ==tbp.recipient:
         request.session['error_message']='You can only approve affirmations you received.'
         return redirect('member_resources:member_playground')
+    if (tbp.giver ==tbp.recipient and tbp.anonymous and tbp.public):
+        request.session['error_message']='You can\' post a self-affirmation anonymously.'
+        return redirect('member_resources:member_playground')
     tbp.approved=True
     tbp.save()
     request.session['success_message']='Affirmation successfully approved for posting'
@@ -2508,8 +2512,7 @@ def submit_praise(request):
     if not hasattr(request.user,'userprofile'):
         request.session['error_message']='You must create a profile to send an affirmation.'
         return redirect('member_resources:index')
-    PraiseForm = modelform_factory(TBPraise,exclude=('giver','date_added','approved',))
-    PraiseForm.base_fields['recipient'].queryset=UserProfile.objects.all().order_by('last_name')
+    PraiseForm = modelform_factory(TBPraise,form=TBPraiseForm)
     if request.method == 'POST':
 
         form = PraiseForm(request.POST)
@@ -2517,7 +2520,8 @@ def submit_praise(request):
             instance=form.save(commit=False)
             instance.giver=request.user.userprofile
             instance.save()
-            instance.email_praise()
+            if not (instance.giver ==instance.recipient and instance.anonymous and instance.public):
+                instance.email_praise()
             request.session['success_message']='Affirmation submitted successfully'
             return redirect('member_resources:member_playground')
         else:

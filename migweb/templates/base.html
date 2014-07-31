@@ -222,11 +222,13 @@ ga('send', 'pageview');
                     <i class="fa fa-briefcase fa-2x"></i>
                 </a>
             </li>
+            {% if request.user.userprofile.is_member %}
             <li>
                 <a href="https://www.facebook.com/groups/174096225957916/" title="TBP Facebook Group">
                     <i class="fa fa-facebook fa-2x"></i>
                 </a>
             </li>
+            {% endif %}
             <li>
                 <a href="http://www.linkedin.com/groups?home=&gid=3836030&trk=anet_ug_hm&goback=%2Egna_3836030" title="TBP LinkedIn Group">
                     <i class="fa fa-linkedin fa-2x"></i>
