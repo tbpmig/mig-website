@@ -61,6 +61,7 @@ def get_article_view(request,article_id):
         'main_id':int(article_id),
         'form':form,
         'subnav':'news',
+        'event_photos': (EventPhoto.objects.all() if form else None),
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))

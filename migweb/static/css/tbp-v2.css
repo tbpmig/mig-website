@@ -64,6 +64,11 @@ html,body {
 	padding-right:.2em;
 	margin-top:.3em;
 }
+.scrollable-menu {
+    height: auto;
+    max-height: 200px;
+    overflow-x:hidden;
+}
 #event-list li h3 {
     max-width:75%;
 }
@@ -73,6 +78,9 @@ html,body {
 
 #news-header {
 	text-align:center;
+}
+#news-list img {
+    max-width:100%;
 }
 img#logo {
 	margin-left:.4em;
