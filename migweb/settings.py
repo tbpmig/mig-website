@@ -1,6 +1,7 @@
 # Django settings for migweb project.
 import os
-
+DEBUG = False
+TEMPLATE_DEBUG = False
 try:
     from local_settings import *
 except ImportError:
@@ -9,8 +10,8 @@ except ImportError:
 PROJECT_PATH = os.path.realpath(os.path.dirname(__file__)).replace('\\','/')
 
 LOGIN_URL='login_view'
-DEBUG = False
-TEMPLATE_DEBUG = False
+
+
 
 ### admins in local_settings ###
 MANAGERS = ADMINS
@@ -76,8 +77,7 @@ STATICFILES_FINDERS = (
 #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
-# Make this unique, and don't share it with anybody.
-SECRET_KEY = 'hn1c0ll-qjgawkjc@wx&c87q_dr=+g5ld1)j_i&i_vyuw@m!u#'
+
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (

@@ -10,6 +10,7 @@ from stdimage import StdImageField
 from event_cal.gcal_functions import get_credentials,get_authorized_http,get_service
 from mig_main.models import AcademicTerm
 from requirements.models import Requirement
+from migweb.settings import DEBUG
 # Create your models here.
 
 class GoogleCalendar(models.Model):
@@ -235,6 +236,8 @@ class CalendarEvent(models.Model):
                 send_mail('[TBP] Event Needs Facebook Event.',body,'tbp.mi.g@gmail.com',[publicity_email],fail_silently=False)
 
     def delete_gcal_event(self):
+        if DEBUG:
+            return
         c = get_credentials()
         h = get_authorized_http(c)
         if h:
@@ -246,6 +249,8 @@ class CalendarEvent(models.Model):
                     except:
                         pass
     def add_event_to_gcal(self):
+        if DEBUG:
+            return
         c = get_credentials()
         h = get_authorized_http(c)
         if h:
@@ -349,6 +354,8 @@ class EventShift(models.Model):
             return None
         return res_string.lstrip()+'s'
     def delete_gcal_event_shift(self):
+        if DEBUG:
+            return
         c = get_credentials()
         h = get_authorized_http(c)
         if h:
@@ -360,6 +367,8 @@ class EventShift(models.Model):
                 except:
                     pass
     def add_attendee_to_gcal(self,name,email):
+        if DEBUG:
+            return
         c = get_credentials()
         h = get_authorized_http(c)
         if h:
@@ -387,6 +396,8 @@ class EventShift(models.Model):
                 service.events().update(calendarId=event.google_cal.calendar_id,eventId=self.google_event_id,body=gcal_event).execute()
                 
     def delete_gcal_attendee(self,email):
+        if DEBUG:
+            return
         c = get_credentials()
         h = get_authorized_http(c)
         if h:
@@ -436,7 +447,7 @@ class EventPhoto(models.Model):
     event = models.ForeignKey(CalendarEvent,blank=True,null=True)
     project_report = models.ForeignKey('history.ProjectReport',blank=True,null=True)
     caption = models.TextField(blank=True,null=True)
-    photo   = StdImageField(upload_to='event_photos',thumbnail_size=(800,800))
+    photo   = StdImageField(upload_to='event_photos',variations={'thumbnail':(800,800)})
 
 class CarpoolPerson(models.Model):
     event = models.ForeignKey(CalendarEvent)

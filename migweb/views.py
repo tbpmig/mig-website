@@ -12,7 +12,7 @@ from event_cal.models import CalendarEvent
 from history.models   import WebsiteArticle
 from mig_main.models import SlideShowPhoto
 from mig_main.utility import get_quick_links, get_message_dict
-
+from migweb.settings import DEBUG,DEBUG_user
 def get_permissions(user):
     permission_dict={}
     return permission_dict
@@ -43,7 +43,10 @@ def home(request):
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 def login_view(request):
-    user_name = request.META['REMOTE_USER']
+    if DEBUG:
+        user_name = DEBUG_user
+    else:
+        user_name = request.META['REMOTE_USER']
     users_w_name = User.objects.filter(username=user_name)
     if not users_w_name.exists():
         user = User.objects.create_user(user_name,user_name+'@umich.edu','')

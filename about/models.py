@@ -10,7 +10,7 @@ class AboutSlideShowPhoto(models.Model):
     """
     Necessary information for the images used for the slideshow on the about page. 
     """
-    photo   = StdImageField(upload_to='about_page_photos',thumbnail_size=(1050,790))
+    photo   = StdImageField(upload_to='about_page_photos',variations={'thumbnail':(1050,790)})
     active  = models.BooleanField()
     title   = models.TextField()
     text    = models.TextField()

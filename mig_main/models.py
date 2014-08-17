@@ -42,7 +42,7 @@ GENDER_CHOICES = (
 )
 # homepage models
 class SlideShowPhoto(models.Model):
-    photo   = StdImageField(upload_to='home_page_photos',thumbnail_size=(1050,790,True))
+    photo   = StdImageField(upload_to='home_page_photos',variations={'thumbnail':(1050,790,True)})
     active  = models.BooleanField()
     title   = models.TextField()
     text    = models.TextField()
@@ -321,7 +321,7 @@ class MemberProfile(UserProfile):
     still_electing  = models.BooleanField(default=True)
     
     #Uncomment this on actual server with Python Image Library installed
-    photo   = StdImageField(upload_to='member_photos',thumbnail_size=(555,775))
+    photo   = StdImageField(upload_to='member_photos',variations={'thumbnail':(555,775)})
     resume          = ContentTypeRestrictedFileField(
         upload_to=resume_file_name,
         content_types=pdf_types,
