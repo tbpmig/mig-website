@@ -1,6 +1,7 @@
 # Django settings for migweb project.
 import os
 DEBUG = False
+DEBUG_user = ''
 TEMPLATE_DEBUG = False
 try:
     from local_settings import *
