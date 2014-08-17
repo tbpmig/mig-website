@@ -79,7 +79,8 @@ html,body {
 #news-header {
 	text-align:center;
 }
-#news-list img {
+#news-list img,
+#event-list img {
     max-width:100%;
 }
 img#logo {

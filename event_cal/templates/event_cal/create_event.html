@@ -5,6 +5,14 @@
 <link rel="stylesheet" type="text/css" href="{% static 'css/datepicker.css' %}" />
 {% endblock css %}
 {% block js %}
+<script>
+    function addtext(img_url,img_title,text_id) {
+        var newtext="!["+img_title+"]("+img_url+" \""+img_title+"\")\n";
+        var caretPos = document.getElementById(text_id).selectionStart;
+        var textAreaTxt = jQuery("#"+text_id).val();
+        jQuery("#"+text_id).val(textAreaTxt.substring(0,caretPos)+newtext+textAreaTxt.substring(caretPos));
+    }
+</script>
 <script src="{% static 'js/bootstrap-datepicker.js' %}"></script>
 {% include 'datepicker.html' %}
 {% endblock js %}
@@ -12,6 +20,19 @@
 <h3>{{form_title}}</h3>
 <p>{{help_text}}</p>
 <p><strong>Note:</strong> If your event is on campus and needs a room, fill out the form <a href="http://tinyurl.com/tbprooms">here</a> so that one will be reserved for you.</p>
+<div class="dropdown">
+    <a class="btn btn-default" id="photoSelect" role="button" data-toggle="dropdown" href="#">Add Photo <span class="caret"></span></a>
+    <ul id="menu1" class="dropdown-menu scrollable-menu" role="menu" aria-labelledby="photoSelect">
+    {% for photo in event_photos %}
+        <li role="presentation"><img style="max-width:200px;" role="menuitem" tabindex="-1" src="{{photo.photo.thumbnail.url}}"></img>
+        <div class="btn-group">
+            <button type="button" class="btn-default" onClick="addtext('{{photo.photo.thumbnail.url}}','{{photo.caption|escapejs}}','id_event-description')">Add to Description</button>
+            <button type="button" class="btn-default" onClick="addtext('{{photo.photo.thumbnail.url}}','{{photo.caption|escapejs}}','id_event-announce_text')">Add to Announcement</button>
+        </div>
+        <hr/></li>
+    {% endfor %}
+     </ul>
+</div>
 <form action="{{ request.path }}" method="post" id="dynForm">{% csrf_token %}
     {% include 'event_cal/event_form.html' %}
 </form>

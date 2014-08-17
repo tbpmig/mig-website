@@ -522,6 +522,7 @@ def create_multishift_event(request):
         'shift_title':'Shift days and time windows',
         'shift_help_text':'Shifts will be automatically created within the window you specify, for the duration you give. Note that if your duration does not line up with the end time, you may go longer than you planned.',
         'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
+        'event_photos':EventPhoto.objects.all(),
 #        'date_prefixes':[{'id_shift':['start_time_0','end_time_0']}],
         }
     context_dict.update(get_permissions(request.user))
@@ -622,6 +623,7 @@ def create_electee_interviews(request):
         'shift_title':'Shift days and time windows',
         'shift_help_text':'Shifts will be automatically created within the window you specify, for the duration you give. Note that if your duration does not line up with the end time, you may go longer than you planned.',
         'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
+        'event_photos':EventPhoto.objects.all(),
 #        'date_prefixes':[{'id_shift':['start_time_0','end_time_0']}],
         }
     context_dict.update(get_permissions(request.user))
@@ -682,6 +684,7 @@ def create_event(request):
         'shift_title':'Event Shifts',
         'shift_help_text':'',
         'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
+        'event_photos':EventPhoto.objects.all(),
 #        'date_prefixes':[{'id_shift':['start_time_0','end_time_0']}],
         }
     context_dict.update(get_permissions(request.user))
@@ -800,6 +803,7 @@ def edit_event(request, event_id):
         'subnav':'list',
         'submit_name':'Submit Changes',
         'shift_title':'Edit Shifts',
+        'event_photos':EventPhoto.objects.all(),
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))

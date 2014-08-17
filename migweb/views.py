@@ -64,4 +64,7 @@ def login_view(request):
     return redirect('home')
 def logout_view(request):
     logout(request)
-    return HttpResponseRedirect('https://weblogin.umich.edu/cgi-bin/logout?https://tbp.engin.umich.edu/')
+    if DEBUG:
+        return redirect('/')
+    else:
+        return HttpResponseRedirect('https://weblogin.umich.edu/cgi-bin/logout?https://tbp.engin.umich.edu/')
