@@ -13,7 +13,7 @@ from django import forms
 from django.forms.models import modelformset_factory,modelform_factory
 from django.db.models import Min,Q
 
-from event_cal.forms import BaseEventPhotoForm,BaseEventPhotoFormAlt, BaseAnnouncementForm,BaseEventForm,EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset,MultiShiftFormset
+from event_cal.forms import BaseEventPhotoForm,BaseEventPhotoFormAlt, BaseAnnouncementForm,BaseEventForm,EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset,MultiShiftFormset,EventEmailForm
 from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift
 from history.models import ProjectReport, Officer,NonEventProject
 from mig_main.models import OfficerPosition,PREFERENCES,UserPreference,MemberProfile,UserProfile,AcademicTerm
@@ -756,7 +756,38 @@ def delete_shift(request,event_id, shift_id):
         request.session['error_message']='You do not have sufficient permissions to delete this shift.'
         return redirect('even_cal:index')
 
-
+def email_participants(request,event_id):
+    e= get_object_or_404(CalendarEvent,id=event_id)
+    if not Permissions.can_edit_event(e,request.user) or not hasattr(request.user,'userprofile') or not request.user.userprofile.is_member():
+        request.session['error_message']='You are not authorized to email this event\'s participants.'
+        return get_previous_page(request,alternate='event_cal:list')
+    if request.method == 'POST':
+        form = EventEmailForm(request.POST)
+        if form.is_valid():
+            subject = form.cleaned_data['subject']
+            body = form.cleaned_data['body']
+            e.email_participants(subject,body,request.user.userprofile.memberprofile)
+            request.session['success_message']='Event participants emailed successfully'
+            return redirect('event_cal:event_detail',event_id)
+        else:
+            request.session['error_message']='You need to include a subject and a body.'
+    else:
+        form = EventEmailForm()
+    template = loader.get_template('generic_form.html')
+    context_dict = {
+        'form':form,
+        'subnav':'list',
+        'has_files':False,
+        'submit_name':'Email Participants',
+        'form_title':'Specify Subject/Body for Emailing Participants',
+        'help_text':'Use this form to email all current event participants. Event leaders will be cc\'ed and you will be the reply-to address.',
+        'base':'event_cal/base_event_cal.html',
+        'back_button':{'link':reverse('event_cal:event_detail',args=[event_id]),'text':'To  %s Page'%(e.name)},
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))
 def edit_event(request, event_id):
     e= get_object_or_404(CalendarEvent,id=event_id)
     if not Permissions.can_edit_event(e,request.user):
@@ -766,6 +797,8 @@ def edit_event(request, event_id):
     EventForm = modelform_factory(CalendarEvent,form=BaseEventForm,exclude=('completed','google_event_id','project_report'))
     EventForm.base_fields['assoc_officer'].queryset=OfficerPosition.objects.filter(enabled=True)
     EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
+    needed_flyer = e.needs_flyer
+    needed_facebook =e.needs_facebook_event
     if request.method == 'POST':
         form = EventForm(request.POST,prefix='event',instance=e)
         formset = EventShiftEditFormset(request.POST,prefix='shift',instance=e)
@@ -778,6 +811,7 @@ def edit_event(request, event_id):
                 form.save_m2m()
                 formset.save()
                 event.add_event_to_gcal()
+                event.notify_publicity(needed_flyer =needed_flyer,needed_facebook=needed_facebook,edited=True)
                 request.session['success_message']='Event updated successfully'
                 return redirect('event_cal:event_detail',event_id)
             else:

@@ -197,3 +197,10 @@ class EventFilterForm(Form):
     event_reqs = forms.ModelMultipleChoiceField(queryset=EventCategory.objects.all(),widget=forms.CheckboxSelectMultiple,required=False)
     on_campus = forms.BooleanField(required=False)
     can_attend = forms.BooleanField(required=False,label='Events open to me')
+
+class EventEmailForm(Form):
+    """
+    The form used to get the subject and email body for emailing event participants.
+    """
+    subject = forms.CharField()
+    body = forms.CharField(widget=forms.Textarea)

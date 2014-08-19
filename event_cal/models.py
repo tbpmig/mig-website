@@ -1,7 +1,7 @@
 from datetime import date,timedelta
 from markdown import markdown
 
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage,send_mail
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Max,Min,Q
@@ -10,7 +10,7 @@ from django.utils.encoding import force_unicode
 from stdimage import StdImageField
 
 from event_cal.gcal_functions import get_credentials,get_authorized_http,get_service
-from mig_main.models import AcademicTerm,OfficerPosition
+from mig_main.models import AcademicTerm,OfficerPosition,MemberProfile
 from requirements.models import Requirement
 from migweb.settings import DEBUG
 # Create your models here.
@@ -223,12 +223,13 @@ class CalendarEvent(models.Model):
             hours+=(end_time-start_time).seconds/3600.0
             count+=1
         return hours
-    def notify_publicity(self):
-        if self.needs_flyer:
-            publicity_officer = OfficerPosition.objects.filter(name='Publicity Officer')
-            if publicity_officer.exists():
-                publicity_email = publicity_officer[0].email
-                body = r'''Hello Publicity Officer,
+    def notify_publicity(self,needed_flyer=False,needed_facebook=False,edited=False):
+        publicity_officer = OfficerPosition.objects.filter(name='Publicity Officer')
+        if publicity_officer.exists():
+            publicity_email = publicity_officer[0].email
+            if self.needs_flyer:
+                if not needed_flyer or not edited:
+                    body = r'''Hello Publicity Officer,
 
     An event has been created that requires a flyer to be created. The event information can be found at https://tbp.engin.umich.edu%(event_link)s
 
@@ -236,13 +237,31 @@ class CalendarEvent(models.Model):
     The Website
 
     Note: This is an automated email. Please do not reply to it as responses are not checked.'''%{'event_link':reverse('event_cal:event_detail',args=(self.id,))}
-                send_mail('[TBP] Event Needs Flyer.',body,'tbp.mi.g@gmail.com',[publicity_email],fail_silently=False)
+                    send_mail('[TBP] Event Needs Flyer.',body,'tbp.mi.g@gmail.com',[publicity_email],fail_silently=False)
+                elif edited:
+                    body = r'''Hello Publicity Officer,
 
-        if self.needs_facebook_event:
-            publicity_officer = OfficerPosition.objects.filter(name='Publicity Officer')
-            if publicity_officer.exists():
-                publicity_email = publicity_officer[0].email
+    An event which needs a flyer was updated. The event information can be found at https://tbp.engin.umich.edu%(event_link)s
+    Please ensure that all your information is up-to-date.
+    
+    Regards,
+    The Website
+
+    Note: This is an automated email. Please do not reply to it as responses are not checked.'''%{'event_link':reverse('event_cal:event_detail',args=(self.id,))}
+                    send_mail('[TBP] Event Needing Flyer was Updated.',body,'tbp.mi.g@gmail.com',[publicity_email],fail_silently=False)
+            elif needed_flyer:
                 body = r'''Hello Publicity Officer,
+
+    An event needing a flyer is no longer listed as needing a flyer. The event information can be found at https://tbp.engin.umich.edu%(event_link)s
+
+    Regards,
+    The Website
+
+    Note: This is an automated email. Please do not reply to it as responses are not checked.'''%{'event_link':reverse('event_cal:event_detail',args=(self.id,))}
+                send_mail('[TBP] Flyer Request Cancelled.',body,'tbp.mi.g@gmail.com',[publicity_email],fail_silently=False)
+            if self.needs_facebook_event:
+                if not needed_facebook or not edited:
+                    body = r'''Hello Publicity Officer,
 
     An event has been created that requires a facebook event to be created. The event information can be found at https://tbp.engin.umich.edu%(event_link)s
 
@@ -250,8 +269,37 @@ class CalendarEvent(models.Model):
     The Website
 
     Note: This is an automated email. Please do not reply to it as responses are not checked.'''%{'event_link':reverse('event_cal:event_detail',args=(self.id,))}
-                send_mail('[TBP] Event Needs Facebook Event.',body,'tbp.mi.g@gmail.com',[publicity_email],fail_silently=False)
+                
+                    send_mail('[TBP] Event Needs Facebook Event.',body,'tbp.mi.g@gmail.com',[publicity_email],fail_silently=False)
+                elif edited:
+                    body = r'''Hello Publicity Officer,
 
+    An event which requires a facebook event was updated. The event information can be found at https://tbp.engin.umich.edu%(event_link)s
+    Please make any necessary updates to the facebook event.
+
+    Regards,
+    The Website
+
+    Note: This is an automated email. Please do not reply to it as responses are not checked.'''%{'event_link':reverse('event_cal:event_detail',args=(self.id,))}
+                
+                    send_mail('[TBP] Event with Facebook Event was Updated.',body,'tbp.mi.g@gmail.com',[publicity_email],fail_silently=False)
+            elif needed_facebook:
+                body = r'''Hello Publicity Officer,
+
+    An event needing a facebook event is no longer listed as needing one. The event information can be found at https://tbp.engin.umich.edu%(event_link)s
+
+    Regards,
+    The Website
+
+    Note: This is an automated email. Please do not reply to it as responses are not checked.'''%{'event_link':reverse('event_cal:event_detail',args=(self.id,))}
+                send_mail('[TBP] Facebook Event Request Cancelled.',body,'tbp.mi.g@gmail.com',[publicity_email],fail_silently=False)
+    def email_participants(self,subject,body,sender):
+        attendees = MemberProfile.objects.filter(event_attendee__event=self)
+        recipients = [attendee.get_email() for attendee in attendees]
+        ccs = [leader.get_email() for leader in self.leaders.all()]
+        
+        email = EmailMessage(subject,body,'tbp.mi.g@gmail.com',recipients,headers={'Reply-To':sender.get_email()},cc=ccs)
+        email.send()
     def delete_gcal_event(self):
         if DEBUG:
             return
