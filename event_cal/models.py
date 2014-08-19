@@ -1,6 +1,8 @@
 from datetime import date,timedelta
 from markdown import markdown
 
+from django.core.mail import send_mail
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Max,Min,Q
 from django.utils import timezone
@@ -8,7 +10,7 @@ from django.utils.encoding import force_unicode
 from stdimage import StdImageField
 
 from event_cal.gcal_functions import get_credentials,get_authorized_http,get_service
-from mig_main.models import AcademicTerm
+from mig_main.models import AcademicTerm,OfficerPosition
 from requirements.models import Requirement
 from migweb.settings import DEBUG
 # Create your models here.
@@ -44,6 +46,7 @@ class CalendarEvent(models.Model):
     use_sign_in     = models.BooleanField(default=False)
     allow_advance_sign_up = models.BooleanField(default=True)
     needs_facebook_event = models.BooleanField(default=False)
+    needs_flyer = models.BooleanField(default=False)
     
     before_grace = timedelta(minutes=-30)
     after_grace = timedelta(hours = 1)
@@ -221,6 +224,20 @@ class CalendarEvent(models.Model):
             count+=1
         return hours
     def notify_publicity(self):
+        if self.needs_flyer:
+            publicity_officer = OfficerPosition.objects.filter(name='Publicity Officer')
+            if publicity_officer.exists():
+                publicity_email = publicity_officer[0].email
+                body = r'''Hello Publicity Officer,
+
+    An event has been created that requires a flyer to be created. The event information can be found at https://tbp.engin.umich.edu%(event_link)s
+
+    Regards,
+    The Website
+
+    Note: This is an automated email. Please do not reply to it as responses are not checked.'''%{'event_link':reverse('event_cal:event_detail',args=(self.id,))}
+                send_mail('[TBP] Event Needs Flyer.',body,'tbp.mi.g@gmail.com',[publicity_email],fail_silently=False)
+
         if self.needs_facebook_event:
             publicity_officer = OfficerPosition.objects.filter(name='Publicity Officer')
             if publicity_officer.exists():
