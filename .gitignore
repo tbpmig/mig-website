@@ -7,4 +7,4 @@ _static/
 migweb/media/
 gcal/calendar.dat
 gcal/client_secrets.json
-deploy_updates.sh
+deploy_update.sh
