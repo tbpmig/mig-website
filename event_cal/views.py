@@ -126,7 +126,7 @@ def meeting_sign_in(request,event_id,shift_id):
                             if 'free_response' in form.cleaned_data:
                                 user_data.free_response = form.cleaned_data['free_response']
                                 if not user_data.free_response:
-                                    user_data.free_response='no response give'
+                                    user_data.free_response='no response given'
                             user_data.save()
                         hours = (shift.end_time-shift.start_time).seconds/3600.0
                         if event.is_fixed_progress():

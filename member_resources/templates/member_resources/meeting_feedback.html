@@ -4,6 +4,11 @@
 {% block content %}
 <div class="row">
     <div class="col-md-12">
+	<div class="btn-group">
+	{% for display_term in display_terms %}
+		<a href="{% url 'member_resources:view_meeting_feedback_for_term' display_term.id %}" class="btn {% if display_term.id == term.id %} btn-primary active{%else%} btn-default{%endif%}">{{display_term}}</a>
+	{%endfor%}
+	</div>
         <h3>Meeting Surveys for {{term}}</h3>
 {% regroup surveys|dictsort:"meeting_data.id" by meeting_data as sorted_surveys %}
 {% for meeting in sorted_surveys %}

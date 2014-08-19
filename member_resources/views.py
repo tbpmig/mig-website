@@ -13,7 +13,7 @@ from django.shortcuts import  get_object_or_404
 from django.shortcuts import redirect
 from django.template import RequestContext, loader
 from django.db import IntegrityError
-from django.db.models import Max,Q
+from django.db.models import Max,Q,Count
 from django.core.exceptions import PermissionDenied
 from django.forms.models import modelformset_factory, modelform_factory
 from django.core.urlresolvers import reverse
@@ -2362,9 +2362,12 @@ def view_meeting_feedback_for_term(request,term_id):
     for meeting in completed_meetings:
         feedback_surveys.append({'meeting':meeting,'surveys':MeetingSignInUserData.objects.filter(meeting_data__event=meeting)})
     template = loader.get_template('member_resources/meeting_feedback.html')
+    terms_w_data = AcademicTerm.objects.annotate(num_surveys=Count('calendarevent__meetingsignin')).filter(num_surveys__gt=0)
+   
     context_dict = {
         'surveys':meeting_surveys,
         'term':term,
+        'display_terms':terms_w_data|AcademicTerm.objects.filter(id=AcademicTerm.get_current_term().id),
         'subnav':'history',
         }
     context_dict.update(get_common_context(request))
