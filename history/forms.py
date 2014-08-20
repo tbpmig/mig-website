@@ -3,10 +3,15 @@ from django.forms.models import modelformset_factory
 
 from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,ModelSelect2Field,Select2Widget
 
-from history.models import Publication, WebsiteArticle,NonEventProject,NonEventProjectParticipant, Officer,ProjectReportHeader
+from history.models import Publication, WebsiteArticle,NonEventProject,NonEventProjectParticipant, Officer,ProjectReportHeader,Award
 from event_cal.models import EventPhoto
 from mig_main.models import MemberProfile,AcademicTerm,OfficerPosition
 
+class AwardForm(forms.ModelForm):
+    recipient = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select member','closeOnSelect':True}),queryset=MemberProfile.get_members())
+    class Meta:
+        model = Award
+        
 class OfficerForm(forms.ModelForm):
     user = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select member','closeOnSelect':True}),queryset=MemberProfile.get_members(),label='Member')
     position = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select member','closeOnSelect':True}),queryset=OfficerPosition.get_current())

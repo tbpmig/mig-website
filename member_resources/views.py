@@ -21,8 +21,8 @@ from django.core.urlresolvers import reverse
 from corporate.views import update_resume_zips
 from electees.models import ElecteeGroup, electee_stopped_electing, EducationalBackgroundForm
 from event_cal.models import CalendarEvent, MeetingSignInUserData
-from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm
-from history.models import Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport
+from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardForm
+from history.models import Award,Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport
 from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet,ExternalServiceForm
 from member_resources.forms import MeetingMinutesForm,ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet,TBPraiseForm
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
@@ -1116,6 +1116,7 @@ def access_history(request):
         'can_view_feedback':Permissions.can_view_meeting_feedback(request.user),
         'can_access_project_reports':Permissions.can_access_project_reports(request.user),
         'can_create_nep':Permissions.can_create_events(request.user),
+        'can_add_awards':Permissions.can_manage_website(request.user),
         'subnav':'history',
         }
     context_dict.update(get_common_context(request))
@@ -2598,7 +2599,44 @@ def non_event_project_meta_data(request,ne_report):
     context_dict.update(get_common_context(request))
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
-
+def manage_awards_for_term(request,term_id):
+    if not Permissions.can_manage_website(request.user):
+        request.session['error_message']='You are not authorized to create manage awards.'
+        return get_previous_page(request,alternate='member_resources:index')
+    AwardFormSet = modelformset_factory(Award,form = AwardForm,exclude=('term',))
+    term = get_object_or_404(AcademicTerm,id=term_id)
+    if request.method =='POST':
+        formset = AwardFormSet(request.POST,queryset=Award.objects.filter(term=term).order_by('-award_type'),prefix='award')
+        if formset.is_valid():
+            instances = formset.save(commit=False)
+            for instance in instances:
+                instance.term = term
+                instance.save()
+            request.session['success_message']='Awards updated successfully'
+            return redirect('member_resourcs:access_history')
+        else:
+            request.session['error_message']='Form contained errors, was not saved.'
+    else:
+        formset = AwardFormSet(queryset=Award.objects.filter(term=term).order_by('-award_type'),prefix='award')
+    template = loader.get_template('generic_formset.html')
+    context_dict ={
+        'formset':formset,
+        'can_add_row':True,
+        'subnav':'history',
+        'has_files':False,
+        'prefix':'award',
+        'submit_name':'Update awards',
+        'form_title':'Add/Edit Banquet/Honor\'s Brunch Awards for %s'%(unicode(term)),
+        'help_text':'Update the banquet awards for those that received them. These show on the recipients\' profiles.',
+        'base':'member_resources/base_member_resources.html',
+        'back_button':{'link':reverse('member_resources:access_history'),'text':'To Access History'},
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))
+def manage_awards(request):
+    return redirect('member_resources:manage_awards_for_term', AcademicTerm.get_current_term().id)
 def non_event_project_participants(request,ne_id):
     ne = get_object_or_404(NonEventProject,id=ne_id)
     NonEventFormSet = modelformset_factory(NonEventProjectParticipant,form = BaseNEPParticipantForm,exclude=('project',))

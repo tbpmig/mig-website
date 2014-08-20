@@ -17,6 +17,9 @@
         {% if can_create_nep %}
             <li><a href="{% url 'member_resources:new_non_event_project' %}">Create New Non-Event Project and Report</a></li>
         {% endif %}
+        {% if can_add_awards %}
+            <li><a href="{% url 'member_resources:manage_awards' %}">Manage Awards</a></li>
+        {% endif %}
             <li><a href="{% url 'member_resources:main_meeting_minutes' %}">View Meeting Minutes</a></li>
         </ul>
     </div>
