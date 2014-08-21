@@ -6,7 +6,7 @@ from django.forms.models import inlineformset_factory, BaseInlineFormSet
 
 from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,ModelSelect2Field,Select2Widget
 
-from electees.models import ElecteeGroup,EducationalBackgroundForm,BackgroundInstitution
+from electees.models import ElecteeGroup,EducationalBackgroundForm,BackgroundInstitution,SurveyQuestion,ElecteeInterviewSurvey
 from mig_main.models import MemberProfile,AcademicTerm
 from history.models import Officer
 
@@ -35,3 +35,9 @@ class BaseElecteeGroupForm(forms.ModelForm):
     class Meta:
         model = ElecteeGroup
         exclude= ('term','members','points',)
+
+class AddSurveyQuestionsForm(forms.ModelForm):
+    questions = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'26em','placeholder':'Select question(s)','closeOnSelect':True}),queryset=SurveyQuestion.objects.all().order_by('short_name'))
+    class Meta:
+        model = ElecteeInterviewSurvey
+        exclude=('term','due_date',)

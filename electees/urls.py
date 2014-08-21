@@ -10,4 +10,12 @@ urlpatterns = patterns('',
     url(r'^edit_electee_group_points/$', views.edit_electee_group_points,name='edit_electee_group_points'),
     url(r'^edit_electee_resources/$', views.edit_electee_resources,name='edit_electee_resources'),
     url(r'^submit_education_form/$', views.submit_background_form,name='submit_background_form'),
+    url(r'^edit_electee_survey/(?P<term_id>\d+)/$', views.edit_survey_for_term,name='edit_survey_for_term'),
+    url(r'^edit_electee_survey/$', views.edit_survey,name='edit_survey'),
+    url(r'^manage_survey/$', views.manage_survey,name='manage_survey'),
+    url(r'^edit_survey_parts/$', views.edit_survey_parts,name='edit_survey_parts'),
+    url(r'^edit_survey_questions/$', views.edit_survey_questions,name='edit_survey_questions'),
+    url(r'^add_survey_questions_for_term/(?P<term_id>\d+)/$', views.add_survey_questions_for_term,name='add_survey_questions_for_term'),
+    url(r'^add_survey_questions/$', views.add_survey_questions,name='add_survey_questions'),
+    
 )

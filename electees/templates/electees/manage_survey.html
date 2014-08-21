@@ -1,0 +1,18 @@
+{% extends "electees/base_electees.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+    <h3>Manage Electee Survey</h3>
+    <hr>
+    <a href="{%url 'electees:edit_survey' %}" class="btn {% if survey_exists %}btn-success{% else %}btn-danger{%endif%}">Add/Edit Survey</a>
+    <a href="{%url 'electees:edit_survey_parts' %}" class="btn {% if parts_exist %}btn-success{% else %}btn-danger{%endif%}">Add/Edit Survey Parts</a>
+    <a href="{%url 'electees:edit_survey_questions' %}" class="btn {% if questions_exist %}btn-success{% else %}btn-danger{%endif%}">Add/Edit Survey Questions</a>
+    {% if survey_exists %}
+        <a href="{%url 'electees:add_survey_questions' %}" class="btn {% if survey_has_questions %}btn-success{% else %}btn-danger{%endif%}">Add Questions to Survey</a>
+    {% else %}
+        <a  class="btn btn-danger" disabled="disabled">Add Questions to Survey</a>
+    {% endif %}
+    </div>
+</div>
+{% endblock content %}

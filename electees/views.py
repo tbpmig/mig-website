@@ -1,6 +1,6 @@
 import json
 
-from django.http import HttpResponse
+from django.http import HttpResponse,Http404
 from django.shortcuts import  get_object_or_404
 from django.shortcuts import redirect
 from django.template import RequestContext, loader
@@ -8,13 +8,14 @@ from django.core.exceptions import PermissionDenied
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.forms.models import modelformset_factory,modelform_factory
 from django.forms import CheckboxSelectMultiple
+from django.core.urlresolvers import reverse
 
-from electees.models import ElecteeGroup, ElecteeGroupEvent,ElecteeResource,EducationalBackgroundForm,BackgroundInstitution
+from electees.models import ElecteeGroup, ElecteeGroupEvent,ElecteeResource,EducationalBackgroundForm,BackgroundInstitution,ElecteeInterviewSurvey,SurveyPart,SurveyQuestion
 from mig_main.models import MemberProfile, AcademicTerm
 from mig_main.utility import Permissions, get_previous_page,  get_message_dict
 from member_resources.views import get_permissions as get_member_permissions
 from history.models import Officer
-from electees.forms import get_unassigned_electees,InstituteFormset,BaseElecteeGroupForm
+from electees.forms import get_unassigned_electees,InstituteFormset,BaseElecteeGroupForm,AddSurveyQuestionsForm
 
 def user_is_member(user):
     if hasattr(user,'userprofile'):
@@ -26,6 +27,7 @@ def get_permissions(user):
     permission_dict.update({
         'can_create_groups':Permissions.can_manage_electee_progress(user),
         'can_edit_resources':Permissions.can_manage_electee_progress(user),
+        'can_edit_surveys':Permissions.can_manage_electee_progress(user),
         })
     return permission_dict
 def get_common_context(request):
@@ -221,3 +223,182 @@ def edit_electee_resources(request):
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+    
+def manage_survey(request):
+    if not Permissions.can_manage_electee_progress(request.user):
+        request.session['error_message']='You are not authorized to edit the electee survey.'
+        return redirect('electees:view_electee_groups')
+        
+    template = loader.get_template('electees/manage_survey.html')
+    term = AcademicTerm.get_current_term()
+    current_survey = ElecteeInterviewSurvey.objects.filter(term = term)
+    survey_exists = current_survey.exists()
+    if survey_exists:
+        survey_has_q = current_survey[0].questions.all().exists()
+    else:
+        survey_has_q = False
+    context_dict = {
+        'survey_exists':survey_exists,
+        'parts_exist':SurveyPart.objects.all().exists(),
+        'questions_exist':SurveyQuestion.objects.all().exists(),
+        'survey_has_questions':survey_has_q,
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
+def edit_survey_for_term(request,term_id):
+    if not Permissions.can_manage_electee_progress(request.user):
+        request.session['error_message']='You are not authorized to edit the electee survey.'
+        return redirect('electees:view_electee_groups')
+    SurveyForm = modelform_factory(ElecteeInterviewSurvey,exclude=('term','questions'))
+    term = AcademicTerm.get_current_term()
+    current_surveys = ElecteeInterviewSurvey.objects.filter(term = term)
+    prefix='survey'
+    if current_surveys.exists():
+        current_survey=current_surveys[0]
+        existed=True
+    else:
+        current_survey = ElecteeInterviewSurvey(term=term)
+        existed = False
+    if request.method =='POST':
+        form = SurveyForm(request.POST,prefix=prefix,instance=current_survey)
+        if form.is_valid():
+            form.save()
+            request.session['success_message']='Electee interview survey updated successfully'
+            return redirect('electees:manage_survey')
+        else:
+            request.session['error_message']='Form is invalid. Please correct the noted errors.'
+    else:
+        form = SurveyForm(prefix=prefix,instance=current_survey)
+    template = loader.get_template('generic_form.html')
+    verb = 'Update' if existed else 'Add'
+    context_dict = {
+        'form':form,
+        'prefix':prefix,
+        'has_files':False,
+        'submit_name':'Update Electee Survey',
+        'form_title':verb+' Electee Interview Survey for %s'%(unicode(term)),
+        'help_text':'This is the meta survey object that will group the questions for a particular term.',
+        'base':'electees/base_electees.html',
+        'dp_ids':['id_survey-due_date'],
+        'back_button':{'link':reverse('electees:manage_survey'),'text':'To Survey Manager'},
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
+
+def edit_survey(request):
+    return redirect('electees:edit_survey_for_term',AcademicTerm.get_current_term().id)
+    
+def edit_survey_parts(request):
+    if not Permissions.can_manage_electee_progress(request.user):
+        request.session['error_message']='You are not authorized to edit the electee survey.'
+        return redirect('electees:view_electee_groups')
+    SurveyPartFormSet = modelformset_factory(SurveyPart)
+    prefix='surveyparts'
+   
+    if request.method =='POST':
+        formset = SurveyPartFormSet(request.POST,prefix=prefix,queryset=SurveyPart.objects.all())
+        if formset.is_valid():
+            formset.save()
+            request.session['success_message']='Electee interview survey parts updated successfully'
+            return redirect('electees:manage_survey')
+        else:
+            request.session['error_message']='Form is invalid. Please correct the noted errors.'
+    else:
+        formset = SurveyPartFormSet(prefix=prefix,queryset=SurveyPart.objects.all())
+    template = loader.get_template('generic_formset.html')
+    context_dict = {
+        'formset':formset,
+        'prefix':prefix,
+        'has_files':False,
+        'can_add_row':True,
+        'submit_name':'Update Electee Survey Parts',
+        'form_title':'Update Electee Interview Survey Parts',
+        'help_text':'Add or edit the different parts of the survey. Questions will be associated with a particular part. Only those parts that have questions which appear in a given survey will be included in that survey. There should be no need to remove survey parts. If all questions in a part are required, leave that field blank.',
+        'base':'electees/base_electees.html',
+        'back_button':{'link':reverse('electees:manage_survey'),'text':'To Survey Manager'},
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
+    
+def edit_survey_questions(request):
+    if not Permissions.can_manage_electee_progress(request.user):
+        request.session['error_message']='You are not authorized to edit the electee survey.'
+        return redirect('electees:view_electee_groups')
+    SurveyQuestionFormSet = modelformset_factory(SurveyQuestion)
+    prefix='surveyquestions'
+   
+    if request.method =='POST':
+        formset = SurveyQuestionFormSet(request.POST,prefix=prefix,queryset=SurveyQuestion.objects.all())
+        if formset.is_valid():
+            formset.save()
+            request.session['success_message']='Electee interview survey questions updated successfully'
+            return redirect('electees:manage_survey')
+        else:
+            request.session['error_message']='Form is invalid. Please correct the noted errors.'
+    else:
+        formset = SurveyQuestionFormSet(prefix=prefix,queryset=SurveyQuestion.objects.all())
+    template = loader.get_template('generic_formset.html')
+    context_dict = {
+        'formset':formset,
+        'prefix':prefix,
+        'has_files':False,
+        'can_add_row':True,
+        'submit_name':'Update Electee Survey Questions',
+        'form_title':'Update Electee Interview Survey Questions',
+        'help_text':'Add or edit the different questions for the survey. Questions will only be displayed if they are added to the current survey. There should be no need to remove survey parts. If there is no word limit for a question, leave that field blank.',
+        'base':'electees/base_electees.html',
+        'back_button':{'link':reverse('electees:manage_survey'),'text':'To Survey Manager'},
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
+
+def add_survey_questions_for_term(request,term_id):
+    if not Permissions.can_manage_electee_progress(request.user):
+        request.session['error_message']='You are not authorized to edit the electee survey.'
+        return redirect('electees:view_electee_groups')
+    term = AcademicTerm.get_current_term()
+    current_surveys = ElecteeInterviewSurvey.objects.filter(term = term)
+    prefix='survey'
+    if current_surveys.exists():
+        current_survey=current_surveys[0]
+        existed=True
+    else:
+        raise Http404
+
+    if request.method =='POST':
+        form = AddSurveyQuestionsForm(request.POST,prefix=prefix,instance=current_survey)
+        if form.is_valid():
+            form.save()
+            request.session['success_message']='Electee survey questions updated successfully'
+            return redirect('electees:manage_survey')
+        else:
+            request.session['error_message']='Form is invalid. Please correct the noted errors.'
+    else:
+        form = AddSurveyQuestionsForm(prefix=prefix,instance=current_survey)
+    template = loader.get_template('generic_form.html')
+    verb = 'Update' if existed else 'Add'
+    context_dict = {
+        'form':form,
+        'prefix':prefix,
+        'has_files':False,
+        'submit_name':'Update Electee Survey Questions',
+        'form_title':verb+' Electee Survey Questions for %s'%(unicode(term)),
+        'help_text':'Add questions for the particular term\'s survey.',
+        'base':'electees/base_electees.html',
+        'back_button':{'link':reverse('electees:manage_survey'),'text':'To Survey Manager'},
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))    
+
+def add_survey_questions(request):
+    return redirect('electees:add_survey_questions_for_term',AcademicTerm.get_current_term().id)

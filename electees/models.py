@@ -144,3 +144,56 @@ class BackgroundInstitution(models.Model):
     major = models.CharField(max_length = 128)
     degree_start_date = models.DateField(verbose_name='Degree Start Date (MM/DD/YYYY)')
     degree_end_date = models.DateField(verbose_name='Degree Start Date (MM/DD/YYYY)')
+
+class SurveyPart(models.Model):
+    VISIBILITY_OPTIONS = (
+        ('E','Fellow Electees'),
+        ('A','Active Members'),
+        ('M','All Members'),
+        ('R','Only Admins/VPs'),
+    )
+    title = models.CharField(max_length=128)
+    number_of_required_questions = models.PositiveSmallIntegerField(blank=True,null=True)
+    display_order = models.PositiveSmallIntegerField(default=1)
+    visibility = models.CharField(max_length=1,choices=VISIBILITY_OPTIONS, default='R')
+    
+    def __unicode__(self):
+        return self.title
+    
+class SurveyQuestion(models.Model):
+    short_name = models.CharField(max_length=64)
+    text = models.TextField()
+    part = models.ForeignKey(SurveyPart)
+    max_words = models.PositiveSmallIntegerField(blank=True,null=True)
+    display_order = models.PositiveSmallIntegerField(default=1)
+    
+    def __unicode__(self):
+        return self.short_name+'('+unicode(self.part)+')'
+        
+class SurveyAnswer(models.Model):
+    term = models.ForeignKey('mig_main.AcademicTerm')
+    question = models.ForeignKey(SurveyQuestion)
+    submitter = models.ForeignKey('mig_main.MemberProfile')
+    answer = models.TextField()
+    
+    def __unicode__(self):
+        return self.submitter.uniqname+'\'s answer to '+unicode(self.question)
+        
+class ElecteeInterviewSurvey(models.Model):
+    term = models.ForeignKey('mig_main.AcademicTerm')
+    questions= models.ManyToManyField(SurveyQuestion)
+    due_date = models.DateField()
+    
+    def __unicode__(self):
+        return 'Electee Survey for '+unicode(self.term)
+       
+    def check_if_electee_completed(self,electee):
+        parts = SurveyPart.objects.filter(surveyquestion__in=self.questions.all()).distinct()
+        completed = True
+        for part in parts:
+            num_req = part.number_of_required_questions
+            part_answers = SurveyAnswer.objects.filter(submitter=electee,term=self.term,question__part=part).count()
+            if (not num_req is None) and part_answers < num_req:
+                return False
+        return True
+        
