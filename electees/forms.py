@@ -6,7 +6,7 @@ from django.forms.models import inlineformset_factory, BaseInlineFormSet
 
 from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,ModelSelect2Field,Select2Widget
 
-from electees.models import ElecteeGroup,EducationalBackgroundForm,BackgroundInstitution,SurveyQuestion,ElecteeInterviewSurvey
+from electees.models import ElecteeGroup,EducationalBackgroundForm,BackgroundInstitution,SurveyQuestion,ElecteeInterviewSurvey,SurveyPart
 from mig_main.models import MemberProfile,AcademicTerm
 from history.models import Officer
 
@@ -41,3 +41,56 @@ class AddSurveyQuestionsForm(forms.ModelForm):
     class Meta:
         model = ElecteeInterviewSurvey
         exclude=('term','due_date',)
+        
+class ElecteeSurveyForm(forms.Form):
+    def __init__(self,*args,**kwargs):
+        self.questions = kwargs.pop('questions',[])
+        init_answers = kwargs.pop('answers',[])
+        initial = {"custom_%d"%answer.question.id:answer.answer for answer in init_answers}
+        kwargs['initial']=initial
+        super(ElecteeSurveyForm,self).__init__(*args,**kwargs)
+        for question in self.questions:
+            max_words = '(Limit %s words)'%(question.max_words) if question.max_words else ''
+            self.fields["custom_%s"%question.id]=forms.CharField(widget=forms.Textarea,label=question.text+max_words,required=False)
+
+    def get_answers(self):
+        for name,value in self.cleaned_data.items():
+            yield(SurveyQuestion.objects.get(id=name.replace("custom_","")),value)
+    
+    def render(self):
+        output = ''
+        parts = SurveyPart.objects.filter(surveyquestion__in=self.questions).distinct()
+        if self.non_field_errors():
+            output+="<ul class=\"text-danger\"><li>%s</li></ul>"%"</li><li>".join(self.non_field_errors())
+        for part in sorted(parts):
+            output+="<h4>"+unicode(part)+"</h4>"
+            if not part.number_of_required_questions is None:
+                if part.number_of_required_questions:
+                    output+="<p>Please answer at least %d of the following questions:</p>"%part.number_of_required_questions
+                else:
+                    output+="<p>These questions are optional:<p>"
+            else:
+                output+="<p>Each question is required:</p>"
+            output+="<ol>"
+            questions = self.questions.filter(part=part).order_by('display_order')
+            for question in questions:
+                output+="<li><p for=\"id_custom_%d\">%s %s</p>"%(question.id,question.text,"<strong>(Limit %d words)</strong>"%(question.max_words) if question.max_words else "")
+                output+=unicode(self["custom_%s"%question.id].errors)
+                output+=unicode(self["custom_%s"%question.id])
+                output+="</li>"
+            output+="</ol><hr/>"
+        return output
+    def clean(self):
+        cleaned_data = super(ElecteeSurveyForm,self).clean()
+        val_errors = []
+        for name,value in self.cleaned_data.items():
+            question = SurveyQuestion.objects.get(id=name.replace("custom_",""))
+            if question.max_words and len(value.split())>question.max_words:
+                val_errors.append("%s: \"%s\" exceeded the maximum word count (%d/%d words used)"%(unicode(question.part),question.short_name,len(value.split()),question.max_words))
+        if val_errors:
+            raise ValidationError(val_errors)
+        return cleaned_data
+
+
+
+    

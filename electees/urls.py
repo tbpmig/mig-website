@@ -17,5 +17,9 @@ urlpatterns = patterns('',
     url(r'^edit_survey_questions/$', views.edit_survey_questions,name='edit_survey_questions'),
     url(r'^add_survey_questions_for_term/(?P<term_id>\d+)/$', views.add_survey_questions_for_term,name='add_survey_questions_for_term'),
     url(r'^add_survey_questions/$', views.add_survey_questions,name='add_survey_questions'),
-    
+    url(r'^preview_survey_for_term/(?P<term_id>\d+)/$', views.preview_survey_for_term,name='preview_survey_for_term'),
+    url(r'^preview_survey/$', views.preview_survey,name='preview_survey'),
+    url(r'^complete_survey_for_term/(?P<term_id>\d+)/$', views.complete_survey_for_term,name='complete_survey_for_term'),
+    url(r'^complete_survey/$', views.complete_survey,name='complete_survey'),
+  
 )

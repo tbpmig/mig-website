@@ -1,0 +1,24 @@
+{% regroup questions|dictsort:"part" by part as questions_by_part %}
+{% for part in questions_by_part %}
+<h4>{{part.grouper}}</h4>
+{% if part.grouper.number_of_required_questions != None %}
+    {% if part.grouper.number_of_required_questions %}
+    <p>Please answer at least {{part.grouper.number_of_required_questions}} of the following questions:</p>
+    {% else %}
+    <p>These questions are optional:</p>
+    {% endif %}
+{% else %}
+<p>Each question is required:</p>
+{% endif %}
+<ol>
+{% for question in part.list|dictsort:"display_order" %}
+<li>
+<p>{{question.text}} {% if question.max_words %}<strong>(Limit {{question.max_words}} words){%endif%}</strong></p>
+{% if real_form %}
+<textarea rows="4" cols="70" id="id_{{question.id}}" type="text" name="{{question.id}}">{% if answers.question %}"{{answers.question.answer}}"{%endif%} </textarea>
+{% endif %}
+</li>
+{% endfor %}
+</ol>
+<hr/>
+{% endfor %}

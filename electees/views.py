@@ -10,12 +10,12 @@ from django.forms.models import modelformset_factory,modelform_factory
 from django.forms import CheckboxSelectMultiple
 from django.core.urlresolvers import reverse
 
-from electees.models import ElecteeGroup, ElecteeGroupEvent,ElecteeResource,EducationalBackgroundForm,BackgroundInstitution,ElecteeInterviewSurvey,SurveyPart,SurveyQuestion
+from electees.models import ElecteeGroup, ElecteeGroupEvent,ElecteeResource,EducationalBackgroundForm,BackgroundInstitution,ElecteeInterviewSurvey,SurveyPart,SurveyQuestion,SurveyAnswer
 from mig_main.models import MemberProfile, AcademicTerm
 from mig_main.utility import Permissions, get_previous_page,  get_message_dict
 from member_resources.views import get_permissions as get_member_permissions
 from history.models import Officer
-from electees.forms import get_unassigned_electees,InstituteFormset,BaseElecteeGroupForm,AddSurveyQuestionsForm
+from electees.forms import get_unassigned_electees,InstituteFormset,BaseElecteeGroupForm,AddSurveyQuestionsForm,ElecteeSurveyForm
 
 def user_is_member(user):
     if hasattr(user,'userprofile'):
@@ -28,6 +28,7 @@ def get_permissions(user):
         'can_create_groups':Permissions.can_manage_electee_progress(user),
         'can_edit_resources':Permissions.can_manage_electee_progress(user),
         'can_edit_surveys':Permissions.can_manage_electee_progress(user),
+        'can_complete_surveys':Permissions.can_complete_electee_survey(user),
         })
     return permission_dict
 def get_common_context(request):
@@ -252,7 +253,7 @@ def edit_survey_for_term(request,term_id):
         request.session['error_message']='You are not authorized to edit the electee survey.'
         return redirect('electees:view_electee_groups')
     SurveyForm = modelform_factory(ElecteeInterviewSurvey,exclude=('term','questions'))
-    term = AcademicTerm.get_current_term()
+    term = get_object_or_404(AcademicTerm,id=term_id)
     current_surveys = ElecteeInterviewSurvey.objects.filter(term = term)
     prefix='survey'
     if current_surveys.exists():
@@ -364,7 +365,7 @@ def add_survey_questions_for_term(request,term_id):
     if not Permissions.can_manage_electee_progress(request.user):
         request.session['error_message']='You are not authorized to edit the electee survey.'
         return redirect('electees:view_electee_groups')
-    term = AcademicTerm.get_current_term()
+    term = get_object_or_404(AcademicTerm,id=term_id)
     current_surveys = ElecteeInterviewSurvey.objects.filter(term = term)
     prefix='survey'
     if current_surveys.exists():
@@ -402,3 +403,84 @@ def add_survey_questions_for_term(request,term_id):
 
 def add_survey_questions(request):
     return redirect('electees:add_survey_questions_for_term',AcademicTerm.get_current_term().id)
+    
+    
+def preview_survey_for_term(request,term_id):
+    if not Permissions.can_manage_electee_progress(request.user):
+        request.session['error_message']='You are not authorized to preview the electee survey.'
+        return redirect('electees:view_electee_groups')
+    term = get_object_or_404(AcademicTerm,id=term_id)
+    current_surveys = ElecteeInterviewSurvey.objects.filter(term = term)
+    if current_surveys.exists():
+        current_survey=current_surveys[0]
+        existed=True
+    else:
+        raise Http404
+        
+    template = loader.get_template('electees/preview_survey.html')
+    context_dict = {
+        'real_form':False,
+        'questions':current_survey.questions.all(),
+    }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context)) 
+    
+def preview_survey(request):
+    return redirect('electees:preview_survey_for_term',AcademicTerm.get_current_term().id)
+ 
+def complete_survey_for_term(request,term_id):
+    if not Permissions.can_complete_electee_survey(request.user):
+        request.session['error_message']='You are not authorized to preview the electee survey.'
+        return redirect('electees:view_electee_groups')
+        
+    term = get_object_or_404(AcademicTerm,id=term_id)
+    current_surveys = ElecteeInterviewSurvey.objects.filter(term = term)
+    submitter=request.user.userprofile.memberprofile
+    if current_surveys.exists():
+        current_survey=current_surveys[0]
+        existed=True
+    else:
+        raise Http404
+    questions = current_survey.questions.all()
+    if request.method =='POST':
+        form = ElecteeSurveyForm(request.POST,questions=questions)
+        print request.POST
+        if form.is_valid():
+            print form.cleaned_data
+            for (question, answer) in form.get_answers():
+
+                existing_answer = SurveyAnswer.objects.filter(term=term,submitter=submitter,question=question)
+                if existing_answer.exists():
+                    if len(answer):
+                        existing_answer[0].answer=answer
+                        existing_answer[0].save()
+                    else:
+                        existing_answer.delete()
+                    
+                else:
+                    if len(answer):
+                        new_answer = SurveyAnswer(term=term,submitter=submitter,answer=answer,question=question)
+                        new_answer.save()
+            request.session['success_message']='Electee survey updated successfully'
+            return redirect('electees:manage_survey')
+        else:
+            request.session['error_message']='Form is invalid. Please correct the noted errors.'
+    else:
+        answers = SurveyAnswer.objects.filter(submitter=submitter,term=term,question__in=questions).distinct()
+        form = ElecteeSurveyForm(questions=questions,answers=answers)
+    template = loader.get_template('electees/complete_survey.html')
+    
+    context_dict = {
+        'real_form':True,
+        'form':form,
+        'questions':questions,
+    }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context)) 
+    
+def complete_survey(request):
+    return redirect('electees:complete_survey_for_term',AcademicTerm.get_current_term().id)

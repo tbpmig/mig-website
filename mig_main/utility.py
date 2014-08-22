@@ -659,7 +659,22 @@ class Permissions:
         if p.is_member():
             return True
         return False
-
+    @classmethod
+    def can_complete_electee_survey(cls,user):
+        p=cls.get_profile(user)
+        if not p:
+            return False
+        if not p.is_member():
+            return False
+        if user.is_superuser:
+            return True  
+        current_positions = cls.get_current_officer_positions(user) 
+        query = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Graduate Student Vice President')
+        if current_positions.filter(query).exists():
+            return True  
+        if p.memberprofile.status.name=='Electee':
+            return True
+        return False
     @classmethod
     def can_view_calendar_admin(cls,user):
         return cls.can_add_event_photo(user) or cls.can_create_events(user) or cls.can_add_announcements(user) or cls.can_generate_announcements(user) 

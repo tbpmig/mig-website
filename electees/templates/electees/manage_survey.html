@@ -10,8 +10,10 @@
     <a href="{%url 'electees:edit_survey_questions' %}" class="btn {% if questions_exist %}btn-success{% else %}btn-danger{%endif%}">Add/Edit Survey Questions</a>
     {% if survey_exists %}
         <a href="{%url 'electees:add_survey_questions' %}" class="btn {% if survey_has_questions %}btn-success{% else %}btn-danger{%endif%}">Add Questions to Survey</a>
+        <a href="{%url 'electees:preview_survey' %}" class="btn {% if survey_has_questions %}btn-success{% else %}btn-danger{%endif%}">Preview Survey</a>
     {% else %}
         <a  class="btn btn-danger" disabled="disabled">Add Questions to Survey</a>
+        <a  class="btn btn-danger" disabled="disabled">Preview Survey</a>
     {% endif %}
     </div>
 </div>

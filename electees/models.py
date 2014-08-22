@@ -159,7 +159,27 @@ class SurveyPart(models.Model):
     
     def __unicode__(self):
         return self.title
+    def __gt__(self,part2):
+        if not hasattr(part2,'display_order') or not hasattr(part2,'id'):
+            return True
+        if self.display_order > part2.display_order:
+            return True
+        if (self.display_order == part2.display_order) and self.id > part2.id:
+            return True
+        return False
     
+    def __lt__(self,part2):
+        if not hasattr(part2,'display_order') or not hasattr(part2,'id'):
+            return False
+        if self.display_order < part2.display_order:
+            return True
+        if (self.display_order == part2.display_order) and self.id < part2.id:
+            return True
+        return False
+    def __le__(self,part2):
+        return not self > part2
+    def __ge__(self,part2):
+        return not self < part2
 class SurveyQuestion(models.Model):
     short_name = models.CharField(max_length=64)
     text = models.TextField()
@@ -195,5 +215,6 @@ class ElecteeInterviewSurvey(models.Model):
             part_answers = SurveyAnswer.objects.filter(submitter=electee,term=self.term,question__part=part).count()
             if (not num_req is None) and part_answers < num_req:
                 return False
+        if not electee.resume:
+            return False
         return True
-        

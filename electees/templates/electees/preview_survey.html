@@ -1,0 +1,12 @@
+{% extends "electees/base_electees.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+    <a class="btn btn-default" href="{% url 'electees:manage_survey' %}"><i class="glyphicon glyphicon-chevron-left"></i> To Survey Manager</a>
+    <h3>Preview Electee Survey</h3>
+    <p>The survey will appear as follows, but with fields to submit answers</p>
+    <hr>
+    {% include "electees/electee_survey.html" %}
+</div>
+{% endblock content %}

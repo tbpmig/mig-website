@@ -9,6 +9,9 @@
         {% if can_edit_surveys %}
             <a href="{% url 'electees:manage_survey' %}" class="btn btn-warning">Manage Electee Survey</a>
         {% endif %}
+        {% if can_edit_surveys %}
+            <a href="{% url 'electees:complete_survey' %}" class="btn btn-primary">Electee Interview Survey</a>
+        {% endif %}
         <h3>Electee Resources</h3>
         <h4>Full Packets</h4>
     {% regroup packets|dictsort:"resource_type.id" by resource_type as packets_by_type %}
