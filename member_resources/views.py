@@ -2690,21 +2690,25 @@ def view_electee_surveys_for_term(request,term_id):
     term = get_object_or_404(AcademicTerm,id=term_id)
     interview_shifts = InterviewShift.objects.filter(interviewer_shift__attendees__in=[profile])
     current_surveys = ElecteeInterviewSurvey.objects.filter(term=term)
-    if current_surveys.exists:
+
+    if current_surveys.exists():
         current_survey=current_surveys[0]
     else:
         current_survey=None
-    if term == AcademicTerm.get_current_term():
-        electees=MemberProfile.get_electees()
-    else:
-        electees=None
+    
     if current_survey:
-        answers =SurveyAnswer.objects.filter(question__in=current_survey.questions.all()).distinct()
-        parts = SurveyPart.objects.filter(surveyquestion__in=current_survey.questions.all()).distinct()
         questions = current_survey.questions.all()
+        answers =SurveyAnswer.objects.filter(question__in=questions,term=term).distinct()
+        parts = SurveyPart.objects.filter(surveyquestion__in=questions).distinct()
+        
+        if term == AcademicTerm.get_current_term():
+            electees=MemberProfile.get_electees()
+        else:
+            electees=MemberProfile.objects.filter(surveyanswer__in=answers)
     else:
         answers=[]
         parts = []
+        electees=[]
     output_table = '<thead><tr><th>Electee</th>'
     for part in sorted(parts):
         output_table+="<th colspan=\"%d\">%s</th>"%(questions.filter(part=part).distinct().count(),my_markdown(unicode(part)))
