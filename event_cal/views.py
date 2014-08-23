@@ -535,7 +535,7 @@ def create_electee_interviews(request):
         request.session['error_message']='You are not authorized to create electee interviews'
         return get_previous_page(request,alternate='event_cal:list')
     request.session['current_page']=request.path
-    EventForm = modelform_factory(CalendarEvent,form=BaseEventForm,exclude=('completed','google_event_id','project_report','event_type','members_only','needs_carpool','use_sign_in','allow_advance_sign_up','needs_facebook_event'))
+    EventForm = modelform_factory(CalendarEvent,form=BaseEventForm,exclude=('completed','google_event_id','project_report','event_type','members_only','needs_carpool','use_sign_in','allow_advance_sign_up','needs_facebook_event','needs_flyer'))
     EventForm.base_fields['assoc_officer'].queryset=OfficerPosition.objects.filter(enabled=True)
     EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
     active_type = EventCategory.objects.get(name='Conducted Interviews')
@@ -581,6 +581,7 @@ def create_electee_interviews(request):
                     electee_shift.electees_only = True
                     electee_shift.event = electee_event
                     electee_shift.save()
+                    electee_shift_id=electee_shift.id
                     active_shift = electee_shift
                     active_shift.pk = None
                     active_shift.save()
@@ -591,7 +592,7 @@ def create_electee_interviews(request):
                     active_shift.save()
                     interview_shift = InterviewShift()
                     interview_shift.interviewer_shift = active_shift
-                    interview_shift.interviewee_shift = electee_shift
+                    interview_shift.interviewee_shift = EventShift.objects.get(id=electee_shift_id)
                     interview_shift.term = active_event.term
                     interview_shift.save()
                     

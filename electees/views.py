@@ -446,16 +446,18 @@ def complete_survey_for_term(request,term_id):
     questions = current_survey.questions.all()
     if request.method =='POST':
         form = ElecteeSurveyForm(request.POST,questions=questions)
-        print request.POST
         if form.is_valid():
             print form.cleaned_data
             for (question, answer) in form.get_answers():
 
                 existing_answer = SurveyAnswer.objects.filter(term=term,submitter=submitter,question=question)
                 if existing_answer.exists():
+                    old_answer = existing_answer[0]
                     if len(answer):
-                        existing_answer[0].answer=answer
-                        existing_answer[0].save()
+                        print existing_answer
+                        print answer
+                        old_answer.answer=answer
+                        old_answer.save()
                     else:
                         existing_answer.delete()
                     

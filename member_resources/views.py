@@ -19,8 +19,8 @@ from django.forms.models import modelformset_factory, modelform_factory
 from django.core.urlresolvers import reverse
 
 from corporate.views import update_resume_zips
-from electees.models import ElecteeGroup, electee_stopped_electing, EducationalBackgroundForm
-from event_cal.models import CalendarEvent, MeetingSignInUserData
+from electees.models import ElecteeGroup, electee_stopped_electing, EducationalBackgroundForm,ElecteeInterviewSurvey,SurveyAnswer,SurveyQuestion,SurveyPart
+from event_cal.models import CalendarEvent, MeetingSignInUserData,InterviewShift
 from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardForm
 from history.models import Award,Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport
 from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet,ExternalServiceForm
@@ -32,6 +32,7 @@ from mig_main.utility import  Permissions, get_previous_page,get_next_term, get_
 from outreach.models import TutoringRecord
 from requirements.models import DistinctionType, Requirement, ProgressItem, EventCategory
 
+from mig_main.templatetags.my_markdown import my_markdown
 INVALID_FORM_MESSAGE='The form is invalid. Please correct the noted errors.'
 
 #LOGGING={
@@ -1117,6 +1118,7 @@ def access_history(request):
         'can_access_project_reports':Permissions.can_access_project_reports(request.user),
         'can_create_nep':Permissions.can_create_events(request.user),
         'can_add_awards':Permissions.can_manage_website(request.user),
+        'can_view_surveys':(hasattr(request.user,'userprofile') and request.user.userprofile.is_member),
         'subnav':'history',
         }
     context_dict.update(get_common_context(request))
@@ -2670,3 +2672,71 @@ def non_event_project_participants(request,ne_id):
     context_dict.update(get_common_context(request))
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
+
+def view_electee_surveys_for_term(request,term_id):
+    if not hasattr(request.user,'userprofile') or not request.user.userprofile.is_member():
+        request.session['error_message']='You are not authorized to view electee surveys awards.'
+        return get_previous_page(request,alternate='member_resources:index')
+    user_visibilities = set(['M'])
+    if Permissions.can_manage_electee_progress(request.user):
+        user_visibilities.add('R')
+        user_visibilities.add('E')
+        user_visibilities.add('A')
+    profile = request.user.userprofile.memberprofile
+    if profile.status.name=='Electee':
+        user_visibilities.add('E')
+    elif profile.status.name=='Active':
+        user_visibilities.add('A')
+    term = get_object_or_404(AcademicTerm,id=term_id)
+    interview_shifts = InterviewShift.objects.filter(interviewer_shift__attendees__in=[profile])
+    current_surveys = ElecteeInterviewSurvey.objects.filter(term=term)
+    if current_surveys.exists:
+        current_survey=current_surveys[0]
+    else:
+        current_survey=None
+    if term == AcademicTerm.get_current_term():
+        electees=MemberProfile.get_electees()
+    else:
+        electees=None
+    if current_survey:
+        answers =SurveyAnswer.objects.filter(question__in=current_survey.questions.all()).distinct()
+        parts = SurveyPart.objects.filter(surveyquestion__in=current_survey.questions.all()).distinct()
+        questions = current_survey.questions.all()
+    else:
+        answers=[]
+        parts = []
+    output_table = '<thead><tr><th>Electee</th>'
+    for part in sorted(parts):
+        output_table+="<th colspan=\"%d\">%s</th>"%(questions.filter(part=part).distinct().count(),my_markdown(unicode(part)))
+    output_table+="</tr><tr><th></th>"
+    for part in sorted(parts):
+        for question in questions.filter(part=part).distinct().order_by('display_order'):
+            output_table+="<th>%s</th>"%(my_markdown(question.text))
+    output_table+="</tr></thead><tbody>"
+    for electee in electees:
+        output_table+="<tr><td>%s</td>"%unicode(electee)
+        for part in sorted(parts):
+            for question in questions.filter(part=part).distinct().order_by('display_order'):
+                electee_answers = answers.filter(submitter=electee,question=question)
+                if part.visibility in user_visibilities or electee ==profile or interview_shifts.filter(interviewee_shift__attendees__in=[electee]).exists():
+                    if electee_answers.exists():
+                        output_table+="<td>%s</td>"%my_markdown(electee_answers[0].answer)
+                    else:
+                        output_table+="<td><i>No answer given</i></td>"
+                else:
+                    output_table+="<td><i>Answer hidden</i></td>"
+        output_table+="</tr>"
+    output_table+="</tbody>"
+    template = loader.get_template('member_resources/view_electee_surveys.html')
+    context_dict ={
+        'table':output_table,
+        'subnav':'history',
+        'base':'member_resources/base_member_resources.html',
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))
+    
+def view_electee_surveys(request):   
+    return redirect('member_resources:view_electee_surveys_for_term',AcademicTerm.get_current_term().id)

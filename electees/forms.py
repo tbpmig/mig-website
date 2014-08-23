@@ -9,7 +9,7 @@ from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,Model
 from electees.models import ElecteeGroup,EducationalBackgroundForm,BackgroundInstitution,SurveyQuestion,ElecteeInterviewSurvey,SurveyPart
 from mig_main.models import MemberProfile,AcademicTerm
 from history.models import Officer
-
+from mig_main.templatetags.my_markdown import my_markdown
 def get_unassigned_electees():
     current_electee_groups = ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term())
     current_electees = MemberProfile.get_electees()
@@ -63,7 +63,7 @@ class ElecteeSurveyForm(forms.Form):
         if self.non_field_errors():
             output+="<ul class=\"text-danger\"><li>%s</li></ul>"%"</li><li>".join(self.non_field_errors())
         for part in sorted(parts):
-            output+="<h4>"+unicode(part)+"</h4>"
+            output+="<h4>"+my_markdown(unicode(part))+"</h4>"
             if not part.number_of_required_questions is None:
                 if part.number_of_required_questions:
                     output+="<p>Please answer at least %d of the following questions:</p>"%part.number_of_required_questions
@@ -74,7 +74,7 @@ class ElecteeSurveyForm(forms.Form):
             output+="<ol>"
             questions = self.questions.filter(part=part).order_by('display_order')
             for question in questions:
-                output+="<li><p for=\"id_custom_%d\">%s %s</p>"%(question.id,question.text,"<strong>(Limit %d words)</strong>"%(question.max_words) if question.max_words else "")
+                output+="<li><p for=\"id_custom_%d\">%s %s</p>"%(question.id,my_markdown(question.text),"<strong>(Limit %d words)</strong>"%(question.max_words) if question.max_words else "")
                 output+=unicode(self["custom_%s"%question.id].errors)
                 output+=unicode(self["custom_%s"%question.id])
                 output+="</li>"

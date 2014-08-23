@@ -287,7 +287,10 @@ class Permissions:
 
     @classmethod
     def can_access_history(cls, user):
-        return cls.can_view_meeting_feedback(user) or cls.can_access_project_reports(user)
+        if cls.get_profile(user):
+            return True
+        else:
+            return False
 
     @classmethod
     def can_access_project_reports(cls,user):

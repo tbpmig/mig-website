@@ -21,6 +21,9 @@
             <li><a href="{% url 'member_resources:manage_awards' %}">Manage Awards</a></li>
         {% endif %}
             <li><a href="{% url 'member_resources:main_meeting_minutes' %}">View Meeting Minutes</a></li>
+        {% if can_view_surveys %}
+            <li><a href="{% url 'member_resources:view_electee_surveys' %}">View Electee Surveys</a></li>
+        {% endif %}
         </ul>
     </div>
 </div>

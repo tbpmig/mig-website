@@ -58,5 +58,8 @@ urlpatterns = patterns('',
     url(r'^non_event_project_participants/(?P<ne_id>\d+)/$',views.non_event_project_participants,name='non_event_project_participants'),
     url(r'^manage_awards/(?P<term_id>\d+)/$',views.manage_awards_for_term,name='manage_awards_for_term'),
     url(r'^manage_awards/$',views.manage_awards,name='manage_awards'),
+    url(r'^view_electee_surveys/(?P<term_id>\d+)/$',views.view_electee_surveys_for_term,name='view_electee_surveys_for_term'),
+    url(r'^view_electee_surveys/$',views.view_electee_surveys,name='view_electee_surveys'),
+    
 #	url(r'^profiles/(?P<uniqname>[a-z]{3,8})/commitchange/$',views.profile_commit, name='profile_commit'),
 )
