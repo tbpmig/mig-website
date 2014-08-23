@@ -9,7 +9,7 @@
         {% if can_edit_surveys %}
             <a href="{% url 'electees:manage_survey' %}" class="btn btn-warning">Manage Electee Survey</a>
         {% endif %}
-        {% if can_edit_surveys %}
+        {% if can_complete_surveys %}
             <a href="{% url 'electees:complete_survey' %}" class="btn btn-primary">Electee Interview Survey</a>
         {% endif %}
         <h3>Electee Resources</h3>

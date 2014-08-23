@@ -464,7 +464,7 @@ def complete_survey_for_term(request,term_id):
                         new_answer = SurveyAnswer(term=term,submitter=submitter,answer=answer,question=question)
                         new_answer.save()
             request.session['success_message']='Electee survey updated successfully'
-            return redirect('electees:manage_survey')
+            return redirect('electees:view_electee_groups')
         else:
             request.session['error_message']='Form is invalid. Please correct the noted errors.'
     else:

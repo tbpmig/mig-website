@@ -321,7 +321,7 @@ class MemberProfile(UserProfile):
     still_electing  = models.BooleanField(default=True)
     
     #Uncomment this on actual server with Python Image Library installed
-    photo   = StdImageField(upload_to='member_photos',variations={'thumbnail':(555,775)})
+    photo   = StdImageField(upload_to='member_photos',variations={'thumbnail':(555,775)},min_size=(100,100))
     resume          = ContentTypeRestrictedFileField(
         upload_to=resume_file_name,
         content_types=pdf_types,
