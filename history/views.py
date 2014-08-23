@@ -85,7 +85,7 @@ def edit_articles(request):
         request.session['error_message']='You are not authorized to edit web articles.'
         return redirect('history:index')
     prefix='webstories'
-    WebStoryFormset = modelformset_factory(WebsiteArticle)
+    WebStoryFormset = modelformset_factory(WebsiteArticle,can_delete=True)
     if request.method =='POST':
         formset = WebStoryFormset(request.POST,prefix=prefix,queryset = WebsiteArticle.objects.order_by('approved','-date_posted'))
         if formset.is_valid():

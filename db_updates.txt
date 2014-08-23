@@ -1,3 +1,2 @@
 \echo 'updating db'
-ALTER TABLE history_websitearticle ADD COLUMN "approved" BOOLEAN DEFAULT TRUE;
 \echo 'done updating db'
