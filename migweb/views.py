@@ -1,6 +1,4 @@
 # Create your views here.
-from datetime import date
-
 from django.contrib.auth import logout, login
 from django.contrib.auth.models import User
 from django.http import HttpResponse, HttpResponseRedirect
@@ -25,9 +23,8 @@ def home(request):
     request.session['current_page']=request.path
     slideshow_photos = SlideShowPhoto.objects.filter(active=True)
     now = timezone.localtime(timezone.now())
-    today=date.today()
     upcoming_events = CalendarEvent.get_upcoming_events()
-    web_articles    = WebsiteArticle.objects.order_by('-date_posted').exclude(date_posted__gt=today)[:3]
+    web_articles    = WebsiteArticle.get_stories()[:3]
     template = loader.get_template('home.html')
     context_dict = {
         'upcoming_events':upcoming_events,

@@ -1,8 +1,9 @@
 from datetime import date
 
 from django.core.exceptions import PermissionDenied
+from django.core.urlresolvers import reverse
 from django.db.models import Q
-from django.forms.models import modelform_factory
+from django.forms.models import modelform_factory,modelformset_factory
 from django.http import HttpResponse#, Http404, HttpResponseRedirect
 from django.shortcuts import  get_object_or_404,redirect
 from django.template import RequestContext, loader
@@ -15,6 +16,7 @@ from event_cal.models import EventPhoto
 def get_permissions(user):
     permission_dict={
         'can_post':Permissions.can_post_web_article(user),
+        'can_edit':Permissions.can_approve_web_article(user),
         'post_button':Permissions.can_upload_articles(user),
         'is_member':hasattr(user,'userprofile') and user.userprofile.is_member(),
         'can_process_project_reports': Permissions.can_process_project_reports(user),
@@ -26,23 +28,30 @@ def get_common_context(request):
         'request':request,
         'main_nav':'publications',
         'new_bootstrap':True,
+        'num_pending_stories':WebsiteArticle.objects.filter(approved=False).count(),
     })
     return context_dict
 
 def get_article_view(request,article_id):
     request.session['current_page']=request.path
     today = date.today()
-    web_articles    = WebsiteArticle.objects.order_by('-date_posted').exclude(date_posted__gt=today)
+    web_articles    = WebsiteArticle.get_stories()
     if Permissions.can_post_web_article(request.user):
         NewArticleForm = modelform_factory(WebsiteArticle,form=WebArticleForm)
         if request.method == 'POST':
             form = NewArticleForm(request.POST)
             if form.is_valid():
                 a=form.save()
+                if Permissions.can_approve_web_article(request.user):
+                    a.approved=True
+                    a.save()
+                    request.session['success_message']='Your webstory was posted successfully'
+                else:
+                    request.session['success_message']='Your webstory has been submitted and is awaiting approval'
                 if hasattr(request.user,'userprofile') and request.user.userprofile.is_member():
                     a.created_by = request.user.userprofile.memberprofile
                     a.save()
-                request.session['success_message']='Your webstory was posted successfully'
+                
                 return get_previous_page(request, 'history:index')
             else:
                 request.session['error_message']='There were errors in your submission. Please correct the noted errors.'
@@ -71,7 +80,38 @@ def get_article_view(request,article_id):
 def index(request):
     return get_article_view(request,None)
     
-
+def edit_articles(request):
+    if not Permissions.can_approve_web_article(request.user):
+        request.session['error_message']='You are not authorized to edit web articles.'
+        return redirect('history:index')
+    prefix='webstories'
+    WebStoryFormset = modelformset_factory(WebsiteArticle)
+    if request.method =='POST':
+        formset = WebStoryFormset(request.POST,prefix=prefix,queryset = WebsiteArticle.objects.order_by('approved','-date_posted'))
+        if formset.is_valid():
+            formset.save()
+            request.session['success_message']='Web stories updated successfully'
+            return redirect('history:index')
+        else:
+            request.session['error_message']='Form is invalid. Please correct the noted errors.'
+    else:
+        formset = WebStoryFormset(prefix=prefix,queryset = WebsiteArticle.objects.order_by('approved','-date_posted'))
+    template = loader.get_template('generic_formset.html')
+    context_dict = {
+        'formset':formset,
+        'prefix':prefix,
+        'has_files':False,
+        'can_add_row':False,
+        'submit_name':'Update Website Stories',
+        'form_title':'Edit Website Stories',
+        'help_text':'Use this to edit or approve website stories submitted by others, for long stories, make sure to add the <fold> attribute.',
+        'base':'history/base_history.html',
+        'back_button':{'link':reverse('history:index'),'text':'To Website Stories'},
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
 def article_view(request,article_id):
     return get_article_view(request,article_id)
 

@@ -25,10 +25,10 @@ class ArticleForm(forms.ModelForm):
 
 class WebArticleForm(forms.ModelForm):
 #    tagged_members = ModelSelect2MultipleField()
-    tagged_members = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'26em','placeholder':'Tag member(s)','closeOnSelect':True}),queryset=MemberProfile.get_members())
+    tagged_members = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'26em','placeholder':'Tag member(s)','closeOnSelect':True}),queryset=MemberProfile.get_members(),required=False)
     class Meta:
         model = WebsiteArticle
-        exclude = ['created_by']
+        exclude = ['created_by','approved']
 
 class ProjectDescriptionForm(forms.Form):
     description = forms.CharField(widget=forms.Textarea)

@@ -366,12 +366,22 @@ class Permissions:
         if user.is_superuser:
             return True
         current_positions = cls.get_current_officer_positions(user) 
-        query = Q(position__name='President')|Q(position__name='Historian')|Q(position__name='New Initiatives Officer')|Q(position__name='Publicity Officer')|Q(position__name='Website Officer')|Q(position__name='Advisor')|Q(position__name='Chapter Development Officer')
+        if current_positions.exists():
+            return True
+        if profile.projectleaderlist_set.all().exists():
+            return True
+        else:
+            return False
+    @classmethod
+    def can_approve_web_article(cls,user):
+        if user.is_superuser:
+            return True
+        current_positions = cls.get_current_officer_positions(user) 
+        query = Q(position__name='President')|Q(position__name='Publicity Officer')
         if current_positions.filter(query).exists():
             return True
         else:
             return False
-
     @classmethod
     def can_view_others_progress(cls,user,uniqname2):
         if user.username == uniqname2:
@@ -455,7 +465,7 @@ class Permissions:
             if current_positions.filter(query_electees).exists():
                 query_out = query_out | MemberProfile.get_electees()
         
-        electee_groups_led = ElecteeGroup.objects.filter(query_electee_groups)
+        electee_groups_led = ElecteeGroup.objects.filter(query_electee_groups).filter(term=AcademicTerm.get_current_term())
         for electee_group in electee_groups_led:
             query_out = query_out|electee_group.members.all()
 

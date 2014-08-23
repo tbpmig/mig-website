@@ -1,5 +1,6 @@
 import os
 import subprocess
+from datetime import date
 from decimal import Decimal
 from numpy import std,median,mean
 
@@ -61,6 +62,12 @@ class WebsiteArticle(models.Model):
     date_posted     = models.DateField()
     tagged_members  = models.ManyToManyField('mig_main.MemberProfile', blank=True,
                                             null=True,related_name='article_tagged_members')
+                                            
+    approved = models.BooleanField(default=False)
+    
+    @classmethod
+    def get_stories(cls):
+        return cls.objects.order_by('-date_posted').exclude(date_posted__gt=date.today()).exclude(approved=False)
     def __unicode__(self):
         return self.title+' ('+str(self.date_posted)+')'
 
