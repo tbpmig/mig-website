@@ -8,6 +8,7 @@ from django.db.models import Max,Min,Q
 from django.utils import timezone
 from django.utils.encoding import force_unicode
 from stdimage import StdImageField
+import tweepy
 
 from event_cal.gcal_functions import get_credentials,get_authorized_http,get_service
 from mig_main.models import AcademicTerm,OfficerPosition,MemberProfile

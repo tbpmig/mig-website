@@ -7,6 +7,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.template import RequestContext, loader
 from django.utils import timezone
+import tweepy
 
 from event_cal.models import CalendarEvent
 from history.models   import WebsiteArticle
