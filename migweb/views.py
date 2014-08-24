@@ -98,4 +98,4 @@ def twitter_oauth(request):
     json.dump((auth.access_token.key,auth.access_token.secret),f)
     f.close()
     request.session['success_message']='Website successfully authorized'
-    return ('/')
+    return redirect('/')
