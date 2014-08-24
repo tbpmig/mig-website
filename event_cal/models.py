@@ -12,7 +12,7 @@ from stdimage import StdImageField
 from event_cal.gcal_functions import get_credentials,get_authorized_http,get_service
 from mig_main.models import AcademicTerm,OfficerPosition,MemberProfile
 from requirements.models import Requirement
-from migweb.settings import DEBUG
+from migweb.settings import DEBUG, twitter_token,twitter_secret
 # Create your models here.
 
 class GoogleCalendar(models.Model):
@@ -223,6 +223,30 @@ class CalendarEvent(models.Model):
             hours+=(end_time-start_time).seconds/3600.0
             count+=1
         return hours
+    def tweet_event(self,include_hashtag):
+        if self.members_only:
+            return None
+        f = open('twitter.dat','r')
+        token = json.load(f)
+        auth = tweepy.OAuthHandler(twitter_token,twitter_secret)
+        auth.set_access_token(token[0],token[1])
+        api = tweepy.API(auth)
+        start_time = self.get_start_and_end()['start']
+        if start_time.minute:
+            disp_time = start_time.strftime('%b %d, %I:%M%p')
+        else:
+            disp_time = start_time.strftime('%b %d, %I%p')
+        if include_hashtag:
+            hashtag='\n#UmichEngin'
+        else:
+            hashtag=''
+        max_name_length = 140-len(disp_time)-25-len(hashtag)-3
+        name=self.name
+        if len(name)>max_name_length:
+            name = name[:(max_name_length-3)]+'...'
+        tweet_text = "%(name)s:\n%(time)s\n%(link)s%(hashtag)s"%{'name':name,'time':disp_time,'link':reverse('event_cal:event_detail',self.id),'hashtag':hashtag }
+        
+        api.update_status(tweet_text)
     def notify_publicity(self,needed_flyer=False,needed_facebook=False,edited=False):
         publicity_officer = OfficerPosition.objects.filter(name='Publicity Officer')
         if publicity_officer.exists():

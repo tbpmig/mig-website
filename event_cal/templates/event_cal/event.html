@@ -12,6 +12,11 @@
 <a href="{% url 'event_cal:delete_event' event.id %}"><i class="glyphicon glyphicon-remove"></i> Delete</a>
 </div>
 {% endif %}
+{% if not event.members_only %}
+<div class="fb-like" data-kid-directed-site="true" data-href="https://tbp.engin.umich.edu{{event_page}}" data-layout="button_count" data-action="like" data-show-faces="false" data-share="true"></div><br/>
+<div class="g-plusone" data-size="medium" data-href="https://tbp.engin.umich.edu{{ event_page|slice:":-1"}}"></div>
+<p><a href="https://twitter.com/intent/tweet?screen_name=tbpmig" data-url="https://tbp.engin.umich.edu{{event_page}}" data-count="none" class="twitter-mention-button" data-lang="en">Tweet</a></p>                       
+{% endif %}
 {% if has_profile and user.userprofile.is_member %}
     {% if user.userprofile.is_active %}
     <p><b>Event/Requirement Type:</b> {{event.get_relevant_active_event_type}}</p>

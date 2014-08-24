@@ -1,4 +1,6 @@
 # Create your views here.
+import json
+
 from django.contrib.auth import logout, login
 from django.contrib.auth.models import User
 from django.http import HttpResponse, HttpResponseRedirect
@@ -10,7 +12,8 @@ from event_cal.models import CalendarEvent
 from history.models   import WebsiteArticle
 from mig_main.models import SlideShowPhoto
 from mig_main.utility import get_quick_links, get_message_dict
-from migweb.settings import DEBUG,DEBUG_user
+from migweb.settings import DEBUG,DEBUG_user, twitter_token,twitter_secret
+
 def get_permissions(user):
     permission_dict={}
     return permission_dict
@@ -65,3 +68,28 @@ def logout_view(request):
         return redirect('/')
     else:
         return HttpResponseRedirect('https://weblogin.umich.edu/cgi-bin/logout?https://tbp.engin.umich.edu/')
+
+def initialize_twitter(request):
+    auth = tweepy.OAuthHandler(twitter_token, twitter_secret)
+    try:
+        redirect_url = auth.get_authorization_url()
+    except tweepy.TweepError:
+        print 'Error! Failed to get request token.'
+    request.session['request_token']=(auth.request_token.key,auth.request_token.secret)
+    return redirect(redirect_url)
+def twitter_oauth(request):
+    verifier = request.GET['oauth_verifier']
+    auth = tweepy.OAuthHandler(twitter_token, twitter_secret)
+    token = request.pop('request_token',None)
+    if not token:
+        request.session['error_message']='Unable to load twitter token'
+        return redirect('/')
+    auth.set_request_token(token[0], token[1])
+
+    try:
+        auth.get_access_token(verifier)
+        f = open('twitter.dat','w')
+        json.dump((auth.access_token.key,auth.access_token.secret),f)
+        f.close()
+    except tweepy.TweepError:
+        print 'Error! Failed to get access token.'

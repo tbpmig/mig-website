@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.conf.urls import patterns, include, url
 from django.conf.urls.static import static
-# Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 from django.views.generic import RedirectView
 admin.autodiscover()
@@ -26,5 +25,7 @@ urlpatterns = patterns('',
     url(r'^pi_day/$',RedirectView.as_view(url='/outreach/pi_day/')),
     url(r'^pi-day/$',RedirectView.as_view(url='/outreach/pi_day/')),
     url(r'^piday/$',RedirectView.as_view(url='/outreach/pi_day/')),
+    url(r'^twitter_oauth/$','migweb.views.twitter_oauth',name='twitter_oauth'),
+    url(r'^init_twitter/$','migweb.views.initialize_twitter',name='initialize_twitter'),
     #url(r'^settings/',include('dbsettings.urls')),
 )+static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)
