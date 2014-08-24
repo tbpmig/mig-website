@@ -75,8 +75,8 @@ def initialize_twitter(request):
     try:
         redirect_url = auth.get_authorization_url()
     except tweepy.TweepError:
-        print 'Error! Failed to get request token.'
-        raise Http404
+        request.session['error_message']= 'Error! Failed to get request token.'
+        return redirect('/')
     request.session['request_token']=(auth.request_token.key,auth.request_token.secret)
     return redirect(redirect_url)
 def twitter_oauth(request):
@@ -93,5 +93,8 @@ def twitter_oauth(request):
         f = open('twitter.dat','w')
         json.dump((auth.access_token.key,auth.access_token.secret),f)
         f.close()
+        request.session['success_message']='Website successfully authorized'
     except tweepy.TweepError:
-        print 'Error! Failed to get access token.'
+        request.session['error_message']='Unable to get access token'
+        return redirect('/')
+    return ('/')
