@@ -246,7 +246,7 @@ class CalendarEvent(models.Model):
         name=self.name
         if len(name)>max_name_length:
             name = name[:(max_name_length-3)]+'...'
-        tweet_text = "%(name)s:\n%(time)s\n%(link)s%(hashtag)s"%{'name':name,'time':disp_time,'link':reverse('event_cal:event_detail',args=(self.id,)),'hashtag':hashtag }
+        tweet_text = "%(name)s:\n%(time)s\n%(link)s%(hashtag)s"%{'name':name,'time':disp_time,'link':'https:/tbp.engin.umich.edu'+reverse('event_cal:event_detail',args=(self.id,)),'hashtag':hashtag }
         
         api.update_status(tweet_text)
     def notify_publicity(self,needed_flyer=False,needed_facebook=False,edited=False):
