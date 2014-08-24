@@ -227,7 +227,7 @@ class CalendarEvent(models.Model):
     def tweet_event(self,include_hashtag):
         if self.members_only:
             return None
-        f = open('twitter.dat','r')
+        f = open('/srv/www/twitter.dat','r')
         token = json.load(f)
         auth = tweepy.OAuthHandler(twitter_token,twitter_secret)
         auth.set_access_token(token[0],token[1])

@@ -90,11 +90,12 @@ def twitter_oauth(request):
 
     try:
         auth.get_access_token(verifier)
-        f = open('twitter.dat','w')
-        json.dump((auth.access_token.key,auth.access_token.secret),f)
-        f.close()
-        request.session['success_message']='Website successfully authorized'
+
     except tweepy.TweepError:
         request.session['error_message']='Unable to get access token'
         return redirect('/')
+    f = open('/srv/www/twitter.dat','w')
+    json.dump((auth.access_token.key,auth.access_token.secret),f)
+    f.close()
+    request.session['success_message']='Website successfully authorized'
     return ('/')
