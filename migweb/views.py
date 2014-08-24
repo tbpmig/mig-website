@@ -3,7 +3,7 @@ import json
 
 from django.contrib.auth import logout, login
 from django.contrib.auth.models import User
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect,Http404
 from django.shortcuts import redirect
 from django.template import RequestContext, loader
 from django.utils import timezone
@@ -76,6 +76,7 @@ def initialize_twitter(request):
         redirect_url = auth.get_authorization_url()
     except tweepy.TweepError:
         print 'Error! Failed to get request token.'
+        raise Http404
     request.session['request_token']=(auth.request_token.key,auth.request_token.secret)
     return redirect(redirect_url)
 def twitter_oauth(request):
