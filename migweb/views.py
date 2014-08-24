@@ -82,7 +82,7 @@ def initialize_twitter(request):
 def twitter_oauth(request):
     verifier = request.GET['oauth_verifier']
     auth = tweepy.OAuthHandler(twitter_token, twitter_secret)
-    token = request.pop('request_token',None)
+    token = request.session.pop('request_token',None)
     if not token:
         request.session['error_message']='Unable to load twitter token'
         return redirect('/')
