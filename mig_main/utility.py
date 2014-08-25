@@ -369,7 +369,7 @@ class Permissions:
         if current_positions.exists():
             return True
         profile=cls.get_profile(user)
-        if profile.projectleaderlist_set.all().exists():
+        if profile and profile.projectleaderlist_set.all().exists():
             return True
         else:
             return False
