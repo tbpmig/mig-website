@@ -472,6 +472,7 @@ def create_multishift_event(request):
         formset = MultiShiftFormset(request.POST,prefix='shift')
         if form.is_valid() and formset.is_valid():
             event = form.save()
+
             for shift_form in formset:
                 if not shift_form.is_valid():
                     continue
@@ -484,8 +485,8 @@ def create_multishift_event(request):
                     start_time = mid_time
                     mid_time +=timedelta(minutes=shift_form.cleaned_data['duration'])
                     event_shift = EventShift()
-                    event_shift.start_time = start_time
-                    event_shift.end_time = mid_time
+                    event_shift.start_time = timezone.make_aware(start_time,timezone.get_current_timezone())
+                    event_shift.end_time = timezone.make_aware(mid_time,timezone.get_current_timezone())
                     event_shift.location = shift_form.cleaned_data['location']
                     event_shift.ugrads_only = shift_form.cleaned_data['ugrads_only']
                     event_shift.grads_only = shift_form.cleaned_data['grads_only']
@@ -497,9 +498,8 @@ def create_multishift_event(request):
                 request.session['success_message']='Event created successfully'
                 event.add_event_to_gcal()
                 event.notify_publicity()
-                return redirect('event_cal:list')
-            else:
-                request.session['error_message']='There were errors in your shifts.'
+            return redirect('event_cal:list')
+
         else:
             request.session['error_message']='There were errors in the submitted event, please correct the errors noted below.'
     else:
@@ -572,8 +572,8 @@ def create_electee_interviews(request):
                     start_time = mid_time
                     mid_time +=timedelta(minutes=shift_form.cleaned_data['duration'])
                     electee_shift = EventShift()
-                    electee_shift.start_time = start_time
-                    electee_shift.end_time = mid_time
+                    electee_shift.start_time = timezone.make_aware(start_time,timezone.get_current_timezone())
+                    electee_shift.end_time = timezone.make_aware(mid_time,timezone.get_current_timezone())
                     electee_shift.location = shift_form.cleaned_data['location']
                     electee_shift.ugrads_only = shift_form.cleaned_data['ugrads_only']
                     electee_shift.grads_only = shift_form.cleaned_data['grads_only']
@@ -599,9 +599,8 @@ def create_electee_interviews(request):
                 request.session['success_message']='Event created successfully'
                 active_event.add_event_to_gcal()
                 electee_event.add_event_to_gcal()
-                return redirect('event_cal:list')
-            else:
-                request.session['error_message']='There were errors in your shifts.'
+            return redirect('event_cal:list')
+            
         else:
             request.session['error_message']='There were errors in the submitted event, please correct the errors noted below.'
     else:
