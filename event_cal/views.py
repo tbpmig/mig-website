@@ -816,6 +816,11 @@ def edit_event(request, event_id):
                 form.save_m2m()
                 formset.save()
                 event.add_event_to_gcal()
+                tweet_option = form.cleaned_data.pop('tweet_option','N')
+                if tweet_option=='T':
+                    event.tweet_event(False)
+                elif tweet_option=='H':
+                    event.tweet_story(True)
                 event.notify_publicity(needed_flyer =needed_flyer,needed_facebook=needed_facebook,edited=True)
                 request.session['success_message']='Event updated successfully'
                 return redirect('event_cal:event_detail',event_id)
