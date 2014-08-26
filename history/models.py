@@ -4,6 +4,7 @@ import subprocess
 from datetime import date
 from decimal import Decimal
 from numpy import std,median,mean
+import tweepy
 
 from django.core.files import File
 from django.db import models
