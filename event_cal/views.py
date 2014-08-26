@@ -495,9 +495,14 @@ def create_multishift_event(request):
                     event_shift.actives_only = shift_form.cleaned_data['actives_only']
                     event_shift.event = event    
                     event_shift.save()
-                request.session['success_message']='Event created successfully'
-                event.add_event_to_gcal()
-                event.notify_publicity()
+            request.session['success_message']='Event created successfully'
+            event.add_event_to_gcal()
+            event.notify_publicity()
+            tweet_option = form.cleaned_data.pop('tweet_option','N')
+            if tweet_option=='T':
+                event.tweet_event(False)
+            elif tweet_option=='H':
+                event.tweet_event(True)
             return redirect('event_cal:list')
 
         else:
@@ -596,9 +601,14 @@ def create_electee_interviews(request):
                     interview_shift.term = active_event.term
                     interview_shift.save()
                     
-                request.session['success_message']='Event created successfully'
-                active_event.add_event_to_gcal()
-                electee_event.add_event_to_gcal()
+            request.session['success_message']='Event created successfully'
+            active_event.add_event_to_gcal()
+            electee_event.add_event_to_gcal()
+            tweet_option = form.cleaned_data.pop('tweet_option','N')
+            if tweet_option=='T':
+                event.tweet_event(False)
+            elif tweet_option=='H':
+                event.tweet_event(True)
             return redirect('event_cal:list')
             
         else:
@@ -657,7 +667,7 @@ def create_event(request):
                 if tweet_option=='T':
                     event.tweet_event(False)
                 elif tweet_option=='H':
-                    event.tweet_story(True)
+                    event.tweet_event(True)
                 if event.use_sign_in:
                     request.session['info_message']='Please create a sign-in for %s'%(unicode(event),)
                     event_id=int(event.id)
@@ -820,7 +830,7 @@ def edit_event(request, event_id):
                 if tweet_option=='T':
                     event.tweet_event(False)
                 elif tweet_option=='H':
-                    event.tweet_story(True)
+                    event.tweet_event(True)
                 event.notify_publicity(needed_flyer =needed_flyer,needed_facebook=needed_facebook,edited=True)
                 request.session['success_message']='Event updated successfully'
                 return redirect('event_cal:event_detail',event_id)
