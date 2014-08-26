@@ -31,7 +31,7 @@ def get_common_context(request):
         'num_pending_stories':WebsiteArticle.objects.filter(approved=False).count(),
     })
     return context_dict
-
+#This is not a url-findable method. To find article urls, use article_view
 def get_article_view(request,article_id):
     request.session['current_page']=request.path
     today = date.today()

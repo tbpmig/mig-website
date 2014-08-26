@@ -98,7 +98,7 @@ class WebsiteArticle(models.Model):
         name=self.title
         if len(name)>max_name_length:
             name = name[:(max_name_length-3)]+'...'
-        tweet_text = "%(name)s:\nRead more at:\n%(link)s%(hashtag)s"%{'name':name,'link':'https://tbp.engin.umich.edu'+reverse('history:get_article_view',args=(self.id,)),'hashtag':hashtag }
+        tweet_text = "%(name)s:\nRead more at:\n%(link)s%(hashtag)s"%{'name':name,'link':'https://tbp.engin.umich.edu'+reverse('history:article_view',args=(self.id,)),'hashtag':hashtag }
         
         api.update_status(tweet_text)
 class Publication(models.Model):
