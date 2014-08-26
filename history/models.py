@@ -7,8 +7,9 @@ from numpy import std,median,mean
 import tweepy
 
 from django.core.files import File
-from django.db import models
+from django.core.urlresolvers import reverse
 from django.core.validators import  MinValueValidator
+from django.db import models
 from localflavor.us.models import PhoneNumberField
 from stdimage import StdImageField
 
