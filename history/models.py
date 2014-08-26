@@ -94,7 +94,7 @@ class WebsiteArticle(models.Model):
         else:
             hashtag=''
         max_name_length = 140-25-len(hashtag)-15
-        name=self.name
+        name=self.title
         if len(name)>max_name_length:
             name = name[:(max_name_length-3)]+'...'
         tweet_text = "%(name)s:\nRead more at:\n%(link)s%(hashtag)s"%{'name':name,'link':'https://tbp.engin.umich.edu'+reverse('history:get_article_view',args=(self.id,)),'hashtag':hashtag }
