@@ -12,11 +12,12 @@ from django.core.validators import  MinValueValidator
 from localflavor.us.models import PhoneNumberField
 from stdimage import StdImageField
 
-from mig_main.pdf_field import ContentTypeRestrictedFileField,pdf_types
-from mig_main.models import MemberProfile,UserProfile,OfficerPosition,AcademicTerm
-
 from event_cal.models import EventShift,EventPhoto
+from mig_main.models import MemberProfile,UserProfile,OfficerPosition,AcademicTerm
+from mig_main.pdf_field import ContentTypeRestrictedFileField,pdf_types
+from migweb.settings import  twitter_token,twitter_secret
 from requirements.models import ProgressItem
+
 # Create your models here.
 class Officer(models.Model):
     user            = models.ForeignKey('mig_main.MemberProfile',
