@@ -653,6 +653,11 @@ def create_event(request):
                 request.session['success_message']='Event created successfully'
                 event.add_event_to_gcal()
                 event.notify_publicity()
+                tweet_option = form.cleaned_data.pop('tweet_option','N')
+                if tweet_option=='T':
+                    event.tweet_event(False)
+                elif tweet_option=='H':
+                    event.tweet_story(True)
                 if event.use_sign_in:
                     request.session['info_message']='Please create a sign-in for %s'%(unicode(event),)
                     event_id=int(event.id)

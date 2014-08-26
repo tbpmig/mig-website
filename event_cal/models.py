@@ -230,6 +230,7 @@ class CalendarEvent(models.Model):
             return None
         f = open('/srv/www/twitter.dat','r')
         token = json.load(f)
+        f.close()
         auth = tweepy.OAuthHandler(twitter_token,twitter_secret)
         auth.set_access_token(token[0],token[1])
         api = tweepy.API(auth)

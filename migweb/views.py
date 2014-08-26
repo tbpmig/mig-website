@@ -1,6 +1,8 @@
 # Create your views here.
 import json
+from os.path import isfile
 
+from django.core.exceptions import PermissionDenied
 from django.contrib.auth import logout, login
 from django.contrib.auth.models import User
 from django.http import HttpResponse, HttpResponseRedirect,Http404
@@ -71,15 +73,23 @@ def logout_view(request):
         return HttpResponseRedirect('https://weblogin.umich.edu/cgi-bin/logout?https://tbp.engin.umich.edu/')
 
 def initialize_twitter(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied()
+    if isfile('/srv/www/twitter.dat'):
+        request.session['error_message']='Twitter already initialized'
+        return redirect('/')
     auth = tweepy.OAuthHandler(twitter_token, twitter_secret)
     try:
         redirect_url = auth.get_authorization_url()
-    except tweepy.TweepError:
+    except tweepy.TweepError as e:
+        print e
         request.session['error_message']= 'Error! Failed to get request token.'
         return redirect('/')
     request.session['request_token']=(auth.request_token.key,auth.request_token.secret)
     return redirect(redirect_url)
 def twitter_oauth(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied()
     verifier = request.GET['oauth_verifier']
     auth = tweepy.OAuthHandler(twitter_token, twitter_secret)
     token = request.session.pop('request_token',None)

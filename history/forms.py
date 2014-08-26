@@ -24,11 +24,25 @@ class ArticleForm(forms.ModelForm):
         model = Publication
 
 class WebArticleForm(forms.ModelForm):
-#    tagged_members = ModelSelect2MultipleField()
+    TWEET_CHOICES= (
+        ('N','No Tweet'),
+        ('T','Tweet normally'),
+        ('H','Tweet with #UmichEngin'),
+    )
     tagged_members = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'26em','placeholder':'Tag member(s)','closeOnSelect':True}),queryset=MemberProfile.get_members(),required=False)
+    tweet_option = forms.ChoiceField(choices=TWEET_CHOICES,initial='N')
     class Meta:
         model = WebsiteArticle
         exclude = ['created_by','approved']
+    
+    def save(self,commit=True):
+        tweet_option = self.cleaned_data.pop('tweet_option','N')
+        a=super(WebArticleForm,self).save()
+        if tweet_option=='T':
+            a.tweet_story(False)
+        elif tweet_option=='H':
+            a.tweet_story(True)
+        return a
 
 class ProjectDescriptionForm(forms.Form):
     description = forms.CharField(widget=forms.Textarea)

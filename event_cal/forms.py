@@ -31,11 +31,22 @@ class BaseAnnouncementForm(ModelForm):
         model = AnnouncementBlurb
 
 class BaseEventForm(ModelForm):
+    TWEET_CHOICES= (
+        ('N','No Tweet'),
+        ('T','Tweet normally'),
+        ('H','Tweet with #UmichEngin'),
+    )
     leaders = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'element','placeholder':'Select Leader(s)','closeOnSelect':True}), queryset=MemberProfile.get_members())
-
+    tweet_option = forms.ChoiceField(choices=TWEET_CHOICES,initial='N')
     class Meta:
         model = CalendarEvent
-
+    def clean(self):
+        cleaned_data = super(BaseEventForm,self).clean()
+        members_only = cleaned_data.get('members_only')
+        tweet_option = cleaned_data.get('tweet_option')
+        if members_only and not tweet_option=='N':
+            raise ValidationError(_('Tweeting is not currentlys supported for members-only events'))
+        return cleaned_data
 class EventShiftForm(ModelForm):
     """
     Custom form for event shifts to verify that the event doesn't end before it starts and that mutually exclusive restrictions on attendance are not checked.

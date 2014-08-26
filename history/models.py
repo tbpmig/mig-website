@@ -78,6 +78,25 @@ class WebsiteArticle(models.Model):
         return self.body
     def get_full_view(self):
         return self.body.replace('<fold>','')
+        
+    def tweet_story(self,include_hashtag):
+        f = open('/srv/www/twitter.dat','r')
+        token = json.load(f)
+        f.close()
+        auth = tweepy.OAuthHandler(twitter_token,twitter_secret)
+        auth.set_access_token(token[0],token[1])
+        api = tweepy.API(auth)
+        if include_hashtag:
+            hashtag='\n#UmichEngin'
+        else:
+            hashtag=''
+        max_name_length = 140-25-len(hashtag)-15
+        name=self.name
+        if len(name)>max_name_length:
+            name = name[:(max_name_length-3)]+'...'
+        tweet_text = "%(name)s:\nRead more at:\n%(link)s%(hashtag)s"%{'name':name,'link':'https://tbp.engin.umich.edu'+reverse('history:get_article_view',args=(self.id,)),'hashtag':hashtag }
+        
+        api.update_status(tweet_text)
 class Publication(models.Model):
     date_published  = models.DateField()
     volume_number   = models.PositiveSmallIntegerField()
