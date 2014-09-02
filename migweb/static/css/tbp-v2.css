@@ -187,7 +187,11 @@ img#logo {
 .footer, .push {
     height:8em;
 }
-
+.forum-post {
+    border-style:solid;
+    border-color:#9D9B8B;
+    border-width:2px;
+}
 @media (max-width: 700px){
     .subnav-medium >li {
         float:none;

@@ -693,8 +693,21 @@ class Permissions:
     def can_view_calendar_admin(cls,user):
         return cls.can_add_event_photo(user) or cls.can_create_events(user) or cls.can_add_announcements(user) or cls.can_generate_announcements(user) 
 
-
-
+    @classmethod
+    def can_create_thread(cls,user):
+        if not hasattr(user,'userprofile') or not user.userprofile.is_member():
+            return False
+        return True
+    @classmethod
+    def can_create_forum(cls,user):
+        if not cls.can_create_thread(user):
+            return False
+        if user.is_superuser:
+            return True
+        current_positions = cls.get_current_officer_positions(user) 
+        if current_positions.exists():
+            return True
+        return False
 class UnicodeWriter:
     def __init__(self, f, dialect=csv.excel, encoding="utf-8-sig", **kwds):
         self.queue = cStringIO.StringIO()

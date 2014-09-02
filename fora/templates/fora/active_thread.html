@@ -1,0 +1,10 @@
+{% load my_markdown %}
+{% with message=active_thread.get_root_message %}
+<h3> {{active_thread.title}}</h3>
+{{message.print_replies|safe}}
+<h4>Post reply</h4>
+<form action="{% url 'fora:add_comment' active_thread.forum.id message.id %}" method="post">{% csrf_token %} 
+    {% include 'form_template.html' %}
+    <input type="submit" value="Add comment"/>
+</form>
+{% endwith %}
