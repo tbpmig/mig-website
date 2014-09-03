@@ -1,13 +1,19 @@
 <hr/>
 <h3>{{forum.name}}</h3>
 <hr/>
+<div class="btn-group-vertical">
 {% for thread in forum.get_first_threads %}
-<p><a href="{% url 'fora:view_thread' thread.id %}" >{{thread.title}}</a></p>
 
+<a href="{% url 'fora:view_thread' thread.id %}" class="btn btn-small btn-default">{{thread.title}}</a>
 {% endfor %}
+
 {% if can_create_thread %}
-    <a href="{% url 'fora:create_thread' forum.id %}" class="btn btn-small btn-default">Create new thread</a>
+    <a href="{% url 'fora:create_thread' forum.id %}" class="btn btn-small btn-primary">Create new thread</a>
 {% endif %}
+{% if can_create_forum %}
+        <a href="{% url 'fora:delete_forum' forum.id %}" class="btn btn-small btn-danger">Delete forum</a>
+    {% endif %}
+</div>
 
 
 

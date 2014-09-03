@@ -62,7 +62,7 @@ def login_view(request):
         body = request.POST
     else:
         body = request.GET
-    if 'next' in body:
+    if 'next' in body and not body['next']=='':
         return redirect(body['next'])
     return redirect('home')
 def logout_view(request):

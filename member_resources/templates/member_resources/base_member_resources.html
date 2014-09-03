@@ -11,7 +11,7 @@
 <li {% if subnav and subnav == 'misc_reqs' %}class="active"{% endif %}><a href="{% url 'member_resources:view_misc_reqs' %}">Membership Admin</a></li>
 {% endif %}
 {% if can_access_playground %}
-<li {% if subnav and subnav == 'playground' %}class="active"{% endif %}><a href="{% url 'member_resources:member_playground' %}">TBPlayground</a></li>
+<li {% if subnav and subnav == 'playground' %}class="active"{% endif %}><a href="{% url 'fora:index' %}">TBPlayground</a></li>
 {% endif %}
 {% if can_access_history %}
     <li  {% if subnav and subnav == 'history' %}class="active"{% endif %}><a href ="{% url 'member_resources:access_history' %}">Access History</a></li>

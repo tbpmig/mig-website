@@ -3,7 +3,7 @@
 
 {% block content  %}
 <div class="row">
-    <div class="col-md-3">
+    <div class="col-md-3 col-sm-4">
         {% for forum in fora %}
             {% include 'fora/forum_sidebar.html' %}
         {% endfor %}
@@ -12,8 +12,14 @@
             <a href="{% url 'fora:create_forum' %}" class="btn btn-small btn-default">Create new forum</a>
         {% endif %}
     </div>
-    <div class="col-md-6">
+    <div class="col-md-5 col-sm-4">
         {% include 'fora/active_thread.html' %}
+    </div>
+        <div class="col-md-4 col-sm-4">
+        <h4>Tau Beta Playground</h4>
+        {% for link in links %}
+        <a class="btn btn-default" href="{{link.link}}">{{link.name}}</a>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}

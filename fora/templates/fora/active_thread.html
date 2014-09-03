@@ -1,10 +1,57 @@
 {% load my_markdown %}
 {% with message=active_thread.get_root_message %}
+{% if active_thread %}
 <h3> {{active_thread.title}}</h3>
-{{message.print_replies|safe}}
+{% else %}
+<h3>No thread selected</h3>
+{% endif %}
+{% for reply in message.assemble_replies %}
+        {% if reply.depth %}
+        <div style="padding-left:{{reply.depth}}px;">
+        {% endif %}
+        <div class="forum-post"> 
+        <h4>{{reply.reply.title}} ({{reply.comment_points}} points)</h4>
+        <p><em>By: {{reply.reply.creator}} (User points: {{reply.user_points}}) {{reply.reply.time_created|date:"d N Y, P"}}</em></p>
+
+        {% if can_comment %}
+            <a class="btn btn-default" href="{% url 'fora:add_comment' active_thread.forum.id reply.reply.id %}">Post Reply</a>
+            <div class="btn-group pull-right">
+                {% if profile != reply.reply.creator %}
+                {% if profile in reply.reply.get_upvoters %}
+                <a class="btn btn-warning" href="{% url 'fora:withdraw_upvote' reply.reply.id %}">Withdraw upvote</a>
+                {% elif profile in reply.reply.get_downvoters %}
+                <a class="btn btn-success" href="{% url 'fora:upvote_comment' reply.reply.id %}">Switch to upvote</a>
+                {% else %}
+                <a class="btn btn-success" href="{% url 'fora:upvote_comment' reply.reply.id %}">Upvote</a>
+                {% endif %}
+                {% if profile in reply.reply.get_downvoters %}
+                <a class="btn btn-primary" href="{% url 'fora:withdraw_downvote' reply.reply.id %}">Withdraw downvote</a>
+                {% elif profile in reply.reply.get_upvoters %}
+                <a class="btn btn-danger" href="{% url 'fora:downvote_comment' reply.reply.id %}">Switch to downvote</a>
+                {% else %}
+                <a class="btn btn-danger" href="{% url 'fora:downvote_comment' reply.reply.id %}">Downvote</a>
+                {% endif %}
+                {% endif %}
+                {% if can_moderate %}
+                <a class="btn btn-danger" href="{% url 'fora:hide_comment' reply.reply.id %}">Hide</a>
+                {% endif %}
+            </div>
+        {% else %}
+            <p class="text-warning">You must be logged in and a member to post a comment.</p>
+        {% endif %}
+        
+        </div>
+        {% if reply.depth %}
+        </div>
+        {% endif %}
+{% endfor %}
+{% if can_comment  and active_thread and message%}
 <h4>Post reply</h4>
 <form action="{% url 'fora:add_comment' active_thread.forum.id message.id %}" method="post">{% csrf_token %} 
     {% include 'form_template.html' %}
     <input type="submit" value="Add comment"/>
 </form>
+{% else %}
+<p class="text-warning">You must be logged in and a member to post a comment.</p>
+{% endif %}
 {% endwith %}

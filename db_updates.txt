@@ -1,3 +1,4 @@
 \echo 'updating db'
 DROP TABLE fora_forummessage CASCADE;
+DROP TABLE fora_downvotespent CASCADE;
 \echo 'done updating db'

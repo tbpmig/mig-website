@@ -191,6 +191,7 @@ img#logo {
     border-style:solid;
     border-color:#9D9B8B;
     border-width:2px;
+    padding-left:5px;
 }
 @media (max-width: 700px){
     .subnav-medium >li {

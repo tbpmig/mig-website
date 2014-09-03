@@ -2476,25 +2476,6 @@ def view_background_forms(request):
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
-def member_playground(request):
-    if not hasattr(request.user, 'userprofile'): 
-        request.session['error_message']='You must create a profile to access TBPlayground.'
-        return redirect('member_resources:index')
-    profile = request.user.userprofile
-    links=[]
-    links.append({'name':'Submit Affirmation','link':reverse('member_resources:submit_praise')})
-    if profile.is_member:
-        pass
-    template = loader.get_template('member_resources/playground.html')
-    context_dict = {
-        'subnav':'playground',
-        'links':links,
-        }
-    context_dict.update(get_common_context(request))
-    context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
-    
 def approve_praise(request,praise_id): 
     if not hasattr(request.user,'userprofile'):
         request.session['error_message']='You must create a profile to approve an affirmation.'
@@ -2502,17 +2483,17 @@ def approve_praise(request,praise_id):
     tbp=get_object_or_404(TBPraise,id=praise_id)
     if not tbp.public:
         request.session['error_message']='You can only approve public affirmations.'
-        return redirect('member_resources:member_playground')
+        return redirect('fora:index')
     if not request.user.userprofile ==tbp.recipient:
         request.session['error_message']='You can only approve affirmations you received.'
-        return redirect('member_resources:member_playground')
+        return redirect('fora:index')
     if (tbp.giver ==tbp.recipient and tbp.anonymous and tbp.public):
         request.session['error_message']='You can\' post a self-affirmation anonymously.'
-        return redirect('member_resources:member_playground')
+        return redirect('fora:index')
     tbp.approved=True
     tbp.save()
     request.session['success_message']='Affirmation successfully approved for posting'
-    return redirect('member_resources:member_playground')
+    return redirect('fora:index')
         
 def submit_praise(request):
     if not hasattr(request.user,'userprofile'):
@@ -2529,7 +2510,7 @@ def submit_praise(request):
             if not (instance.giver ==instance.recipient and instance.anonymous and instance.public):
                 instance.email_praise()
             request.session['success_message']='Affirmation submitted successfully'
-            return redirect('member_resources:member_playground')
+            return redirect('fora:index')
         else:
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
@@ -2541,7 +2522,7 @@ def submit_praise(request):
         'has_files':False,
         'base':'member_resources/base_member_resources.html',
         'submit_name':'Submit Praise/Affirmation',
-        'back_button':{'link':reverse('member_resources:member_playground'),'text':'To Member Playground'},
+        'back_button':{'link':reverse('fora:index'),'text':'To Member Playground'},
         'form_title':'Affirm/Praise/Congratulate a member',
         'help_text':'Use this form to give some positive feedback to another member (or user). This can be done anonymously or attributed to you. You can also indicate that the feedback should be private to the recipient or public (other members/users can see it). This is only for *positive* feedback and should not be used as a means to provide anonymous criticism.',
         }

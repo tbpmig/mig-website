@@ -29,6 +29,7 @@ def get_common_context(request):
         'main_nav':'publications',
         'new_bootstrap':True,
         'num_pending_stories':WebsiteArticle.objects.filter(approved=False).count(),
+
     })
     return context_dict
 #This is not a url-findable method. To find article urls, use article_view
