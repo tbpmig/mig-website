@@ -30,7 +30,7 @@
             {% for minutes_term in minutes_by_term %}
             <div class="col-md-3">
                 <h5>{{minutes_term.grouper}}</h5>
-                {% for minute in minutes_term.list %}
+                {% for minute in minutes_term.list|dictsort:"display_order" %}
                     <p><a href="{{minute.pdf_file.url}}">{{minute}}</a></p>
                 {% endfor %}
             </div>
