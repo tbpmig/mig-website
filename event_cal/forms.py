@@ -97,22 +97,24 @@ class InterviewShiftForm(Form):
     end_time = forms.TimeField(input_formats=valid_time_formats)
     duration = forms.IntegerField(min_value=1,label='Interview Shift Length (min)')
     location = forms.CharField()
-    grads_only = forms.BooleanField(required=False,label="Undergrads only (interviewer and interviewee)",initial=False)
-    ugrads_only=  forms.BooleanField(required=False,label='Grads only (interviewer and interviewee)',initial=False)
-
+    type_choices = (
+        ('N','Normal: Any electee, any active'),
+        ('U','Undergrads only (interviewer and interviewee)'),
+        ('G','Grads only (interviewer and interviewee)'),
+        ('UI','Undergrad interviewee, any active interviewer'),
+        ('GI','Grad interviewee, any active interviewer'),
+        )
+    interview_type = forms.ChoiceField(choices=type_choices)
     def clean(self):
         """
         Ensures that not both grads and undergrads -only options have been checked. Also makes sure start and end times make sense.
         """
         cleaned_data = super(InterviewShiftForm,self).clean()
-        ugrads_only = cleaned_data.get('ugrads_only')
-        grads_only = cleaned_data.get('grads_only')
         start_time = cleaned_data.get('start_time')
         end_time = cleaned_data.get('end_time')
         error_list = []
-        if ugrads_only and grads_only:
-            error_list.append(ValidationError(_('An event cannot be both \'only undergraduates\' and \'only graduates\'.')))
-        if start_time> end_time:
+        
+        if not start_time or not end_time or start_time> end_time:
             error_list.append(ValidationError(_('The event shift must start before it can end; use am/pm to specify.')))
         if error_list:
             raise ValidationError(error_list)

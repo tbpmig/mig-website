@@ -580,8 +580,11 @@ def create_electee_interviews(request):
                     electee_shift.start_time = timezone.make_aware(start_time,timezone.get_current_timezone())
                     electee_shift.end_time = timezone.make_aware(mid_time,timezone.get_current_timezone())
                     electee_shift.location = shift_form.cleaned_data['location']
-                    electee_shift.ugrads_only = shift_form.cleaned_data['ugrads_only']
-                    electee_shift.grads_only = shift_form.cleaned_data['grads_only']
+                    interview_type=shift_form.cleaned_data['interview_type']
+                    if interview_type=='U' or interview_type=='UI':
+                        electee_shift.ugrads_only = True
+                    elif interview_type=='G' or interview_type=='GI':
+                        electee_shift.grads_only = True
                     electee_shift.max_attendance = 1
                     electee_shift.electees_only = True
                     electee_shift.event = electee_event
@@ -594,6 +597,15 @@ def create_electee_interviews(request):
                     active_shift.electees_only = False
                     active_shift.actives_only = True
                     active_shift.event = active_event
+                    if interview_type=='U':
+                        active_shift.ugrads_only = True
+                        active_shift.grads_only=False
+                    elif interview_type=='G':
+                        active_shift.grads_only = True
+                        active_shift.ugrads_only=False
+                    else:
+                        active_shift.grads_only = False
+                        active_shift.ugrads_only=False
                     active_shift.save()
                     interview_shift = InterviewShift()
                     interview_shift.interviewer_shift = active_shift
@@ -629,7 +641,7 @@ def create_electee_interviews(request):
         'subnav':'admin',
         'submit_name':'Create Interview Slots',
         'form_title':'Electee Interview Slot Creation',
-        'help_text':'Create the interview slots. Just one per session, separate events will be automatically created for actives and electees.',
+        'help_text':'Create the interview slots. Just one per session, separate events will be automatically created for actives and electees.\n Note: the \"Grad interviewee anyone interviewer\" option is discouraged due to the nature of the case studies.',
         'shift_title':'Shift days and time windows',
         'shift_help_text':'Shifts will be automatically created within the window you specify, for the duration you give. Note that if your duration does not line up with the end time, you may go longer than you planned.',
         'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
