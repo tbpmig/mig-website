@@ -14,7 +14,7 @@
 </ol>
 <h4>Announcements</h4>
 {% for part in announcement_parts %}
-<h5>{{part.title}}</h5>
+<h5><strong>{{part.title}}</strong></h5>
 <p>{{part.text|my_markdown}}</p>
 <p>Contacts: {% for contact in part.contacts.all %}
 <a href="mailto:{{contact.uniqname}}@umich.edu">{{ contact }}</a>{% if part.contacts.all|length > 2 and not forloop.last %}, {% endif %}{% if part.contacts.all|length > 1 and forloop.revcounter == 2 %} and {% endif %}{% endfor %}</p>

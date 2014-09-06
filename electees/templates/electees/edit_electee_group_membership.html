@@ -4,8 +4,8 @@
 {% block content %}
 <div class="row">
     <div class="col-md-6">
-        <h4>Update Electee Group Membership </h4>
-        <p>Click and drag electees into the desired group and click save to update.</p>
+        <h4>Update Electee Team Membership </h4>
+        <p>Click and drag electees into the desired team and click save to update.</p>
             <h5>Unassigned Electees</h5>
         <div class="DragContainer" id="AllElectees" overclass="OverDragContainer">
             {% for electee in unassigned_electees %}
@@ -14,11 +14,11 @@
         </div>
     </div>
     <div class="col-md-6">
-        {% for group in electee_groups %}
+        {% for team in electee_groups %}
         <div>
-            <h5>{{group.group_name}}</h5>
-            <div class="DragContainer" id="DragContainer{{group.id}}" overclass="OverDragContainer">
-                {% for member in group.members.all %}
+            <h5>{{team.group_name}}</h5>
+            <div class="DragContainer" id="DragContainer{{team.id}}" overclass="OverDragContainer">
+                {% for member in team.members.all %}
                 <div class="DragBox" id="{{member.uniqname}}" overclass="OverDragBox" dragclass="DragDragBox">{{member}},  {% for major in member.major.all %}{{major.acronym}} {%endfor %}, {{member.standing}}</div>
                 {% endfor %}
             </div>

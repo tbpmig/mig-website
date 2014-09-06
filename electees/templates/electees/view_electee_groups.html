@@ -33,17 +33,17 @@
     </div>
     {% if groups|length > 0 %}
     <div class="col-md-4">
-        <h3>Electee Groups</h3>
+        <h3>Electee Teams</h3>
         {% for group in groups|dictsort:"group_name" %}
         <div>
             <h4>{{group.group_name}}</h4>
-            <p>Group Leaders</p>
+            <p>Team Leaders</p>
             <ul>
             {% for leader in group.leaders.all %}
                 <li><a href="{% url 'member_resources:profile' leader.uniqname %}">{{leader.get_full_name}}</a></li>
             {% endfor %}
             </ul>
-            <p>Group Members</p>
+            <p>Team Members</p>
             <ul>
             {% for member in group.members.all %}
                 <li><a href="{% url 'member_resources:profile' member.uniqname %}">{{member.get_full_name}}</a></li>

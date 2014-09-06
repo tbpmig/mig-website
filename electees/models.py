@@ -74,7 +74,7 @@ def add_group_threshold_pts(grp):
 
 # Create your models here.
 class ElecteeGroup(models.Model):
-    group_name  = models.CharField(max_length=50)   
+    group_name  = models.CharField('Team Name',max_length=50)   
     leaders     = models.ManyToManyField('mig_main.MemberProfile',
                                          related_name ="electee_group_leaders")
     officers    = models.ManyToManyField('mig_main.MemberProfile',
@@ -107,7 +107,7 @@ class ElecteeGroup(models.Model):
         res= ElecteeGroup.objects.filter(points__gt=self.points).aggregate(ranking=Count('points'))
         return res['ranking']+1
 class ElecteeGroupEvent(models.Model):
-    electee_group = models.ForeignKey(ElecteeGroup)
+    electee_group = models.ForeignKey(ElecteeGroup,verbose_name='Electee Team')
     description = models.TextField()
     points      = models.PositiveSmallIntegerField()
     related_event_id = models.PositiveIntegerField(null=True,blank=True,default=None)

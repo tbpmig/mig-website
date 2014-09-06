@@ -69,7 +69,7 @@ class EventShiftForm(ModelForm):
             error_list.append(ValidationError(_('An event cannot be both \'only undergraduates\' and \'only graduates\'.')))
         if electees_only and actives_only:
             error_list.append(ValidationError(_('An event cannot be both \'only electees\' and \'only actives\'.')))
-        if start_time> end_time:
+        if not start_time or not end_time or start_time> end_time:
             error_list.append(ValidationError(_('The event shift must start before it can end; use am/pm to specify.')))
         if error_list:
             raise ValidationError(error_list)

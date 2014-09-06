@@ -4,9 +4,9 @@
 
 {% block subnavElectees %}
 {% if can_create_groups %}
-<li class="subtab {%if subsubnav and subsubnav == 'groups' %}active{% endif %}"><a href="{% url 'electees:edit_electee_groups'%}">Manage Electee Groups</a></li>
-<li class="subtab  {%if subsubnav and subsubnav == 'members' %}active{% endif %}"><a href="{% url 'electees:edit_electee_group_membership'%}">Edit Electee Group Members</a></li>
-<li class="subtab {%if subsubnav and subsubnav == 'points' %}active{% endif %}"><a href="{% url 'electees:edit_electee_group_points'%}">Edit Electee Group Points</a></li>
+<li class="subtab {%if subsubnav and subsubnav == 'groups' %}active{% endif %}"><a href="{% url 'electees:edit_electee_groups'%}">Manage Electee Teams</a></li>
+<li class="subtab  {%if subsubnav and subsubnav == 'members' %}active{% endif %}"><a href="{% url 'electees:edit_electee_group_membership'%}">Edit Electee Teams Members</a></li>
+<li class="subtab {%if subsubnav and subsubnav == 'points' %}active{% endif %}"><a href="{% url 'electees:edit_electee_group_points'%}">Edit Electee Team Points</a></li>
 {% endif%}
 {% endblock %}
 

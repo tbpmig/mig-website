@@ -70,7 +70,7 @@ def edit_electee_groups(request):
                     instance.points = 0
                 instance.save()
             formset.save_m2m()
-            request.session['success_message']='Electee groups successfully updated'
+            request.session['success_message']='Electee teams successfully updated'
             return redirect('electees:view_electee_groups')
         else:
             request.session['error_message']='Form is invalid. Please correct the noted errors'
@@ -82,9 +82,9 @@ def edit_electee_groups(request):
         'prefix':'groups',
         'subsubnav':'groups',
         'has_files':False,
-        'submit_name':'Update Electee Groups',
-        'form_title':'Update/Add/Remove Electee Groups',
-        'help_text':'Create the electee groups for this semester, and specify the leaders nd officers. You can also remove or edit here.',
+        'submit_name':'Update Electee Teams',
+        'form_title':'Update/Add/Remove Electee Teams',
+        'help_text':'Create the electee teams for this semester, and specify the leaders and officers. You can also remove or edit here.',
         'can_add_row':True,
         'base':'electees/base_electees.html',
         }
@@ -96,7 +96,7 @@ def edit_electee_groups(request):
 @ensure_csrf_cookie
 def edit_electee_group_membership(request):
     if not Permissions.can_manage_electee_progress(request.user):
-        request.session['error_message']='You are not authorized to edit electee groups'
+        request.session['error_message']='You are not authorized to edit electee teams'
         return redirect('electees:view_electee_groups')
     if request.method =='POST':
         electee_groups_json=request.POST['electee_groups']
@@ -123,7 +123,7 @@ def edit_electee_group_membership(request):
 
 def edit_electee_group_points(request):
     if not Permissions.can_manage_electee_progress(request.user):
-        request.session['error_message']='You are not authorized to edit electee group points.'
+        request.session['error_message']='You are not authorized to edit electee team points.'
         return redirect('electees:view_electee_groups')
     GroupPointsFormSet = modelformset_factory(ElecteeGroupEvent,exclude=('related_event_id',),can_delete=True)
     term =AcademicTerm.get_current_term()
@@ -131,7 +131,7 @@ def edit_electee_group_points(request):
         formset = GroupPointsFormSet(request.POST,prefix='group_points',queryset=ElecteeGroupEvent.objects.filter(related_event_id=None,electee_group__term=term))
         if formset.is_valid():
             formset.save()
-            request.session['success_message']='Electee group points updated successfully'
+            request.session['success_message']='Electee team points updated successfully'
             return redirect('electees:view_electee_groups')
         else:
             request.session['error_message']='Form is invalid. Please correct the noted errors.'
@@ -143,9 +143,9 @@ def edit_electee_group_points(request):
         'prefix':'group_points',
         'subsubnav':'points',
         'has_files':False,
-        'submit_name':'Update Electee Group Points',
-        'form_title':'Update/Add Remove Electee Group Points',
-        'help_text':'Track the electee group points. You should not note any points from threshold participation at service or social events here. Those are tabulated automatically.',
+        'submit_name':'Update Electee Team Points',
+        'form_title':'Update/Add Remove Electee Team Points',
+        'help_text':'Track the electee team points. You should not note any points from threshold participation at service or social events here. Those are tabulated automatically.',
         'can_add_row':True,
         'base':'electees/base_electees.html',
         }
