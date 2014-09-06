@@ -226,7 +226,7 @@ class CalendarEvent(models.Model):
             count+=1
         return hours
     def tweet_event(self,include_hashtag):
-        if self.members_only:
+        if self.members_only or DEBUG:
             return None
         f = open('/srv/www/twitter.dat','r')
         token = json.load(f)

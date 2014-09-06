@@ -34,15 +34,7 @@ class WebArticleForm(forms.ModelForm):
     class Meta:
         model = WebsiteArticle
         exclude = ['created_by','approved']
-    
-    def save(self,commit=True):
-        tweet_option = self.cleaned_data.pop('tweet_option','N')
-        a=super(WebArticleForm,self).save()
-        if tweet_option=='T':
-            a.tweet_story(False)
-        elif tweet_option=='H':
-            a.tweet_story(True)
-        return a
+
 
 class ProjectDescriptionForm(forms.Form):
     description = forms.CharField(widget=forms.Textarea)

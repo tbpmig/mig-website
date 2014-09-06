@@ -52,7 +52,11 @@ def get_article_view(request,article_id):
                 if hasattr(request.user,'userprofile') and request.user.userprofile.is_member():
                     a.created_by = request.user.userprofile.memberprofile
                     a.save()
-                
+                tweet_option = form.cleaned_data.pop('tweet_option','N')
+                if tweet_option=='T':
+                    a.tweet_story(False)
+                elif tweet_option=='H':
+                    a.tweet_story(True)
                 return get_previous_page(request, 'history:index')
             else:
                 request.session['error_message']='There were errors in your submission. Please correct the noted errors.'

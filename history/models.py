@@ -16,7 +16,7 @@ from stdimage import StdImageField
 from event_cal.models import EventShift,EventPhoto
 from mig_main.models import MemberProfile,UserProfile,OfficerPosition,AcademicTerm
 from mig_main.pdf_field import ContentTypeRestrictedFileField,pdf_types
-from migweb.settings import  twitter_token,twitter_secret
+from migweb.settings import  DEBUG,twitter_token,twitter_secret
 from requirements.models import ProgressItem
 
 def set_minutes_order(minutes,order):
@@ -119,6 +119,8 @@ class WebsiteArticle(models.Model):
         return self.body.replace('<fold>','')
         
     def tweet_story(self,include_hashtag):
+        if not self.approved or DEBUG:
+            return None
         f = open('/srv/www/twitter.dat','r')
         token = json.load(f)
         f.close()
