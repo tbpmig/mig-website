@@ -12,7 +12,7 @@
         <div class="forum-post"> 
         <h4>{{reply.reply.title}} ({{reply.comment_points}} points)</h4>
         <p><em>By: {{reply.reply.creator}} (User points: {{reply.user_points}}) {{reply.reply.time_created|date:"d N Y, P"}}</em></p>
-
+        {{reply.reply.content|my_markdown}}
         {% if can_comment %}
             <a class="btn btn-default" href="{% url 'fora:add_comment' active_thread.forum.id reply.reply.id %}">Post Reply</a>
             <div class="btn-group pull-right">

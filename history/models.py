@@ -19,37 +19,6 @@ from mig_main.pdf_field import ContentTypeRestrictedFileField,pdf_types
 from migweb.settings import  DEBUG,twitter_token,twitter_secret
 from requirements.models import ProgressItem
 
-def set_minutes_order(minutes,order):
-    for minute in minutes:
-        minute.display_order=order
-        minute.save()
-
-def update_minutes_display_order():
-    mm=MeetingMinutes.objects.all()
-    set_minutes_order(mm.filter(meeting_name='New Initiatives I'),3)
-    set_minutes_order(mm.filter(meeting_name='New Initiatives II'),6)
-    set_minutes_order(mm.filter(meeting_name='New Initiatives III'),9)
-    set_minutes_order(mm.filter(meeting_name='New Initiatives IV'),12)
-    set_minutes_order(mm.filter(meeting_name='New Initiatives V'),12)
-    set_minutes_order(mm.filter(meeting_name='First Actives'),0)
-    set_minutes_order(mm.filter(meeting_name='First General'),1)
-    set_minutes_order(mm.filter(meeting_name='First Comity'),1)
-    set_minutes_order(mm.filter(meeting_name='Second General'),2)
-    set_minutes_order(mm.filter(meeting_name='Second Comity'),2)
-    set_minutes_order(mm.filter(meeting_name='Second Actives'),4)
-    set_minutes_order(mm.filter(meeting_name='E/A I'),5)
-    set_minutes_order(mm.filter(meeting_name='Third General'),5)
-    set_minutes_order(mm.filter(meeting_name='E/A II'),7)
-    set_minutes_order(mm.filter(meeting_name='Fourth General'),7)
-    set_minutes_order(mm.filter(meeting_name='Third Actives'),8)
-    set_minutes_order(mm.filter(meeting_name='Elections'),10)
-    set_minutes_order(mm.filter(meeting_name='E/A III'),11)
-    set_minutes_order(mm.filter(meeting_name='Fifth General'),11)
-    set_minutes_order(mm.filter(meeting_name='E/A I',semester__year=2011),4)
-    set_minutes_order(mm.filter(meeting_name='E/A II',semester__year=2011),5)
-    set_minutes_order(mm.filter(meeting_name='Second Actives',semester__year=2011),7)
-    
-
 def get_next_meeting_minutes_display_order():
     return MeetingMinutes.objects.filter(semester=AcademicTerm.get_current_term()).count()
 

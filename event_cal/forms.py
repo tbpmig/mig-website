@@ -165,7 +165,7 @@ class CompleteEventForm(Form):
     """
     Form used to specify how many hours the attendee was at the event.
     """
-    attendee = forms.ModelChoiceField(UserProfile.objects.all().order_by('last_name'),required=True)
+    attendee = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Attendee','closeOnSelect':True}),queryset=UserProfile.objects.all())
     hours = forms.DecimalField(required=True)
 
 CompleteEventFormSet = formset_factory(CompleteEventForm,can_delete=True)

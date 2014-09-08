@@ -1,5 +1,2 @@
 \echo 'updating db'
-DROP TABLE fora_forummessage CASCADE;
-DROP TABLE fora_downvotespent CASCADE;
-ALTER TABLE history_meetingminutes ADD COLUMN "display_order" integer DEFAULT 0;
 \echo 'done updating db'

@@ -110,6 +110,9 @@ def delete_forum(request,forum_id):
         request.session['error_message']='You are not authorized to delete fora'
         return redirect('fora:index')
     forum=get_object_or_404(Forum,id=forum_id)
+    if forum.forumthread_set.filter(hidden=False).exists():
+        request.session['error_message']='Forum has visible threads, unable to delete'
+        return get_previous_page(request,alternate='fora:index')
     forum.delete()
     return redirect('fora:index')
     
