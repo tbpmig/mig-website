@@ -2,6 +2,7 @@ from datetime import date,timedelta
 from markdown import markdown
 import json
 
+from django.core.cache import cache
 from django.core.mail import EmailMessage,send_mail
 from django.core.urlresolvers import reverse
 from django.db import models
@@ -86,16 +87,20 @@ class CalendarEvent(models.Model):
         now = timezone.localtime(timezone.now())
         return Q(use_sign_in=True)&Q(eventshift__end_time__gte=(now-cls.after_grace))&Q(eventshift__start_time__lte=(now-cls.before_grace))
     @classmethod
-    def get_upcoming_events(cls):
+    def get_upcoming_events(cls,reset=False):
         """
         Returns all events that are upcoming or are happening now and have sign-in enabled.
         """
+        upcoming_events = cache.get('upcoming_events',None)
+        if upcoming_events and not reset:
+            return upcoming_events
         now = timezone.localtime(timezone.now())
         today=date.today()
         non_meeting_query = Q(eventshift__start_time__gte=now)&Q(announce_start__lte=today)
         meeting_query = cls.get_current_meeting_query()
         not_officer_meeting = ~Q(event_type__name='Officer Meetings')
         upcoming_events = cls.objects.filter((non_meeting_query|meeting_query)&not_officer_meeting).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
+        cache.set('upcoming_events',upcoming_events)
         return upcoming_events
     def __unicode__(self):
         """
