@@ -27,9 +27,6 @@ GCAL_USE_PREF = [d for d in PREFERENCES if d.get('name') == 'google_calendar_add
 GCAL_ACCT_PREF = [d for d in PREFERENCES if d.get('name') == 'google_calendar_account'][0]
 
 
-
-
-    
 def get_permissions(user):
     return {
         'can_submit_tutoring_form':(hasattr(user,'userprofile') and user.userprofile.is_member()),
@@ -886,18 +883,18 @@ def update_completed_event(request, event_id):
         request.session['error_message'] = 'This event hasn\'t been completed yet. Do that first.'
         return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
     if e.is_fixed_progress():
-        form_type = modelformset_factory(ProgressItem,exclude=('term','event_type','date_completed','amount_completed','related_event','name'),can_delete=True)
+        form_type = CompleteFixedProgressEventFormSet
         is_fixed = True
     else:
-        form_type = modelformset_factory(ProgressItem,exclude=('term','event_type','date_completed','related_event','name',),can_delete=True)
+        form_type = CompleteEventFormSet
         is_fixed = False
     form_prefix='update_event'
-    form_type.form.base_fields['member'].queryset=MemberProfile.objects.all().order_by('last_name')
     if request.method == 'POST':
         formset = form_type(request.POST,prefix='update_event',queryset=ProgressItem.objects.filter(related_event=e))
         if formset.is_valid():
             instances = formset.save(commit=False)
             first_shift=e.eventshift_set.all()[0]
+            duplicate_progress = set()
             for instance in instances:
                 if not instance.member.is_member():
                     continue
@@ -906,6 +903,9 @@ def update_completed_event(request, event_id):
                     if not e.eventshift_set.filter(attendees=instance.member).exists():
                         first_shift.attendees.add(instance.member)
                         first_shift.save()
+                    if ProgressItem.objects.filter(related_event=e,member=instance.member).exists():
+                        duplicate_progress|=set([instance.member])
+                        continue
                     instance.term=AcademicTerm.get_current_term()
                     instance.event_type=e.event_type
                     instance.date_completed=date.today()
@@ -919,6 +919,8 @@ def update_completed_event(request, event_id):
                     shift.attendees.remove(instance.member)
                     shift.save()
                     
+            if duplicate_progress:
+                request.session['warning_message']='The following members had progress listed twice, with latter listings ignored: '+ ','.join([prof.uniqname for prof in duplicate_progress])+'. Go to update progress to check that the amount of progress is correct'
             request.session['success_message']='Event and progress updated successfully'
             return redirect('event_cal:event_detail',event_id)
         else:
@@ -953,13 +955,12 @@ def complete_event(request, event_id):
         request.session['error_message'] = 'This event can\'t be completed yet.'
         return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
     if e.is_fixed_progress():
-        form_type = modelformset_factory(ProgressItem,exclude=('term','event_type','date_completed','amount_completed','related_event','name'),can_delete=True)
+        form_type = CompleteFixedProgressEventFormSet
         is_fixed = True
     else:
-        form_type = modelformset_factory(ProgressItem,exclude=('term','event_type','date_completed','related_event','name',),can_delete=True)
+        form_type = CompleteEventFormSet
         is_fixed = False
     form_prefix='complete_event'
-    form_type.form.base_fields['member'].queryset=MemberProfile.get_members().order_by('last_name')
     if request.method == 'POST':
         formset = form_type(request.POST,prefix=form_prefix,queryset=ProgressItem.objects.none())
         if formset.is_valid():

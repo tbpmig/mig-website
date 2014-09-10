@@ -17,6 +17,7 @@
             totalForms = $('#id_' + options.prefix + '-TOTAL_FORMS'),
             maxForms = $('#id_' + options.prefix + '-MAX_NUM_FORMS'),
             childElementSelector = 'input,select,textarea,label,div',
+            scriptElementSelector = 'script:last',
             $$ = $(this),
 
             applyExtraClasses = function(row, ndx) {
@@ -32,6 +33,16 @@
                 if (elem.attr("for")) elem.attr("for", elem.attr("for").replace(idRegex, replacement));
                 if (elem.attr('id')) elem.attr('id', elem.attr('id').replace(idRegex, replacement));
                 if (elem.attr('name')) elem.attr('name', elem.attr('name').replace(idRegex, replacement));
+            },
+            updateScriptElementIndex = function(elem, prefix, ndx) {
+                var idRegex = new RegExp(prefix + '-(\\d+|__prefix__)-'),
+                    replacement = prefix + '-' + ndx + '-';
+                if (elem.html()){
+                    old_html = elem.html();
+                    elem.html(elem.html().replace(idRegex,replacement));
+                    eval(elem.html());
+                    eval(old_html);
+                }
             },
 
             hasChildElements = function(row) {
@@ -113,6 +124,8 @@
 //                $('label[for="' + del.attr('id') + '"]').hide();
 //                del.remove();
 //            }
+
+            
             if (hasChildElements(row)) {
                 row.addClass(options.formCssClass);
                 if (row.is(':visible')) {
@@ -172,11 +185,23 @@
                 var formCount = parseInt(totalForms.val()),
                     row = options.formTemplate.clone(true).removeClass('formset-custom-template'),
                     buttonRow = $($(this).parents('tr.' + options.formCssClass + '-add').get(0) || this);
+                
                 applyExtraClasses(row, formCount);
                 row.insertBefore(buttonRow).show();
                 row.find(childElementSelector).each(function() {
                     updateElementIndex($(this), options.prefix, formCount);
                 });
+                if(row.find('.select2-container')){
+                    row.find('.select2-container:first').remove();
+                    row.find('select:first').each(function(){
+                        $(this).removeClass('select2-offscreen');
+                    })
+
+                }
+                row.find(scriptElementSelector).each(function(){
+                    updateScriptElementIndex($(this), options.prefix, formCount);
+                });
+
                 totalForms.val(formCount + 1);
                 // Check if we've exceeded the maximum allowed number of forms:
                 if (!showAddButton()) buttonRow.hide();

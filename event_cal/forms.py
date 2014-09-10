@@ -8,7 +8,7 @@ from django.utils.translation import ugettext as _
 
 from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,ModelSelect2Field,Select2Widget
 
-from requirements.models import EventCategory
+from requirements.models import EventCategory,ProgressItem
 from event_cal.models import CalendarEvent, EventShift,AnnouncementBlurb,EventPhoto
 from mig_main.models import UserProfile,MemberProfile
 from history.models import ProjectReport
@@ -161,22 +161,27 @@ MultiShiftFormset = formset_factory(MultiShiftForm)
 
 
 
-class CompleteEventForm(Form):
+class CompleteEventForm(ModelForm):
     """
     Form used to specify how many hours the attendee was at the event.
     """
-    attendee = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Attendee','closeOnSelect':True}),queryset=UserProfile.objects.all())
+    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Attendee','closeOnSelect':True}),queryset=MemberProfile.get_members())
     hours = forms.DecimalField(required=True)
+    class Meta:
+        model = ProgressItem
+        exclude = ('term','event_type','date_completed','amount_completed','related_event','name')
 
-CompleteEventFormSet = formset_factory(CompleteEventForm,can_delete=True)
+CompleteEventFormSet = modelformset_factory(ProgressItem, form=CompleteEventForm,can_delete=True)
 
-class CompleteFixedProgressEventForm(Form):
+class CompleteFixedProgressEventForm(ModelForm):
     """
     For events where progress is fixed (i.e. you were there or you weren't) only listing attendees is necessary.
     """
-    attendee = forms.ModelChoiceField(UserProfile.objects.all().order_by('last_name'))
-
-CompleteFixedProgressEventFormSet = formset_factory(CompleteFixedProgressEventForm, can_delete=True)
+    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'26em','placeholder':'Select Attendee','closeOnSelect':True}),queryset=MemberProfile.get_members())
+    class Meta:
+        model = ProgressItem
+        exclude = ('term','event_type','date_completed','amount_completed','related_event','name','hours',)    
+CompleteFixedProgressEventFormSet = modelformset_factory(ProgressItem,form=CompleteFixedProgressEventForm, can_delete=True)
 
 class AddProjectReportForm(Form):
     """
