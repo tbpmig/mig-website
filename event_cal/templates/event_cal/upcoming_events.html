@@ -6,6 +6,9 @@
 					{% if event.eventshift_set.all|length > 1%}
 					<p>Shifts:<p>
 					{% endif %}
+					{% if event.eventshift_set.all|length > 5 %}
+					<p>Click event for shift details</p>
+					{% else %}
                     {% for shift in event.eventshift_set.all|dictsort:"start_time" %}
 						{% if shift.start_time > now %}
 							{% if event.eventshift_set.all|length > 1%}
@@ -24,6 +27,7 @@
 							{% endif %}
 						{% endif %}
 					{% endfor %}
+					{% endif%}
 					
 				</li>
 				{% endfor %}
