@@ -1,6 +1,7 @@
 # Create your views here.
 from datetime import datetime,date,timedelta
 
+from django.core.cache import cache
 from django.utils import timezone
 from django.http import HttpResponse#, Http404, HttpResponseRedirect
 from django.shortcuts import redirect, get_object_or_404
@@ -33,11 +34,15 @@ def get_permissions(user):
         'can_view_calendar_admin':Permissions.can_view_calendar_admin(user),
     }
 def get_common_context(request):
+    upcoming_html = cache.get('upcoming_events_html',None)
+    if not upcoming_html:
+        upcoming_html=loader.render_to_string('event_cal/upcoming_events.html',{'upcoming_events':CalendarEvent.get_upcoming_events(),'now':timezone.localtime(timezone.now())})
+        cache.set('upcoming_events_html',upcoming_html)
     context_dict=get_message_dict(request)
     context_dict.update({
         'request':request,
         'now':timezone.localtime(timezone.now()),
-        'upcoming_events':CalendarEvent.get_upcoming_events(),
+        'upcoming_html':upcoming_html,
         'edit_page':False,
         'main_nav':'cal',
         })
