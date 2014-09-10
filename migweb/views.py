@@ -33,7 +33,7 @@ def home(request):
     upcoming_events = CalendarEvent.get_upcoming_events()
     web_articles    = WebsiteArticle.get_stories()[:3]
     
-    upcoming_html=loader.get_templete('event_cal/upcoming_events.html').render(RequestContext(request({'upcoming_events':upcoming_events,})))
+    upcoming_html=loader.get_template('event_cal/upcoming_events.html').render(RequestContext(request({'upcoming_events':upcoming_events,})))
     
     template = loader.get_template('home.html')
     context_dict = {
