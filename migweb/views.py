@@ -16,7 +16,7 @@ from history.models   import WebsiteArticle
 from mig_main.models import SlideShowPhoto
 from mig_main.utility import get_quick_links, get_message_dict
 from migweb.settings import DEBUG,DEBUG_user, twitter_token,twitter_secret
-
+from migweb.profile_views import profile
 def get_permissions(user):
     permission_dict={}
     return permission_dict
@@ -24,7 +24,7 @@ def get_common_context(request):
     context_dict=get_message_dict(request)
     context_dict.update({'request':request})
     return context_dict
-
+@profile('home.prof')
 def home(request):
     request.session['current_page']=request.path
     slideshow_photos = SlideShowPhoto.objects.filter(active=True)
