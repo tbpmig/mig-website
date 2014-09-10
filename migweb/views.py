@@ -32,9 +32,10 @@ def home(request):
     now = timezone.localtime(timezone.now())
     upcoming_events = CalendarEvent.get_upcoming_events()
     web_articles    = WebsiteArticle.get_stories()[:3]
-    
-    upcoming_html=loader.get_template('event_cal/upcoming_events.html').render(RequestContext(request,{'upcoming_events':upcoming_events,}))
-    
+    upcoming_html = cache.get('upcoming_events_html',None)
+    if not upcoming_html:
+        upcoming_html=loader.get_template('event_cal/upcoming_events.html').render(RequestContext(request,{'upcoming_events':upcoming_events,}))
+        cache.set('upcoming_events_html',upcoming_html)
     template = loader.get_template('home.html')
     context_dict = {
         'upcoming_events':upcoming_html,
