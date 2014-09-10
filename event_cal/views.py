@@ -42,7 +42,7 @@ def get_common_context(request):
     context_dict.update({
         'request':request,
         'now':timezone.localtime(timezone.now()),
-        'upcoming_html':upcoming_html,
+        'upcoming_events':upcoming_html,
         'edit_page':False,
         'main_nav':'cal',
         })
