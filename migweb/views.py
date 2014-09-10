@@ -34,7 +34,7 @@ def home(request):
     web_articles    = WebsiteArticle.get_stories()[:3]
     upcoming_html = cache.get('upcoming_events_html',None)
     if not upcoming_html:
-        upcoming_html=loader.get_template('event_cal/upcoming_events.html').render(RequestContext(request,{'upcoming_events':upcoming_events,}))
+        upcoming_html=loader.get_template('event_cal/upcoming_events.html').render(RequestContext(request,{'upcoming_events':upcoming_events,'now',now,}))
         cache.set('upcoming_events_html',upcoming_html)
     template = loader.get_template('home.html')
     context_dict = {
