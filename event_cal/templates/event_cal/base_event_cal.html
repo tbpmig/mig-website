@@ -23,34 +23,7 @@
 			{% if upcoming_events  and not edit%}
 				<h1>Upcoming Events</h1>
 				<ul id="event-list">
-				{% for event in upcoming_events %}
-				<li>
-                <a href="{% url 'event_cal:event_detail' event.id %}"><h2 id="event-name">{{event.name}}</h2></a>
-					<p id="event-description">{{event.announce_text|my_markdown}}</p>
-					{% if event.eventshift_set.all|length > 1%}
-					<p>Shifts:<p>
-					{% endif %}
-                    {% for shift in event.eventshift_set.all|dictsort:"start_time" %}
-						{% if shift.start_time > now %}
-							{% if event.eventshift_set.all|length > 1%}
-								<div id="event-shift">
-							{% endif %}
-							<p id="event-when"><b>When:</b> {{shift.start_date}}, {{shift.start_time}}&ndash;
-							{% if shift.start_date != shift.end_date %}
-								{{shift.end_date}},
-							{% endif %}
-							{{shift.end_time}}
-							</p>
-							<p id="event-where"><b>Where:</b> {{shift.location}}</p>
-                            {% if event.eventshift_set.all|length > 1%}
-                                <hr/>
-								</div>
-							{% endif %}
-						{% endif %}
-					{% endfor %}
-					
-				</li>
-				{% endfor %}
+				{{upcoming_html|safe}}
 				</ul>
 				{% endif %}
 		</aside>
