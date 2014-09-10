@@ -2,6 +2,7 @@
 import json
 from os.path import isfile
 
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth import logout, login
 from django.contrib.auth.models import User
@@ -31,9 +32,12 @@ def home(request):
     now = timezone.localtime(timezone.now())
     upcoming_events = CalendarEvent.get_upcoming_events()
     web_articles    = WebsiteArticle.get_stories()[:3]
+    
+    upcoming_html=loader.get_templete('event_cal/upcoming_events.html').render(RequestContext(request({'upcoming_events':upcoming_events,})))
+    
     template = loader.get_template('home.html')
     context_dict = {
-        'upcoming_events':upcoming_events,
+        'upcoming_events':upcoming_html,
         'web_articles':web_articles,
         'current_time':now,
         'request':request,
@@ -44,6 +48,7 @@ def home(request):
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
+    
     return HttpResponse(template.render(context))
 def login_view(request):
     if DEBUG:
