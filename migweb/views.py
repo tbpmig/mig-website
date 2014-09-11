@@ -51,6 +51,17 @@ def home(request):
     context = RequestContext(request, context_dict)
     
     return HttpResponse(template.render(context))
+    
+def cf_companies(request):
+    request.session['current_page']=request.path
+    
+    template = loader.get_template('career_fair/CareerFairCompanySheet.html')
+    context_dict = {
+       
+        }
+
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
 def login_view(request):
     if DEBUG:
         user_name = DEBUG_user
