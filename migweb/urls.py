@@ -7,6 +7,7 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
 	url(r'^$', 'migweb.views.home', name='home'),
+	url(r'^career_fair/companies/$', 'migweb.views.cf_companies', name='cf_companies'),
 	url(r'^about/',include('about.urls', namespace='about')),
 	url(r'^outreach/',include('outreach.urls', namespace='outreach')),
 	url(r'^publications/',include('history.urls', namespace='history')),
