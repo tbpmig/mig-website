@@ -1,0 +1,16 @@
+
+.table-holder,table{
+	width:98%;
+	margin: 0 auto;
+	padding-left:.2em;
+	
+}
+
+.table th {
+	background-color:white;
+}
+
+.table th , .table th select , .table th input{
+	width:auto;
+	
+	}
