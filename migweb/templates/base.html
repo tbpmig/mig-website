@@ -310,7 +310,13 @@ ga('send', 'pageview');
         });
 })
 </script>
+
 {% endif %}
+<script type="text/javascript">
+    $('.confirmation').on('click', function () {
+        return confirm('Are you sure you want to '+$(this).html()+'?');
+    });
+</script>
 {% block js %}
 {% endblock %}
 {% block js_bottom %}

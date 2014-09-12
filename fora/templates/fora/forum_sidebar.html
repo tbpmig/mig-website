@@ -11,7 +11,7 @@
     <a href="{% url 'fora:create_thread' forum.id %}" class="btn btn-small btn-primary">Create new thread</a>
 {% endif %}
 {% if can_create_forum %}
-        <a href="{% url 'fora:delete_forum' forum.id %}" class="btn btn-small btn-danger">Delete forum</a>
+        <a href="{% url 'fora:delete_forum' forum.id %}" class="btn btn-small btn-danger confirmation">Delete forum</a>
     {% endif %}
 </div>
 

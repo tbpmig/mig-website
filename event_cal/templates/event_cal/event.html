@@ -9,7 +9,7 @@
 {% if can_edit_event %}
 <div class="location-upper-right">
 <a href="{% url 'event_cal:edit_event' event.id %}"><i class="glyphicon glyphicon-edit"></i> Edit</a>
-<a href="{% url 'event_cal:delete_event' event.id %}"><i class="glyphicon glyphicon-remove"></i> Delete</a>
+<a href="{% url 'event_cal:delete_event' event.id %}" class="confirmation"><i class="glyphicon glyphicon-remove"></i> Delete</a>
 </div>
 {% endif %}
 {% if not event.members_only %}
