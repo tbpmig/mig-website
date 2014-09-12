@@ -590,6 +590,7 @@ def create_electee_interviews(request):
                     electee_shift.max_attendance = 1
                     electee_shift.electees_only = True
                     electee_shift.event = electee_event
+                    #electee_shift.on_campus=True
                     electee_shift.save()
                     electee_shift_id=electee_shift.id
                     active_shift = electee_shift
@@ -608,6 +609,7 @@ def create_electee_interviews(request):
                     else:
                         active_shift.grads_only = False
                         active_shift.ugrads_only=False
+                    #active_shift.on_campus=True
                     active_shift.save()
                     interview_shift = InterviewShift()
                     interview_shift.interviewer_shift = active_shift
