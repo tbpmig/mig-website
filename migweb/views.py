@@ -25,7 +25,7 @@ def get_common_context(request):
     context_dict=get_message_dict(request)
     context_dict.update({'request':request})
     return context_dict
-@profile('home.prof')
+#@profile('home.prof')
 def home(request):
     request.session['current_page']=request.path
     slideshow_photos = SlideShowPhoto.objects.filter(active=True)
