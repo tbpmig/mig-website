@@ -35,6 +35,7 @@ urlpatterns = patterns('',
     url(r'authorize_google_cal/',views.gcal_test,name='gcal_test'),
 	#url(r'^add_project_report/$',views.project_report, name='project_report'),
     url(r'^event_attach_report/(?P<event_id>\d+)/$',views.add_project_report_to_event, name='add_project_report_to_event'),
+    url(r'^event_ajax/(?P<event_id>\d+)/$',views.get_event_ajax,name='get_event_ajax'),
 	#url(r'^leadership/$',views.leadership, name='leadership'),
 	#url(r'^bylaws/$',views.bylaws, name='bylaws'),
 )

@@ -122,6 +122,7 @@ INSTALLED_APPS = (
     # 'django.contrib.admindocs',
     #'dbsettings',
     'django_select2',
+    'django_ajax',
     'stdimage',
 	'mig_main',
 	'elections',

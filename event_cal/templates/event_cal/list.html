@@ -6,6 +6,16 @@
 {% block js %}
 <script src="{% static 'js/bootstrap-datepicker.js' %}"></script>
 {% include 'datepicker.html' %}
+<script type="text/javascript">
+$(document).ready(function(){
+{% for packed_event in events %}
+    {% with event=packed_event.event can_edit_event=packed_event.can_edit %}
+
+         ajaxGet('{% url 'event_cal:get_event_ajax' event.id %}')
+    {% endwith %}
+{% endfor %}
+     });
+ </script>
 {% endblock js %}
 {% block cal_content %}
 <div class="row">
@@ -52,7 +62,9 @@
     {% for packed_event in events %}
     {% with event=packed_event.event can_edit_event=packed_event.can_edit %}
 <li>
-{% include 'event_cal/event.html' %}
+<div id="event{{event.id}}">
+<p>Loading...</p>
+</div>
 </li>
 {% endwith %}
 {% empty %}

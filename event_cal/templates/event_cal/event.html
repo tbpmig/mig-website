@@ -51,10 +51,10 @@
         {% if shift.can_sign_in %}
             <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
             {% if shift.is_before_start %}
-                <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:unsign_up' event.id shift.id %}"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
+                <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="ajaxGet('{% url 'event_cal:unsign_up' event.id shift.id %}')"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% endif %}
         {% elif shift.is_before_start %}
-            <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:unsign_up' event.id shift.id %}"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
+            <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="ajaxGet('{% url 'event_cal:unsign_up' event.id shift.id %}')"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% if event.use_sign_in %}
                 <p>Event sign-in is not open until event starts.</p>
             {% endif %}
@@ -93,10 +93,10 @@
         {% if shift.can_sign_in %}
             <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
             {% if shift.can_sign_up %} 
-                <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:sign_up' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+                <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="ajaxGet('{% url 'event_cal:sign_up' event.id shift.id %}')"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
             {% endif %}
         {% elif shift.can_sign_up %}
-            <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:sign_up' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+            <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="ajaxGet('{% url 'event_cal:sign_up' event.id shift.id %}')"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
             {% if event.use_sign_in %}
                 <p>Event sign-in is not open until event starts.</p>
             {% endif %}
@@ -207,11 +207,11 @@
         {% if shift.can_sign_in %}
             <td><p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
             {% if shift.is_before_start %}
-                <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:unsign_up' event.id shift.id %}"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
+                <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="ajaxGet('{% url 'event_cal:unsign_up' event.id shift.id %}')"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% endif %}
             </td>
         {% elif shift.is_before_start %}
-            <td><p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:unsign_up' event.id shift.id %}"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
+            <td><p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="ajaxGet('{% url 'event_cal:unsign_up' event.id shift.id %}')"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% if event.use_sign_in %}
                 <p>Event sign-in is not open until event starts.</p>
             {% endif %}
@@ -251,11 +251,11 @@
         {% if shift.can_sign_in %}
             <td><p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
             {% if shift.can_sign_up %} 
-                <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:sign_up' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+                <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="ajaxGet('{% url 'event_cal:sign_up' event.id shift.id %}')"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
             {% endif %}
             </td>
         {% elif shift.can_sign_up %}
-            <td><p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:sign_up' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+            <td><p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="ajaxGet('{% url 'event_cal:sign_up' event.id shift.id %}')"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
             {% if event.use_sign_in %}
                 <p>Event sign-in is not open until event starts.</p>
             {% endif %}
@@ -280,7 +280,7 @@
                                 <td>You must login to sign-up
                             {% endif %}
                             {% if can_edit_event %}
-                                <td><a class="btn btn-primary btn-sm" href="{% url 'event_cal:delete_shift' event.id shift.id %}"><i class="glyphicon glyphicon-remove"></i> Delete shift</a></td>
+                                <td><a class="btn btn-primary btn-sm confirmation" href="{% url 'event_cal:delete_shift' event.id shift.id %}"><i class="glyphicon glyphicon-remove"></i> Delete shift</a></td>
                             {% endif %}
                         </tr>
                     {% endwith %}

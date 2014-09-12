@@ -1,6 +1,7 @@
 # Create your views here.
 from datetime import datetime,date,timedelta
 
+
 from django.core.cache import cache
 from django.utils import timezone
 from django.http import HttpResponse#, Http404, HttpResponseRedirect
@@ -13,6 +14,8 @@ from django.core.mail import send_mail
 from django import forms
 from django.forms.models import modelformset_factory,modelform_factory
 from django.db.models import Min,Q
+
+from django_ajax.decorators import ajax
 
 from event_cal.forms import BaseEventPhotoForm,BaseEventPhotoFormAlt, BaseAnnouncementForm,BaseEventForm,EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset,MultiShiftFormset,EventEmailForm
 from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift
@@ -200,7 +203,7 @@ def event_detail(request,event_id):
     context_dict.update(get_common_context(request))
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
-
+@ajax
 @login_required
 def sign_up(request, event_id, shift_id):
     event = get_object_or_404(CalendarEvent,id=event_id)
@@ -249,8 +252,9 @@ def sign_up(request, event_id, shift_id):
                 request.session['error_message']='This event is members-only'
         else:
             request.session['error_message']='You must create a profile before signing up to events' 
-    return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="ajaxGet('%s')"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,reverse('event_cal:unsign_up', args=[event_id, shift_id] ))}}
 
+@ajax
 @login_required
 def unsign_up(request, event_id, shift_id):
     event = get_object_or_404(CalendarEvent,id=event_id)
@@ -276,7 +280,7 @@ def unsign_up(request, event_id, shift_id):
             request.session['success_message']='You have successfully unsigned up from the event.'
         else:
             request.session['error_message']='You must create a profile before unsigning up'
-    return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="ajaxGet('%s')"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,reverse('event_cal:sign_up', args=[event_id, shift_id] ))}}
 
 @login_required
 def carpool_sign_up(request,event_id):
@@ -432,7 +436,23 @@ def list(request):
     context_dict.update(get_common_context(request))
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
-
+@ajax
+def get_event_ajax(request,event_id):
+    event = get_object_or_404(CalendarEvent,id=event_id)
+    can_edit = Permissions.can_edit_event(event,request.user)
+    has_profile=False
+    if hasattr(request.user,'userprofile'):  
+        has_profile = True
+    context_dict = {
+        'event':event,
+        'can_edit_event':can_edit,
+        'has_profile':has_profile,
+        'user':request.user,
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    event_html = loader.render_to_string('event_cal/event.html',context_dict)
+    return {'fragments':{'#event'+event_id:event_html}}
 def my_events(request):
     request.session['current_page']=request.path
     event_signed_up=request.session.pop('event_signed_up',None)
