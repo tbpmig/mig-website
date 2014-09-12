@@ -9,11 +9,14 @@ from django.utils import timezone
 from event_cal.models import CalendarEvent
 from history.models import Officer
 from mig_main.models import OfficerPosition, AcademicTerm
-from mig_main.utility import get_message_dict, Permissions
+from mig_main.utility import get_message_dict,get_previous_page, Permissions
 from outreach.models import OutreachPhoto,MindSETModule,VolunteerFile,TutoringPageSection,OutreachEventType
 
 def get_permissions(user):
-    permission_dict={'can_edit_mindset':Permissions.can_update_mindset_materials(user),}
+    permission_dict={
+        'can_edit_mindset':Permissions.can_update_mindset_materials(user),
+        'can_edit_outreach':user.is_superuser,
+    }
     return permission_dict
 def get_common_context(request):
     context_dict=get_message_dict(request)
@@ -32,7 +35,7 @@ def get_common_context(request):
         'event_signed_up':event_signed_up,
         'now':timezone.now(),
         'main_nav':'outreach',
-        'sub_nav_extras':OutreachEventType.objects.all(),
+        'sub_nav_extras':OutreachEventType.get_active(),
         })
     return context_dict
 
@@ -198,3 +201,12 @@ def outreach_event(request,url_stem):
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
+def hide_outreach_event(request,url_stem):
+    if not request.user.is_superuser:
+        request.session['error_message']='You are not authorized to edit outreach events'
+        return get_previous_page(request,alternate='outreach:index')
+    outreach_event = get_object_or_404(OutreachEventType,url_stem=url_stem)
+    outreach_event.visible=False
+    outreach_event.save()
+    return redirect('outreach:index')

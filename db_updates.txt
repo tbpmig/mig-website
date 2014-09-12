@@ -1,2 +1,3 @@
 \echo 'updating db'
+ALTER TABLE outreach_outreacheventtype ADD COLUMN "visible" BOOLEAN DEFAULT TRUE;
 \echo 'done updating db'

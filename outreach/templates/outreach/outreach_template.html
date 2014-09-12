@@ -9,6 +9,9 @@
     <div class="col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
     {% endif %}
         <h2> {{title}}</h2>
+        {% if can_edit_outreach %}
+        <a class="btn btn-warning confirmation" href="{% url 'outreach:hide_outreach_event' subnav %}">Hide Page</a>
+        {% endif%}
         {{text|my_markdown}}
         {% for event in event_timeline %}
         <a id="{{event.id}}"></a>

@@ -84,13 +84,18 @@ class OutreachEventType(models.Model):
     officers_can_edit = models.ManyToManyField('mig_main.OfficerPosition')
     tab_name = models.CharField(max_length=64,blank=True,null=True)
     has_calendar_events = models.BooleanField(default=True)
+    visible=models.BooleanField(default=True)
 
+    @classmethod
+    def get_active(cls):
+        return cls.objects.filter(visible=True)
     def __unicode__(self):
         return self.title
     def get_tab_name(self):
         if self.tab_name:
             return self.tab_name
         return self.event_category.name
+    
 
 class OutreachEvent(models.Model):
     outreach_event = models.ForeignKey(OutreachEventType)
