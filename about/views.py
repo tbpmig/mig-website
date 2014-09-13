@@ -4,12 +4,15 @@ Contains all of the view logic associated with the about section of the webpage.
 from datetime import date
 # Create your views here.
 
+from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse#, Http404, HttpResponseRedirect
 from django.shortcuts import  get_object_or_404,redirect
 from django.forms.models import modelformset_factory
 from django.template import RequestContext, loader
 from django.db.models import Q,Count
+
+from django_ajax.decorators import ajax
 
 from about.models import AboutSlideShowPhoto,JoiningTextField
 from history.models import Officer
@@ -64,7 +67,7 @@ def pack_officers_for_term(term):
         query = Q(position__in=team.members.all())
         if team.name=='Electee and Membership Team':
             query=query&~Q(position=team.lead)
-        team_data={'order':disp_order,'name':team.name,'lead_name':team.lead.name,'officers':officer_set.filter(query).order_by('position__display_order')}
+        team_data={'order':disp_order,'name':team.name,'lead_name':team.lead.name,'officers':officer_set.filter(query).order_by('position__display_order').values('id')}
         term_officers.append(team_data)
     return {'officers':term_officers,'advisors':term_advisors}
 def index(request):
@@ -185,10 +188,14 @@ def leadership_for_term(request,term_id):
     Shows the officers for the specified term. The packing logic that assembles officers into teams for dispaly is contained in the pack_officers_for_term function.
 
     """
-    template = loader.get_template('about/leadership.html')
     term = get_object_or_404(AcademicTerm,id=term_id)
+    officers = pack_officers_for_term(AcademicTerm.objects.get(id=term_id))
+    officer_set = Officer.objects.filter(term=term).values('id')
+    template = loader.get_template('about/leadership.html')
+
     context_dict = {
-        "officers":pack_officers_for_term(AcademicTerm.objects.get(id=term_id)),
+        "officers":officers,
+        'officer_ids':officer_set,
         'request':request,
         'terms':get_terms()[:5],
         'requested_term':term,
@@ -199,7 +206,23 @@ def leadership_for_term(request,term_id):
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+@ajax 
+def officer(request,officer_id):
+    officer = get_object_or_404(Officer,id=officer_id)
+    is_not_advisor=True
+    if officer.position.name=='Advisor':
+        is_not_advisor=False
 
+    context_dict = {
+        'officer':officer,
+        'is_not_advisor':is_not_advisor,
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    officer_html = loader.render_to_string('about/officer.html',context_dict)
+    output = {'fragments':{'#officer'+officer_id:officer_html}}
+    print output
+    return output
 def bylaws(request):
     """
     Nothing fancy here. Just shows the bylaws (does filter to only show the active ones).

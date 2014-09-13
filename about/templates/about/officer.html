@@ -1,0 +1,15 @@
+{% load staticfiles %}
+{% load my_markdown %}
+<div class="col-sm-6 officer-profile">
+    {% if is_not_advisor %}
+    <h4>{{officer.position}}</h4>
+    {% endif %}
+    <p><strong>{{officer.user.get_firstlast_name}}</strong></p>
+    {% if is_current and is_not_advisor%}
+    <a href="mailto:{{officer.position.email}}">{{officer.position.email}}</a>
+    {% else %}
+    <a href="mailto:{{officer.user.get_email}}">{{officer.user.get_email}}</a>
+    {% endif %}
+    <img  class="img-responsive img-rounded" src="{{officer.website_photo.thumbnail.url}}" ></img>
+    <p class="text-justify">{{officer.website_bio|my_markdown}}</p>
+</div>

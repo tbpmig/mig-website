@@ -42,16 +42,8 @@
                             <div class="col-sm-12 col-lg-6">
                                 <div class="row">
                             {% endif %}
-                            <div class="col-sm-6 officer-profile">
-                                <h4>{{officer.position}}</h4>
-                                <p><strong>{{officer.user.get_firstlast_name}}</strong></p>
-                                {% if is_current %}
-                                <a href="mailto:{{officer.position.email}}">{{officer.position.email}}</a>
-                                {% else %}
-                                <a href="mailto:{{officer.user.get_email}}">{{officer.user.get_email}}</a>
-                                {% endif %}
-                                <img  class="img-responsive img-rounded" src="{{officer.website_photo.thumbnail.url}}" ></img>
-                                <p class="text-justify">{{officer.website_bio|my_markdown}}</p>
+                            <div id="officer{{officer.id}}">
+                                <p>Loading...</p>
                             </div>
                             {% if forloop.counter|divisibleby:"2" or forloop.last %}
                             </div>
@@ -88,13 +80,8 @@
                                 <div class="col-sm-12 col-lg-6">
                                     <div class="row">
                             {% endif %}
-                            <div class="col-sm-6 officer-profile">
-                                <p><strong>{{advisor.user.get_firstlast_name}}</strong></p>
-                                {% if not is_current %}
-                                <a href="mailto:{{advisor.user.get_email}}">{{advisor.user.get_email}}</a>
-                                {% endif %}
-                                <img  class="img-responsive img-rounded" src="{{advisor.website_photo.thumbnail.url}}"></img>
-                                <p class="text-justify">{{advisor.website_bio|my_markdown}}</p>
+                            <div id="officer{{advisor.id}}">
+                                <p>Loading...</p>
                             </div>
                             {% if forloop.counter|divisibleby:"2" or forloop.last %}
                             </div>
@@ -114,3 +101,13 @@
 </div>
 {% endwith %}				
 {% endblock content %}
+{% block js %}
+
+<script type="text/javascript">
+$(document).ready(function(){
+{% for officer in officer_ids %}
+           ajaxGet('{% url 'about:officer' officer.id %}');
+{% endfor %}
+     });
+ </script>
+{% endblock js %}
