@@ -11,7 +11,9 @@ $(document).ready(function(){
 {% for packed_event in events %}
     {% with event=packed_event.event can_edit_event=packed_event.can_edit %}
 
-         ajaxGet('{% url 'event_cal:get_event_ajax' event.id %}')
+         ajaxGet('{% url 'event_cal:get_event_ajax' event.id %}', function(){
+            load_social_media();
+        });
     {% endwith %}
 {% endfor %}
      });

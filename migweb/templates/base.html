@@ -272,28 +272,6 @@ ga('send', 'pageview');
             });
 </script>
 {% if prefix %}
-<!--<script src="{% static 'js/addForm.js' %}"></script>
-<script type="text/javascript">
-    $(function() {
-         $('.add-row').click(function() {
-             addForm(this, '{{prefix}}');
-        {% if date_prefixes %}
-            var formCount = parseInt($('#id_' + '{{prefix}}' + '-TOTAL_FORMS').val());
-            for(count=0;count<formCount;count++){
-            {% for pref_suff in date_prefixes %}
-            {% for field_prefix,suffixes in pref_suff.items %}
-                {% for suffix in suffixes %}
-                addFormDatePicker(this,'{{prefix}}','{{field_prefix}}','{{suffix}}');
-                {% endfor %}
-            {% endfor %}
-            {% endfor %}
-            }
-        {% endif %}
-        });
-    })
-                
-
-</script>-->
 <script src="{% static 'js/jquery.formset.js' %}"></script>
 <script type="text/javascript">
     $(function() {
@@ -329,4 +307,21 @@ ga('send', 'pageview');
         po.src = 'https://apis.google.com/js/platform.js';
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
     })();
+</script>
+<script type="text/javascript">
+    function load_social_media(){
+    console.log('ping')
+        var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+        po.src = 'https://apis.google.com/js/platform.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        twttr.widgets.load();
+
+        (function(d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) return;
+            js = d.createElement(s); js.id = id;
+            js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.0";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+    }
 </script>

@@ -78,7 +78,6 @@ def meeting_sign_in(request,event_id,shift_id):
         sign_in_sheet = sign_in_sheets[0]
     else:
         sign_in_sheet = None
-    request.session['event_signed_up']=int(event_id)
     shift = get_object_or_404(EventShift,id=shift_id)
     if not shift.can_sign_in():
         if not event.use_sign_in:
@@ -172,11 +171,6 @@ def meeting_sign_in(request,event_id,shift_id):
 
 def event_detail(request,event_id):
     request.session['current_page']=request.path
-    if 'event_signed_up' in request.session:
-        event_signed_up = request.session['event_signed_up']
-        del request.session['event_signed_up']
-    else:
-        event_signed_up = None
     has_profile =False
     user_is_member=False
     if hasattr(request.user,'userprofile'):  
@@ -192,7 +186,6 @@ def event_detail(request,event_id):
     context_dict = {
         'event':event,
         'has_profile':hasattr(request.user,'userprofile'),
-        'event_signed_up':event_signed_up,
         'is_member':user_is_member,
         'can_edit_event':Permissions.can_edit_event(event,request.user),
         'can_add_sign_in':(Permissions.can_create_events(request.user) and not MeetingSignIn.objects.filter(event=event).exists() and event.use_sign_in),
@@ -208,7 +201,6 @@ def event_detail(request,event_id):
 def sign_up(request, event_id, shift_id):
     event = get_object_or_404(CalendarEvent,id=event_id)
     shift = get_object_or_404(EventShift,id=shift_id)
-    request.session['event_signed_up']=int(event_id)
     if shift.start_time < timezone.now():
         request.session['error_message']='You cannot sign up for an event in the past'
     elif shift.max_attendance and (shift.attendees.count() >= shift.max_attendance):
@@ -259,7 +251,6 @@ def sign_up(request, event_id, shift_id):
 def unsign_up(request, event_id, shift_id):
     event = get_object_or_404(CalendarEvent,id=event_id)
     shift = get_object_or_404(EventShift,id=shift_id)
-    request.session['event_signed_up']=int(event_id)
     if shift.start_time < timezone.now():
         request.session['error_message']='You cannot unsign-up for an event that has started'
     else:
@@ -371,7 +362,6 @@ def list(request):
     request.session['current_page']=request.path
     user_is_member = False
     has_profile = False
-    event_signed_up = request.session.pop('event_signed_up',None)
     query_members = Q(members_only=False) 
     query_event_type=Q()
     query_location=Q()
@@ -425,7 +415,6 @@ def list(request):
         'events':packed_events,
         'user_is_member':user_is_member,
         'has_profile':has_profile,
-        'event_signed_up':event_signed_up,
         'form':form,
         'dp_ids':['dp_before','dp_after'],
         'sorted_event_categories':EventCategory.flatten_category_tree(),
@@ -455,7 +444,6 @@ def get_event_ajax(request,event_id):
     return {'fragments':{'#event'+event_id:event_html}}
 def my_events(request):
     request.session['current_page']=request.path
-    event_signed_up=request.session.pop('event_signed_up',None)
     my_events = []
     events_im_leading = []
     has_profile = False
@@ -473,7 +461,6 @@ def my_events(request):
         'my_events':packed_events,
         'events_im_leading':events_im_leading,
         'has_profile':has_profile,
-        'event_signed_up':event_signed_up,
         'subnav':'my_events',
         }
     context_dict.update(get_permissions(request.user))
@@ -800,7 +787,6 @@ def delete_shift(request,event_id, shift_id):
     if Permissions.can_edit_event(e,request.user):
         s.delete_gcal_event_shift()
         s.delete()
-        request.session['event_signed_up']=int(event_id)
         request.session['success_message']='Event shift deleted successfully'
         return get_previous_page(request,alternate='event_cal:list')
     else:
