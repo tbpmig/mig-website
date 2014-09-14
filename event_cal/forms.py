@@ -83,7 +83,7 @@ EventShiftFormset.form.base_fields['start_time'].label='Select a start date and 
 EventShiftFormset.form.base_fields['end_time']=forms.SplitDateTimeField(input_time_formats=valid_time_formats)
 EventShiftFormset.form.base_fields['end_time'].label='Select an end date and time'
 
-EventShiftEditFormset = inlineformset_factory(CalendarEvent, EventShift,form=EventShiftForm,extra=1,exclude=('google_event_id',))
+EventShiftEditFormset = inlineformset_factory(CalendarEvent, EventShift,form=EventShiftForm,extra=1,exclude=['drivers','attendees','google_event_id'])
 EventShiftEditFormset.form.base_fields['start_time']=forms.SplitDateTimeField(input_time_formats=valid_time_formats)
 EventShiftEditFormset.form.base_fields['end_time']=forms.SplitDateTimeField(input_time_formats=valid_time_formats)
 EventShiftEditFormset.form.base_fields['start_time'].label='Select a start date and time'
