@@ -17,12 +17,6 @@ def max_peer_interviews_validator(value):
         if value>requirement[0].amount_required:
             raise ValidationError(u'This value cannot exceed %s' % requirement[0].amount_required)
 
-def max_essays_validator(value):
-    requirement = Requirement.objects.filter(event_category__name='Essays')
-    if requirement:
-        if value > requirement[0].amount_required:
-            raise ValidationError(u'This value cannot exceed %s'%requirement[0].amount_required)
-
 class MemberProfileForm(ModelForm):
     major = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'element','placeholder':'Select Major(s)','closeOnSelect':True}),queryset=Major.objects.all().order_by('name'))
     class Meta:
@@ -84,9 +78,9 @@ class ManageUgradPaperWorkForm(Form):
     uniqname = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled','readonly':'readonly'}))
     electee_exam_completed = forms.BooleanField(required=False)
     peer_interviews_completed = forms.IntegerField(min_value=0,validators=[max_peer_interviews_validator])
-    character_essays_completed = forms.IntegerField(min_value=0,validators=[max_essays_validator])
+    character_essays_completed = forms.BooleanField(required=False,label="Interview Survey Completed")
     interviews_completed = forms.BooleanField(required=False)
-    group_meetings = forms.IntegerField(min_value=0)
+    group_meetings = forms.IntegerField(min_value=0,label="Team Meetings")
 
 ManageUgradPaperWorkFormSet = formset_factory(ManageUgradPaperWorkForm,extra=0)
     

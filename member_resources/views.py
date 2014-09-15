@@ -2093,12 +2093,11 @@ def manage_ugrad_paperwork(request):
                     p = ProgressItem(member=profile,term=current_term,amount_completed=interviews,date_completed=date.today(),name='Peer Interviews Completed')
                     p.event_type = EventCategory.objects.get(name='Peer Interviews')
                     p.save()
-                if existing_progress_essays:
-                    #for now assume only 1
-                    existing_progress_essays[0].amount_completed=essays
-                    existing_progress_essays[0].save()
-                else:
-                    p = ProgressItem(member=profile,term=current_term,amount_completed=interviews,date_completed=date.today(),name='Character Surveys Completed')
+                if existing_progress_essays and not essays:
+                    for e in existing_progress_essays:
+                        e.delete()
+                if not existing_progress_essays and essays:
+                    p = ProgressItem(member=profile,term=current_term,amount_completed=interviews,date_completed=date.today(),name='Character Survey Completed')
                     p.event_type = EventCategory.objects.get(name='Interview Survey')
                     p.save()
                 if existing_progress_char_interviews and not char_interviews:
@@ -2155,7 +2154,7 @@ def manage_ugrad_paperwork(request):
         for electee in electee_profiles:
             exam = electee_exam_progress.filter(member=electee).exists()
             interviews = 0
-            essays = 0
+            essays = essays_progress.filter(member=electee).exists()
             char_interviews = char_interviews_progress.filter(member=electee).exists()
             group_meetings=0
             if existing_group_meetings.filter(member=electee).exists():
@@ -2164,8 +2163,6 @@ def manage_ugrad_paperwork(request):
                 group_meetings+=int(existing_extra_group_meetings.filter(member=electee)[0].amount_completed)
             if peer_interview_progress.filter(member=electee).exists():
                 interviews = int(peer_interview_progress.filter(member=electee)[0].amount_completed)
-            if essays_progress.filter(member=electee).exists():
-                essays = int(essays_progress.filter(member=electee)[0].amount_completed)
             initial_data.append({'electee':electee.get_full_name(),'uniqname':electee.uniqname,'electee_exam_completed':exam,'peer_interviews_completed':interviews,'character_essays_completed':essays,'interviews_completed':char_interviews,'group_meetings':group_meetings})
         formset = ManageUgradPaperWorkFormSet(initial=initial_data)
     
