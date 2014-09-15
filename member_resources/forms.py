@@ -79,7 +79,6 @@ class ManageUgradPaperWorkForm(Form):
     electee_exam_completed = forms.BooleanField(required=False)
     peer_interviews_completed = forms.IntegerField(min_value=0,validators=[max_peer_interviews_validator])
     character_essays_completed = forms.BooleanField(required=False,label="Interview Survey Completed")
-    interviews_completed = forms.BooleanField(required=False)
     group_meetings = forms.IntegerField(min_value=0,label="Team Meetings")
 
 ManageUgradPaperWorkFormSet = formset_factory(ManageUgradPaperWorkForm,extra=0)

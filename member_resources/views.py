@@ -2069,8 +2069,6 @@ def manage_ugrad_paperwork(request):
                     continue
                 exam = form.cleaned_data['electee_exam_completed']
                 existing_progress_exam = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Electee Exam')
-                char_interviews = form.cleaned_data['interviews_completed']
-                existing_progress_char_interviews = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Attended Interviews')
                 interviews = form.cleaned_data['peer_interviews_completed']
                 existing_progress_interviews = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Peer Interviews')
                 group_meetings = form.cleaned_data['group_meetings']
@@ -2099,13 +2097,6 @@ def manage_ugrad_paperwork(request):
                 if not existing_progress_essays and essays:
                     p = ProgressItem(member=profile,term=current_term,amount_completed=interviews,date_completed=date.today(),name='Character Survey Completed')
                     p.event_type = EventCategory.objects.get(name='Interview Survey')
-                    p.save()
-                if existing_progress_char_interviews and not char_interviews:
-                    for e in existing_progress_char_interviews:
-                        e.delete()
-                if not existing_progress_char_interviews and char_interviews:
-                    p = ProgressItem(member=profile,term=current_term,amount_completed=2,date_completed=date.today(),name='Attended Interviews')
-                    p.event_type = EventCategory.objects.get(name='Attended Interviews')
                     p.save()
                 dist=DistinctionType.objects.filter(status_type__name='Electee',standing_type__name='Undergraduate')
                 group_meeting_req = Requirement.objects.filter(distinction_type=dist,event_category__name='Team Meetings',term=current_term.semester_type)
@@ -2145,7 +2136,6 @@ def manage_ugrad_paperwork(request):
         initial_data = []
         electee_profiles = MemberProfile.get_electees().filter(standing__name='Undergraduate').order_by('last_name')
         electee_exam_progress = ProgressItem.objects.filter(event_type__name='Electee Exam',term=current_term)
-        char_interviews_progress = ProgressItem.objects.filter(event_type__name='Attended Interviews',term=current_term)
         peer_interview_progress = ProgressItem.objects.filter(event_type__name='Peer Interviews',term=current_term)
         essays_progress = ProgressItem.objects.filter(event_type__name='Interview Survey',term=current_term)
         existing_group_meetings = ProgressItem.objects.filter(term=current_term,event_type__name='Team Meetings')
@@ -2155,7 +2145,6 @@ def manage_ugrad_paperwork(request):
             exam = electee_exam_progress.filter(member=electee).exists()
             interviews = 0
             essays = essays_progress.filter(member=electee).exists()
-            char_interviews = char_interviews_progress.filter(member=electee).exists()
             group_meetings=0
             if existing_group_meetings.filter(member=electee).exists():
                 group_meetings+=int(existing_group_meetings.filter(member=electee)[0].amount_completed)
@@ -2163,7 +2152,7 @@ def manage_ugrad_paperwork(request):
                 group_meetings+=int(existing_extra_group_meetings.filter(member=electee)[0].amount_completed)
             if peer_interview_progress.filter(member=electee).exists():
                 interviews = int(peer_interview_progress.filter(member=electee)[0].amount_completed)
-            initial_data.append({'electee':electee.get_full_name(),'uniqname':electee.uniqname,'electee_exam_completed':exam,'peer_interviews_completed':interviews,'character_essays_completed':essays,'interviews_completed':char_interviews,'group_meetings':group_meetings})
+            initial_data.append({'electee':electee.get_full_name(),'uniqname':electee.uniqname,'electee_exam_completed':exam,'peer_interviews_completed':interviews,'character_essays_completed':essays,'group_meetings':group_meetings})
         formset = ManageUgradPaperWorkFormSet(initial=initial_data)
     
     template = loader.get_template('generic_formset.html')
