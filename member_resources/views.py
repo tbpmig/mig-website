@@ -1615,7 +1615,7 @@ def handle_electees_stopping_electing(request):
         'submit_name':'Update Electees Still Electing',
         'form_title':'Manage Electees Still Electing',
         'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Membership Management'},
-        'help_text':'To note that an electee is no longer electing, uncheck the \'Still Electing\' Box next to their name/uniqname. This will unsign them up from any future events and will remove them from electee groups. It will also cause them to generally not show up in the list of members on the website. It will not remove them from events that have already been completed or prevent them from signing up in the future.',
+        'help_text':'To note that an electee is no longer electing, uncheck the \'Still Electing\' Box next to their name/uniqname. This will unsign them up from any future events and will remove them from electee teams. It will also cause them to generally not show up in the list of members on the website. It will not remove them from events that have already been completed or prevent them from signing up in the future.',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -1983,10 +1983,10 @@ def manage_active_group_meetings(request):
                     continue
                 member = form.cleaned_data['member']
                 group_meetings = form.cleaned_data['group_meetings']
-                existing_group_meetings = ProgressItem.objects.filter(member=member,term=AcademicTerm.get_current_term(),event_type__name='Group Meetings')
-                existing_extra_group_meetings = ProgressItem.objects.filter(member=member,term=AcademicTerm.get_current_term(),event_type__name='Extra Group Meetings')
+                existing_group_meetings = ProgressItem.objects.filter(member=member,term=AcademicTerm.get_current_term(),event_type__name='Team Meetings')
+                existing_extra_group_meetings = ProgressItem.objects.filter(member=member,term=AcademicTerm.get_current_term(),event_type__name='Extra Team Meetings')
                 dist=DistinctionType.objects.filter(status_type__name='Electee',standing_type__name='Undergraduate')
-                group_meeting_req = Requirement.objects.filter(distinction_type=dist,event_category__name='Group Meetings',term=AcademicTerm.get_current_term().semester_type)
+                group_meeting_req = Requirement.objects.filter(distinction_type=dist,event_category__name='Team Meetings',term=AcademicTerm.get_current_term().semester_type)
                 if group_meeting_req:
                     amount_group_req = group_meeting_req[0].amount_required
                 else:
@@ -1997,8 +1997,8 @@ def manage_active_group_meetings(request):
                             existing_extra_group_meetings[0].amount_completed=(group_meetings-amount_group_req)
                             existing_extra_group_meetings[0].save()
                         else:
-                            p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),amount_completed=(group_meetings-amount_group_req),date_completed=date.today(),name='Extra Group Meetings')
-                            p.event_type = EventCategory.objects.get(name='Extra Group Meetings')
+                            p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),amount_completed=(group_meetings-amount_group_req),date_completed=date.today(),name='Extra Team Meetings')
+                            p.event_type = EventCategory.objects.get(name='Extra Team Meetings')
                             p.save()
                         group_meetings=amount_group_req
                     elif existing_extra_group_meetings:
@@ -2011,19 +2011,19 @@ def manage_active_group_meetings(request):
                 else:
                     amt_group_meetings = min(group_meetings,amount_group_req)
                     amt_extra_meetings = max(0,group_meetings-amount_group_req)
-                    p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),amount_completed=amt_group_meetings,date_completed=date.today(),name='Group Meetings')
-                    p.event_type = EventCategory.objects.get(name='Group Meetings')
+                    p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),amount_completed=amt_group_meetings,date_completed=date.today(),name='Team Meetings')
+                    p.event_type = EventCategory.objects.get(name='Team Meetings')
                     p.save()
-                    p2 = ProgressItem(member=member,term=AcademicTerm.get_current_term(),amount_completed=amt_extra_meetings,date_completed=date.today(),name='Extra Group Meetings')
-                    p2.event_type = EventCategory.objects.get(name='Extra Group Meetings')
+                    p2 = ProgressItem(member=member,term=AcademicTerm.get_current_term(),amount_completed=amt_extra_meetings,date_completed=date.today(),name='Extra Team Meetings')
+                    p2.event_type = EventCategory.objects.get(name='Extra Team Meetings')
                     p2.save()
-            request.session['success_message']='Active Group Meeting Progress updated successfully'
+            request.session['success_message']='Active Team Meeting Progress updated successfully'
             return redirect('member_resources:view_misc_reqs')
         else:
             request.session['error_message']=INVALID_FORM_MESSAGE
     else:
         initial_data = []
-        progress_items = ProgressItem.objects.filter(member__status__name='Active',term=AcademicTerm.get_current_term()).filter(Q(event_type__name='Group Meetings')|Q(event_type__name='Extra Group Meetings'))
+        progress_items = ProgressItem.objects.filter(member__status__name='Active',term=AcademicTerm.get_current_term()).filter(Q(event_type__name='Team Meetings')|Q(event_type__name='Extra Team Meetings'))
         members = list(set([p.member for p in progress_items]))
 
         for member in members:
@@ -2040,11 +2040,11 @@ def manage_active_group_meetings(request):
         'prefix':'active_group',
         'subnav':'misc_reqs',
         'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Miscellaneous Requirements'},
-        'submit_name':'Update Active\'s Group Meeting Credit',
+        'submit_name':'Update Active\'s Team Meeting Credit',
         'has_files':False,
         'base':'member_resources/base_member_resources.html',
-        'form_title':'Manage Active\'s Group Meeting Credit',
-        'help_text':'Give credit for each group meeting that each group leader hosts/attends. Any above the minimum required will count as social events.',
+        'form_title':'Manage Active\'s Team Meeting Credit',
+        'help_text':'Give credit for each team meeting that each group leader hosts/attends. Any above the minimum required will count as social events.',
         'can_add_row':True,
         }
     context_dict.update(get_common_context(request))
@@ -2074,10 +2074,10 @@ def manage_ugrad_paperwork(request):
                 interviews = form.cleaned_data['peer_interviews_completed']
                 existing_progress_interviews = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Peer Interviews')
                 group_meetings = form.cleaned_data['group_meetings']
-                existing_group_meetings = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Group Meetings')
-                existing_extra_group_meetings = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Extra Group Meetings')
+                existing_group_meetings = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Team Meetings')
+                existing_extra_group_meetings = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Extra Team Meetings')
                 essays = form.cleaned_data['character_essays_completed']
-                existing_progress_essays = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Essays')
+                existing_progress_essays = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Interview Survey')
                 if existing_progress_exam and not exam:
                     for e in existing_progress_exam:
                         e.delete()
@@ -2098,8 +2098,8 @@ def manage_ugrad_paperwork(request):
                     existing_progress_essays[0].amount_completed=essays
                     existing_progress_essays[0].save()
                 else:
-                    p = ProgressItem(member=profile,term=current_term,amount_completed=interviews,date_completed=date.today(),name='Character Essays Completed')
-                    p.event_type = EventCategory.objects.get(name='Essays')
+                    p = ProgressItem(member=profile,term=current_term,amount_completed=interviews,date_completed=date.today(),name='Character Surveys Completed')
+                    p.event_type = EventCategory.objects.get(name='Interview Survey')
                     p.save()
                 if existing_progress_char_interviews and not char_interviews:
                     for e in existing_progress_char_interviews:
@@ -2109,7 +2109,7 @@ def manage_ugrad_paperwork(request):
                     p.event_type = EventCategory.objects.get(name='Attended Interviews')
                     p.save()
                 dist=DistinctionType.objects.filter(status_type__name='Electee',standing_type__name='Undergraduate')
-                group_meeting_req = Requirement.objects.filter(distinction_type=dist,event_category__name='Group Meetings',term=current_term.semester_type)
+                group_meeting_req = Requirement.objects.filter(distinction_type=dist,event_category__name='Team Meetings',term=current_term.semester_type)
                 if group_meeting_req:
                     amount_group_req = group_meeting_req[0].amount_required
                 else:
@@ -2120,8 +2120,8 @@ def manage_ugrad_paperwork(request):
                             existing_extra_group_meetings[0].amount_completed=(group_meetings-amount_group_req)
                             existing_extra_group_meetings[0].save()
                         else:
-                            p = ProgressItem(member=profile,term=current_term,amount_completed=(group_meetings-amount_group_req),date_completed=date.today(),name='Extra Group Meetings')
-                            p.event_type = EventCategory.objects.get(name='Extra Group Meetings')
+                            p = ProgressItem(member=profile,term=current_term,amount_completed=(group_meetings-amount_group_req),date_completed=date.today(),name='Extra Team Meetings')
+                            p.event_type = EventCategory.objects.get(name='Extra Team Meetings')
                             p.save()
                         group_meetings=amount_group_req
                     elif existing_extra_group_meetings:
@@ -2132,11 +2132,11 @@ def manage_ugrad_paperwork(request):
                 else:
                     amt_group_meetings = min(group_meetings,amount_group_req)
                     amt_extra_meetings = max(0,group_meetings-amount_group_req)
-                    p = ProgressItem(member=profile,term=current_term,amount_completed=amt_group_meetings,date_completed=date.today(),name='Group Meetings')
-                    p.event_type = EventCategory.objects.get(name='Group Meetings')
+                    p = ProgressItem(member=profile,term=current_term,amount_completed=amt_group_meetings,date_completed=date.today(),name='Team Meetings')
+                    p.event_type = EventCategory.objects.get(name='Team Meetings')
                     p.save()
-                    p2 = ProgressItem(member=profile,term=current_term,amount_completed=amt_extra_meetings,date_completed=date.today(),name='Extra Group Meetings')
-                    p2.event_type = EventCategory.objects.get(name='Extra Group Meetings')
+                    p2 = ProgressItem(member=profile,term=current_term,amount_completed=amt_extra_meetings,date_completed=date.today(),name='Extra Team Meetings')
+                    p2.event_type = EventCategory.objects.get(name='Extra Team Meetings')
                     p2.save()
             request.session['success_message']='Electee paperwork updated successfully'
             return redirect('member_resources:view_misc_reqs')
@@ -2148,9 +2148,9 @@ def manage_ugrad_paperwork(request):
         electee_exam_progress = ProgressItem.objects.filter(event_type__name='Electee Exam',term=current_term)
         char_interviews_progress = ProgressItem.objects.filter(event_type__name='Attended Interviews',term=current_term)
         peer_interview_progress = ProgressItem.objects.filter(event_type__name='Peer Interviews',term=current_term)
-        essays_progress = ProgressItem.objects.filter(event_type__name='Essays',term=current_term)
-        existing_group_meetings = ProgressItem.objects.filter(term=current_term,event_type__name='Group Meetings')
-        existing_extra_group_meetings = ProgressItem.objects.filter(term=current_term,event_type__name='Extra Group Meetings')
+        essays_progress = ProgressItem.objects.filter(event_type__name='Interview Survey',term=current_term)
+        existing_group_meetings = ProgressItem.objects.filter(term=current_term,event_type__name='Team Meetings')
+        existing_extra_group_meetings = ProgressItem.objects.filter(term=current_term,event_type__name='Extra Team Meetings')
 
         for electee in electee_profiles:
             exam = electee_exam_progress.filter(member=electee).exists()
