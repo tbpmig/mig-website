@@ -8,7 +8,7 @@
     {% for part in announcement_parts %}
     <li>{{part.title}}</li>
     {% endfor %}
-    {% for event in upcoming_events %}
+    {% for event in announcement_events %}
     <li>{{event.name}}</li>
     {% endfor %}
 </ol>
@@ -24,7 +24,7 @@
 <hr>
 {% endfor %}
 <h4><a href="{% url 'event_cal:list' %}">Upcoming Events</a></h4>
-{% for event in upcoming_events %}
+{% for event in announcement_events %}
 <h5><a href="{% url 'event_cal:event_detail' event.id %}">{{event.name}}</a></h5>
 <p><b>When: </b> {% if event.eventshift_set.all|length > 1 %}Shifts between {{event.get_start_and_end.start|date:"P M d, Y"}} and {{event.get_start_and_end.end|date:"P M d, Y"}}{%else%}{{event.get_start_and_end.start|date:"P"}} to {{event.get_start_and_end.end|date:"P, M d, Y"}}{% endif%}</p>
 <p><b>Where: </b>{% for location in event.get_locations %}{{location}}{% if event.get_locations|length > 2 and not forloop.last %}, {% endif %}{% if event.get_locations|length > 1 and forloop.revcounter == 2 %} and {% endif %}{% endfor %}</p>

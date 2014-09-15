@@ -1057,6 +1057,7 @@ def generate_announcements(request):
     context_dict = {
         'announcement_parts':announcement_parts,
         'subnav':'admin',
+        'announcement_events':CalendarEvent.get_upcoming_events(),
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
