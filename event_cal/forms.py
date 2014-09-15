@@ -166,10 +166,9 @@ class CompleteEventForm(ModelForm):
     Form used to specify how many hours the attendee was at the event.
     """
     member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Attendee','closeOnSelect':True}),queryset=MemberProfile.get_members())
-    hours = forms.DecimalField(required=True)
     class Meta:
         model = ProgressItem
-        exclude = ('term','event_type','date_completed','amount_completed','related_event','name')
+        exclude = ('term','event_type','date_completed','related_event','name')
 
 CompleteEventFormSet = modelformset_factory(ProgressItem, form=CompleteEventForm,can_delete=True)
 
