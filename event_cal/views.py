@@ -1,7 +1,6 @@
 # Create your views here.
 from datetime import datetime,date,timedelta
 
-
 from django.core.cache import cache
 from django.utils import timezone
 from django.http import HttpResponse#, Http404, HttpResponseRedirect
@@ -244,7 +243,7 @@ def sign_up(request, event_id, shift_id):
                 request.session['error_message']='This event is members-only'
         else:
             request.session['error_message']='You must create a profile before signing up to events' 
-    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="ajaxGet('%s')"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,reverse('event_cal:unsign_up', args=[event_id, shift_id] ))}}
+    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,shift_id,reverse('event_cal:unsign_up', args=[event_id, shift_id] ),shift_id)}}
 
 @ajax
 @login_required
@@ -271,7 +270,7 @@ def unsign_up(request, event_id, shift_id):
             request.session['success_message']='You have successfully unsigned up from the event.'
         else:
             request.session['error_message']='You must create a profile before unsigning up'
-    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="ajaxGet('%s')"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,reverse('event_cal:sign_up', args=[event_id, shift_id] ))}}
+    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up', args=[event_id, shift_id] ),shift_id)}}
 
 @login_required
 def carpool_sign_up(request,event_id):
