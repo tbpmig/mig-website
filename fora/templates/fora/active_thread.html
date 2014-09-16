@@ -26,10 +26,12 @@
                 {% endif %}
                 {% if profile in reply.reply.get_downvoters %}
                 <a class="btn btn-primary" href="{% url 'fora:withdraw_downvote' reply.reply.id %}">Withdraw downvote</a>
-                {% elif profile in reply.reply.get_upvoters %}
+                {% elif profile in reply.reply.get_upvoters and can_downvote%}
                 <a class="btn btn-danger" href="{% url 'fora:downvote_comment' reply.reply.id %}">Switch to downvote</a>
-                {% else %}
+                {% elif can_downvote %}
                 <a class="btn btn-danger" href="{% url 'fora:downvote_comment' reply.reply.id %}">Downvote</a>
+                {% else %}
+                <a class="btn btn-danger" disabled="disabled">Insufficient points to downvote</a>
                 {% endif %}
                 {% endif %}
                 {% if can_moderate %}

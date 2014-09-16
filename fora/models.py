@@ -9,7 +9,7 @@ def get_user_points(memberprofile):
     votes_count = 2*point_objects.filter(plus_point=True,message__hidden=False).count()-point_objects.filter(plus_point=False).count()
     spent_downvotes = MessagePoint.objects.filter(user=memberprofile,plus_point=False).count()
     posts_created = ForumMessage.objects.filter(creator=memberprofile,hidden=False).count()
-    return posts_created+votes_count-spent_downvotes
+    return 2+posts_created+votes_count-spent_downvotes
     
 class Forum(models.Model):
     name = models.CharField(max_length=128)

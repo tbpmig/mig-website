@@ -6,7 +6,7 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.template import RequestContext, loader
 from django.utils import timezone
 
-from fora.models import Forum,ForumThread,ForumMessage,MessagePoint
+from fora.models import Forum,ForumThread,ForumMessage,MessagePoint,get_user_points
 from member_resources.views import get_permissions as get_member_permissions
 from mig_main.utility import get_previous_page, get_message_dict, Permissions
 
@@ -15,10 +15,14 @@ from mig_main.utility import get_previous_page, get_message_dict, Permissions
 
 def get_permissions(user):
     permission_dict=get_member_permissions(user)
+    is_member=False
+    if hasattr(user,'userprofile') and user.userprofile.is_member:
+        is_member=True
     permission_dict.update({'can_create_thread':Permissions.can_create_thread(user),
                             'can_create_forum':Permissions.can_create_forum(user),
                             'can_comment':hasattr(user,'userprofile') and user.userprofile.is_member(),
-                            'can_moderate':Permissions.can_create_forum(user),})
+                            'can_moderate':Permissions.can_create_forum(user),
+                            'can_downvote':get_user_points(user.userprofile.memberprofile)>0 if is_member else False})
     
     return permission_dict
 def get_common_context(request):
@@ -122,6 +126,7 @@ def upvote_comment(request,comment_id):
         return redirect('fora:index')
     message=get_object_or_404(ForumMessage,id=comment_id)
     profile = request.user.userprofile.memberprofile
+    
     if profile in message.get_upvoters():
         request.session['error_message']='You have already upvoted this post'
         return get_previous_page(request,alternate='fora:index')
@@ -158,6 +163,9 @@ def downvote_comment(request,comment_id):
         return redirect('fora:index')
     message=get_object_or_404(ForumMessage,id=comment_id)
     profile = request.user.userprofile.memberprofile
+    if get_user_points(profile)<=0:
+        request.session['error_message']='Downvoting costs 1 point. You lack sufficient points.'
+        return redirect('fora:index')
     if profile in message.get_downvoters():
         request.session['error_message']='You have already downvoted this post'
         return get_previous_page(request,alternate='fora:index')
