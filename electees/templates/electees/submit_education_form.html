@@ -1,11 +1,19 @@
 {% extends "electees/base_electees.html" %}
+{% load staticfiles %}
 
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/datepicker.css' %}" />
+{% endblock css %}
+{% block js %}
+<script src="{% static 'js/bootstrap-datepicker.js' %}"></script>
+{% include 'datepicker.html' %}
+{% endblock js %}
 {% block content %}
 <div class="row">
     <div class="col-md-6">
         <h4>Educational Background Form</h4>
         <p>What is the degree type (M.S.E.,Ph.D.,etc.) of the degree you are currently pursuing?</p>
-<form enctype='multipart/form-data' method="post" action="{% url 'electees:submit_background_form' %}">
+<form enctype='multipart/form-data' method="post" action="{% url 'electees:submit_background_form' %}" id="dynForm">
     {% csrf_token %}
     {% include 'form_template.html' %}
     {{ formset.management_form }}
@@ -15,7 +23,6 @@
     <table class="table table-striped table-bordered">
         {% include 'formset_template.html' %}
     </table>
-    <p><a class="btn add-row"  href="javascript:void(0)"/>Add Degree</a></p>
     <input type="submit" value="Submit Form" name = "submit"/>
 </form>
 <p>If you have any questions please email <a href='mailto:tbp.gradcoordinator@umich.edu'>tbp.gradcoordinator@umich.edu</a></p>

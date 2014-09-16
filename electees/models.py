@@ -136,14 +136,15 @@ class ElecteeResource(models.Model):
 class EducationalBackgroundForm(models.Model):
     degree_type=models.CharField(max_length = 16)
     member = models.ForeignKey('mig_main.MemberProfile')
+    term = models.ForeignKey('mig_main.AcademicTerm')
 
 class BackgroundInstitution(models.Model):
     form = models.ForeignKey(EducationalBackgroundForm)
     name = models.CharField(max_length=128,verbose_name='Institution Name')
     degree_type = models.CharField(max_length = 16)
     major = models.CharField(max_length = 128)
-    degree_start_date = models.DateField(verbose_name='Degree Start Date (MM/DD/YYYY)')
-    degree_end_date = models.DateField(verbose_name='Degree Start Date (MM/DD/YYYY)')
+    degree_start_date = models.DateField()
+    degree_end_date = models.DateField()
 
 class SurveyPart(models.Model):
     VISIBILITY_OPTIONS = (

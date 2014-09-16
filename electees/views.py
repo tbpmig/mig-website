@@ -158,14 +158,18 @@ def submit_background_form(request):
     if not user_is_member(request.user) or not (request.user.userprofile.memberprofile.standing.name=='Graduate'):
         request.session['error_message']='You are not authorized to submit an educational background form.'
         return redirect('electees:view_electee_groups')
-    BackgroundForm = modelform_factory(EducationalBackgroundForm,exclude=('member',))
+    BackgroundForm = modelform_factory(EducationalBackgroundForm,exclude=('member','term',))
+    existing_form = EducationalBackgroundForm.objects.filter(member=request.user.userprofile.memberprofile,term=AcademicTerm.get_current_term())
+    if existing_form.exists():
+        form = BackgroundForm(request.POST or None, prefix='background',instance=existing_form[0])
+        formset= InstituteFormset(request.POST or None, prefix='institute',instance=existing_form[0])
+    else:
+        blank_form = EducationalBackgroundForm(member=request.user.userprofile.memberprofile,term=AcademicTerm.get_current_term())
+        form = BackgroundForm(request.POST or None,prefix='background',instance=blank_form)
+        formset= InstituteFormset(request.POST or None,prefix='institute',instance=blank_form)
     if request.method == 'POST':
-        form = BackgroundForm(request.POST,prefix='background')
-        formset = InstituteFormset(request.POST,prefix='institute')
         if form.is_valid():
             background_form = form.save(commit=False)
-            background_form.member=request.user.userprofile.memberprofile
-            formset = InstituteFormset(request.POST,prefix='institute',instance=background_form)
             formset[0].empty_permitted=False
             if formset.is_valid():
                 background_form.save()
@@ -177,14 +181,19 @@ def submit_background_form(request):
                 request.session['error_message']='Either there were errors in your prior degrees or you forgot to include one.'
         else:
             request.session['error_message']='There were errors in the submitted form, please correct the errors noted below.'
-    else:
-        form = BackgroundForm(prefix='background')
-        formset= InstituteFormset(prefix='institute',instance=BackgroundInstitution())
+        
+        
     template = loader.get_template('electees/submit_education_form.html')
+    dp_ids=[]
+    for count in range(len(formset)):
+        dp_ids.append('id_institute-%d-degree_start_date'%(count))
+        dp_ids.append('id_institute-%d-degree_end_date'%(count))
     context_dict = {
         'form':form,
         'formset':formset,
         'prefix':'institute',
+        'dp_ids':dp_ids,
+        'dp_ids_dyn':['degree_start_date', 'degree_end_date'],
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
