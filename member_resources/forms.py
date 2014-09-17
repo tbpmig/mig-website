@@ -92,9 +92,8 @@ ManageActiveGroupMeetingsFormSet = formset_factory(ManageActiveGroupMeetingsForm
 class ManageGradPaperWorkForm(Form):
     electee = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled','readonly':'readonly'}))
     uniqname = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled','readonly':'readonly'}))
-    educational_background_form_completed = forms.BooleanField(required=False)
     advisor_form_completed = forms.BooleanField(required=False)
-    interviews_completed = forms.BooleanField(required=False)
+    
 ManageGradPaperWorkFormSet = formset_factory(ManageGradPaperWorkForm,extra=0)
 
 class ManageProjectLeaderForm(Form):

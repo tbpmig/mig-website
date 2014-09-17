@@ -2188,11 +2188,7 @@ def manage_grad_paperwork(request):
                 if not profile:
                     continue
                 advisor_form = form.cleaned_data['advisor_form_completed']
-                background_form = form.cleaned_data['educational_background_form_completed']
                 existing_progress_advisor_form= ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Advisor Form')
-                existing_progress_background_form= ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Educational Background Form')
-                char_interviews = form.cleaned_data['interviews_completed']
-                existing_progress_char_interviews = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Attended Interviews')
                 if existing_progress_advisor_form and not advisor_form:
                     for e in existing_progress_advisor_form:
                         e.delete()
@@ -2200,20 +2196,7 @@ def manage_grad_paperwork(request):
                     p = ProgressItem(member=profile,term=current_term,amount_completed=1,date_completed=date.today(),name='Advisor Form Completed')
                     p.event_type = EventCategory.objects.get(name='Advisor Form')
                     p.save()
-                if existing_progress_background_form and not background_form:
-                    for e in existing_progress_background_form:
-                        e.delete()
-                if not existing_progress_background_form and background_form:
-                    p = ProgressItem(member=profile,term=current_term,amount_completed=1,date_completed=date.today(),name='Educational Background Form Completed')
-                    p.event_type = EventCategory.objects.get(name='Educational Background Form')
-                    p.save()
-                if existing_progress_char_interviews and not char_interviews:
-                    for e in existing_progress_char_interviews:
-                        e.delete()
-                if not existing_progress_char_interviews and char_interviews:
-                    p = ProgressItem(member=profile,term=current_term,amount_completed=1,date_completed=date.today(),name='Attended Interviews')
-                    p.event_type = EventCategory.objects.get(name='Attended Interviews')
-                    p.save()
+
             request.session['success_message']='Electee paperwork updated sucessfully.'
             return redirect('member_resources:view_misc_reqs')
         else:
@@ -2222,13 +2205,9 @@ def manage_grad_paperwork(request):
         initial_data = []
         electee_profiles = MemberProfile.get_electees().filter(standing__name='Graduate').order_by('last_name')
         advisor_form_progress = ProgressItem.objects.filter(event_type__name='Advisor Form',term=AcademicTerm.get_current_term())
-        background_form_progress = ProgressItem.objects.filter(event_type__name='Educational Background Form',term=AcademicTerm.get_current_term())
-        char_interviews_progress = ProgressItem.objects.filter(event_type__name='Attended Interviews',term=AcademicTerm.get_current_term())
         for electee in electee_profiles:
-            char_interviews = char_interviews_progress.filter(member=electee).exists()
             advisor_form = advisor_form_progress.filter(member=electee).exists()
-            background_form = background_form_progress.filter(member=electee).exists()
-            initial_data.append({'electee':electee.get_full_name(),'uniqname':electee.uniqname,'advisor_form_completed':advisor_form,'educational_background_form_completed':background_form,'interviews_completed':char_interviews})
+            initial_data.append({'electee':electee.get_full_name(),'uniqname':electee.uniqname,'advisor_form_completed':advisor_form})
         formset = ManageGradPaperWorkFormSet(initial=initial_data)
     
     template = loader.get_template('generic_formset.html')

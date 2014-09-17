@@ -1,4 +1,5 @@
 import json
+from datetime import date
 
 from django.http import HttpResponse,Http404
 from django.shortcuts import  get_object_or_404
@@ -16,7 +17,7 @@ from mig_main.utility import Permissions, get_previous_page,  get_message_dict
 from member_resources.views import get_permissions as get_member_permissions
 from history.models import Officer
 from electees.forms import get_unassigned_electees,InstituteFormset,BaseElecteeGroupForm,AddSurveyQuestionsForm,ElecteeSurveyForm
-
+from requirements.models import EventCategory,ProgressItem
 def can_submit_background_form(user):
     if not user_is_member(user):
         return False
@@ -166,7 +167,9 @@ def submit_background_form(request):
         request.session['error_message']='You are not authorized to submit an educational background form.'
         return redirect('electees:view_electee_groups')
     BackgroundForm = modelform_factory(EducationalBackgroundForm,exclude=('member','term',))
-    existing_form = EducationalBackgroundForm.objects.filter(member=request.user.userprofile.memberprofile,term=AcademicTerm.get_current_term())
+    profile=request.user.userprofile.memberprofile
+    term =AcademicTerm.get_current_term()
+    existing_form = EducationalBackgroundForm.objects.filter(member=profile,term=term)
     if existing_form.exists():
         form = BackgroundForm(request.POST or None, prefix='background',instance=existing_form[0])
         formset= InstituteFormset(request.POST or None, prefix='institute',instance=existing_form[0])
@@ -182,7 +185,12 @@ def submit_background_form(request):
                 background_form.save()
                 form.save_m2m()
                 formset.save()
-                request.session['success_message']='Background form successfully'
+                request.session['success_message']='Background form successfully submitted'
+                existing_progress_background_form= ProgressItem.objects.filter(member=profile,term=term,event_type__name='Educational Background Form')
+                if not existing_progress_background_form.exists():
+                    p = ProgressItem(member=profile,term=term,amount_completed=1,date_completed=date.today(),name='Educational Background Form Completed')
+                    p.event_type = EventCategory.objects.get(name='Educational Background Form')
+                    p.save()
                 return redirect('electees:view_electee_groups')
             else:
                 request.session['error_message']='Either there were errors in your prior degrees or you forgot to include one.'
