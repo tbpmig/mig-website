@@ -3,11 +3,20 @@
 {% block content %}
 <div class="row">
     <div class="col-md-4">
+        {% if can_edit_resources or can_edit_surveys %}
+        <div class="btn-group">
+        {% endif %}
         {% if can_edit_resources %}
             <a href="{% url 'electees:edit_electee_resources' %}" class="btn btn-warning">Edit Electee Resources</a>
         {% endif %}
         {% if can_edit_surveys %}
             <a href="{% url 'electees:manage_survey' %}" class="btn btn-warning">Manage Electee Survey</a>
+        {% endif %}
+        {% if can_edit_resources or can_edit_surveys %}
+        </div>
+        {% endif %}
+        {% if can_complete_surveys or can_submit_background_form %}
+        <div class="btn-group">
         {% endif %}
         {% if can_complete_surveys %}
             <a href="{% url 'electees:complete_survey' %}" class="btn btn-primary">Electee Interview Survey</a>
@@ -15,6 +24,10 @@
         {% if can_submit_background_form %}
         <a href="{% url 'electees:submit_background_form' %}" class="btn btn-primary">Educational Background Form</a>
         {% endif %}
+        {% if can_complete_surveys or can_submit_background_form %}
+        </div>
+        {% endif %}
+
         <h3>Electee Resources</h3>
         <h4>Full Packets</h4>
     {% regroup packets|dictsort:"resource_type.id" by resource_type as packets_by_type %}

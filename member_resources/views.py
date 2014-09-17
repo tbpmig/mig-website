@@ -1166,6 +1166,7 @@ def view_misc_reqs(request):
         'can_change_grad_electee_reqs':Permissions.can_change_grad_electee_requirements(request.user),
         'can_manage_actives':Permissions.can_manage_active_progress(request.user),
         'can_manage_interviews':(Permissions.can_manage_active_progress(request.user) or Permissions.can_manage_electee_progress(request.user)),
+        'can_view_interviews':Permissions.can_view_interview_pairings(request.user),
         'active_distinctions':DistinctionType.objects.filter(status_type__name="Active"),
         'ugrad_electee_distinctions':DistinctionType.objects.filter(status_type__name="Electee", standing_type__name="Undergraduate"),
         'grad_electee_distinctions':DistinctionType.objects.filter(status_type__name="Electee",standing_type__name="Graduate"),
@@ -2714,3 +2715,22 @@ def view_electee_surveys_for_term(request,term_id):
     
 def view_electee_surveys(request):   
     return redirect('member_resources:view_electee_surveys_for_term',AcademicTerm.get_current_term().id)
+    
+    
+def view_interview_pairings(request):
+    if not Permissions.can_view_interview_pairings(request.user):
+        request.session['error_message']='You are not authorized to view interview state'
+        return get_previous_page(request,alternate='member_resources:index')
+        
+    interview_shifts = InterviewShift.objects.filter(term=AcademicTerm.get_current_term()).order_by('interviewer_shift__start_time')
+    template = loader.get_template('member_resources/view_interviews.html')
+    context_dict ={
+        'interviews':interview_shifts,
+        'subnav':'misc_reqs',
+        'base':'member_resources/base_member_resources.html',
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))
+        

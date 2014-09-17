@@ -58,5 +58,5 @@ urlpatterns = patterns('',
     url(r'^manage_awards/$',views.manage_awards,name='manage_awards'),
     url(r'^view_electee_surveys/(?P<term_id>\d+)/$',views.view_electee_surveys_for_term,name='view_electee_surveys_for_term'),
     url(r'^view_electee_surveys/$',views.view_electee_surveys,name='view_electee_surveys'),
-
+    url(r'^view_interviews/$',views.view_interview_pairings,name='view_interview_pairings'),
 )
