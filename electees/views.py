@@ -17,6 +17,12 @@ from member_resources.views import get_permissions as get_member_permissions
 from history.models import Officer
 from electees.forms import get_unassigned_electees,InstituteFormset,BaseElecteeGroupForm,AddSurveyQuestionsForm,ElecteeSurveyForm
 
+def can_submit_background_form(user):
+    if not user_is_member(user):
+        return False
+    if user.is_superuser:
+        return True
+    return (user.userprofile.memberprofile.standing.name=='Graduate' and user.userprofile.memberprofile.status.name=='Electee')
 def user_is_member(user):
     if hasattr(user,'userprofile'):
         if user.userprofile.is_member():
@@ -29,6 +35,7 @@ def get_permissions(user):
         'can_edit_resources':Permissions.can_manage_electee_progress(user),
         'can_edit_surveys':Permissions.can_manage_electee_progress(user),
         'can_complete_surveys':Permissions.can_complete_electee_survey(user),
+        'can_submit_background_form':can_submit_background_form(user),
         })
     return permission_dict
 def get_common_context(request):
@@ -155,7 +162,7 @@ def edit_electee_group_points(request):
     return HttpResponse(template.render(context))
 
 def submit_background_form(request):
-    if not user_is_member(request.user) or not (request.user.userprofile.memberprofile.standing.name=='Graduate'):
+    if not can_submit_background_form(request.user):
         request.session['error_message']='You are not authorized to submit an educational background form.'
         return redirect('electees:view_electee_groups')
     BackgroundForm = modelform_factory(EducationalBackgroundForm,exclude=('member','term',))

@@ -12,6 +12,9 @@
         {% if can_complete_surveys %}
             <a href="{% url 'electees:complete_survey' %}" class="btn btn-primary">Electee Interview Survey</a>
         {% endif %}
+        {% if can_submit_background_form %}
+        <a href="{% url 'electees:submit_background_form' %}" class="btn btn-primary">Educational Background Form</a>
+        {% endif %}
         <h3>Electee Resources</h3>
         <h4>Full Packets</h4>
     {% regroup packets|dictsort:"resource_type.id" by resource_type as packets_by_type %}
