@@ -65,7 +65,7 @@ $(document).ready(function(){
     {% with event=packed_event.event can_edit_event=packed_event.can_edit %}
 <li>
 <div id="event{{event.id}}">
-<p>Loading...</p>
+<p>Loading {{event.name}}...</p>
 </div>
 </li>
 {% endwith %}
