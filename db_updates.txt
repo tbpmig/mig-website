@@ -1,3 +1,2 @@
 \echo 'updating db'
-DROP TABLE electees_educationalbackgroundform CASCADE;
 \echo 'done updating db'
