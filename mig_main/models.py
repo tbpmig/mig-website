@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
-from django.core.validators import validate_email, RegexValidator,MinValueValidator,validate_slug
+from django.core.validators import validate_email, RegexValidator,MinValueValidator
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db import models
@@ -321,7 +321,7 @@ class MemberProfile(UserProfile):
     still_electing  = models.BooleanField(default=True)
     
     #Uncomment this on actual server with Python Image Library installed
-    photo   = StdImageField(upload_to='member_photos',variations={'thumbnail':(555,775)},validators=[validate_slug])
+    photo   = StdImageField(upload_to='member_photos',variations={'thumbnail':(555,775)})
     resume          = ContentTypeRestrictedFileField(
         upload_to=resume_file_name,
         content_types=pdf_types,
