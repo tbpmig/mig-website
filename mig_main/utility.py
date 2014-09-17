@@ -168,7 +168,7 @@ def get_quick_links(user):
     # VP items
     if positions.filter(Q(position__name='Vice President')|Q(position__name='Graduate Student Coordinator')|Q(position__name='Graduate Student Vice President')).exists():
         quick_links.append({'link_name':'Member Admin','link':reverse('member_resources:view_misc_reqs')})
-        quick_links.append({'link_name':'Manage Electee Groups','link':reverse('electees:view_electee_groups')})
+        quick_links.append({'link_name':'Manage Electee Teams','link':reverse('electees:view_electee_groups')})
     # Secretary items - nothing unique
     # Treasurer items 
     if positions.filter(position__name='Treasurer').exists():
