@@ -6,7 +6,7 @@ import re
 import logging
 
 from django.contrib.auth.models import User
-
+from django.core.cache import cache
 from django import forms
 from django.http import HttpResponse, Http404 #HttpResponseRedirect
 from django.shortcuts import  get_object_or_404
@@ -317,8 +317,14 @@ def member_profiles(request):
         request.session['error_message']='You must be logged in and a member to view member profiles.'
         return redirect('member_resources:index')
     template = loader.get_template('member_resources/userprofiles.html')
+    member_list = loader.get_template('member_resources/member_list.html')
+    active_html = cache.get('active_list_html',None)
+    if not active_html:
+        active_html=loader.render_to_string('member_resources/member_list.html',{'members':MemberProfile.get_actives(),'member_type':'Actives'})
+        cache.set('active_list_html',active_html)
     context_dict = {
-        'profiles':MemberProfile.get_members(),
+        'active_html':active_html,
+        'electees':MemberProfile.get_electees(),
         'subnav':'member_profiles',
         }
     context_dict.update(get_common_context(request))

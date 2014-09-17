@@ -1,0 +1,19 @@
+{% if members %}
+
+    <div class="col-sm-6">
+        <h4>{{member_type}}</h4>
+        
+        {% regroup members|dictsort:"standing.id" by standing as profiles_by_standing %}
+        <div class="row">
+    {% for standing in profiles_by_standing %}
+        <div class="col-md-4">
+            <h5>{{standing.grouper}}</h5>
+            {% for profile in standing.list|dictsort:"last_name" %}
+                <p><a href="{% url 'member_resources:profile' profile.uniqname %}">{{profile.get_full_name}}</a></p>
+            {% endfor %}
+            <hr class="hidden-md hidden-lg"/>
+        </div>
+    {% endfor %}
+        </div>
+    </div>
+{% endif %}
