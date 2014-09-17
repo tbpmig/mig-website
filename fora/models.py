@@ -58,6 +58,6 @@ class ForumMessage(models.Model):
 class MessagePoint(models.Model):
     message=models.ForeignKey(ForumMessage)
     user = models.ForeignKey('mig_main.MemberProfile')
-    plus_point = models.BooleanField()
+    plus_point = models.BooleanField(default=False)
 
 

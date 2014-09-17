@@ -43,7 +43,7 @@ GENDER_CHOICES = (
 # homepage models
 class SlideShowPhoto(models.Model):
     photo   = StdImageField(upload_to='home_page_photos',variations={'thumbnail':(1050,790,True)})
-    active  = models.BooleanField()
+    active  = models.BooleanField(default=False)
     title   = models.TextField()
     text    = models.TextField()
     link    = models.CharField(max_length=256)

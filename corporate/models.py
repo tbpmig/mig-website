@@ -13,7 +13,7 @@ class CorporateTextField(models.Model):
     text = models.TextField()
 
 class CorporateResourceGuide(models.Model):
-    active          =models.BooleanField()
+    active          =models.BooleanField(default=False)
     name            =models.CharField(max_length=64)
     resource_guide          = ContentTypeRestrictedFileField(
         upload_to='corporate_resources',

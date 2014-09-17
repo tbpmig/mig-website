@@ -19,7 +19,7 @@ class OutreachPhotoType(models.Model):
 class OutreachPhoto(models.Model):
     photo   = StdImageField(upload_to='outreach_photos',variations={'thumbnail':(1050,790)})
     photo_type = models.ForeignKey(OutreachPhotoType)
-    active  = models.BooleanField()
+    active  = models.BooleanField(default=False)
     title   = models.TextField(blank=True,null=True)
     text    = models.TextField(blank=True,null=True)
     link    = models.CharField(max_length=256,blank=True)

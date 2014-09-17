@@ -72,6 +72,8 @@ def edit_electee_groups(request):
         formset = ElecteeGroupFormSet(request.POST,prefix='groups')
         if formset.is_valid():
             instances=formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
             for instance in instances:
                 if not instance.id:
                     instance.term = AcademicTerm.get_current_term()
@@ -224,6 +226,8 @@ def edit_electee_resources(request):
         formset = ResourceFormSet(request.POST,request.FILES,prefix='resources',queryset=ElecteeResource.objects.filter(term=term))
         if formset.is_valid():
             instances=formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
             for instance in instances:
                 instance.term=term
                 instance.save()

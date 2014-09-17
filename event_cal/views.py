@@ -905,6 +905,8 @@ def update_completed_event(request, event_id):
         formset = form_type(request.POST,prefix='update_event',queryset=ProgressItem.objects.filter(related_event=e))
         if formset.is_valid():
             instances = formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
             first_shift=e.eventshift_set.all()[0]
             duplicate_progress = set()
             for instance in instances:
@@ -977,6 +979,8 @@ def complete_event(request, event_id):
         formset = form_type(request.POST,prefix=form_prefix,queryset=ProgressItem.objects.none())
         if formset.is_valid():
             instances = formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
             first_shift=e.eventshift_set.all()[0]
             duplicate_progress = set()
             for instance in instances:

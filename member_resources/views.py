@@ -506,6 +506,8 @@ def edit_progress(request,uniqname):
         formset = progress_formset(request.POST,prefix='edit_progress',queryset=ProgressItem.objects.filter(term=term,member=profile))
         if formset.is_valid():
             instances = formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
             for instance in instances:
                 instance.member = profile
                 instance.term = term
@@ -1273,6 +1275,8 @@ def add_electee_DA_PA_status(request):
         formset = ManageElecteeDAPAFormSet(request.POST,prefix='current_status')
         if formset.is_valid():
             formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
             for instance in formset.new_objects:
                 if instance:
                     instance.term = term
@@ -1336,6 +1340,8 @@ def add_active_statuses(request):
         formset = ManageActiveCurrentStatusFormSet(request.POST,prefix='current_status')
         if formset.is_valid():
             formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
             for instance in formset.new_objects:
                 if instance:
                     instance.term = term
@@ -1508,6 +1514,8 @@ def add_leadership_credit(request):
             form = MassAddProjectLeadersForm(request.POST,prefix='mass-add')
             if formset.is_valid():
                 formset.save(commit=False)
+                for obj in formset.deleted_objects:
+                    obj.delete()
                 for instance in formset.new_objects:
                     if not instance or ProgressItem.objects.filter(member=instance.member,term=term,event_type=leadership_category).exists():
                         continue
@@ -1633,6 +1641,8 @@ def move_electees_to_active(request):
         formset = ElecteeToActiveFormSet(request.POST,prefix='electee2active')
         if formset.is_valid():
             instances=formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
             #technically should check here that the distinction doesn't already exist...
             for instance in instances:
                 if instance:
@@ -1745,6 +1755,8 @@ def add_external_service(request):
         formset = ExternalServiceFormSet(request.POST,queryset=ProgressItem.objects.filter(term=AcademicTerm.get_current_term(),event_type__name='External Service Hours'),prefix='external_service')
         if formset.is_valid():
             instances = formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
             for instance in instances:
                 if instance in formset.new_objects:
                     instance.term = AcademicTerm.get_current_term()
@@ -2251,6 +2263,8 @@ def change_requirements(request,distinction_id):
         formset = RequirementFormSet(request.POST,prefix='requirements')
         if formset.is_valid():
             instances = formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
             for instance in instances:
                 instance.distinction_type = distinction
                 instance.save()
@@ -2557,6 +2571,8 @@ def manage_awards_for_term(request,term_id):
         formset = AwardFormSet(request.POST,queryset=Award.objects.filter(term=term).order_by('-award_type'),prefix='award')
         if formset.is_valid():
             instances = formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()            
             for instance in instances:
                 instance.term = term
                 instance.save()
@@ -2593,6 +2609,8 @@ def non_event_project_participants(request,ne_id):
         formset = NonEventFormSet(request.POST,queryset=NonEventProjectParticipant.objects.filter(project=ne).order_by('participant__last_name'),prefix='nep_parts')
         if formset.is_valid():
             instances = formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
             for instance in instances:
                 instance.project = ne
                 instance.save()

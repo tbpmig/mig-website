@@ -114,7 +114,7 @@ class ElecteeGroupEvent(models.Model):
    
 class ElecteeResourceType(models.Model):
     name = models.CharField(max_length = 128)
-    is_packet = models.BooleanField()
+    is_packet = models.BooleanField(default=False)
 
     def __unicode__(self):
         return self.name

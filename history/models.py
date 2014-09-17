@@ -271,7 +271,7 @@ class ProjectReport(models.Model):
                                                 default='3')
     best_part               = models.TextField()
     opportunity_to_improve  = models.TextField()
-    recommend_continuing    = models.BooleanField()
+    recommend_continuing    = models.BooleanField(default=True)
 
     def __unicode__(self):
         return self.name
