@@ -15,7 +15,7 @@
         {% if can_edit_resources or can_edit_surveys %}
         </div>
         {% endif %}
-        {% if can_complete_surveys or can_submit_background_form %}
+        {% if can_complete_surveys or can_submit_background_form or can_submit_interview_followups%}
         <div class="btn-group">
         {% endif %}
         {% if can_complete_surveys %}
@@ -24,7 +24,10 @@
         {% if can_submit_background_form %}
         <a href="{% url 'electees:submit_background_form' %}" class="btn btn-primary">Educational Background Form</a>
         {% endif %}
-        {% if can_complete_surveys or can_submit_background_form %}
+        {% if can_submit_interview_followups %}
+         <a href="{% url 'electees:view_my_interview_forms' %}" class="btn btn-primary">Submit Interview Follups</a>
+        {% endif %}
+        {% if can_complete_surveys or can_submit_background_form or can_submit_interview_followups%}
         </div>
         {% endif %}
 

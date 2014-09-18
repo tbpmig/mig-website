@@ -219,3 +219,17 @@ class ElecteeInterviewSurvey(models.Model):
         if not electee.resume:
             return False
         return True
+        
+class ElecteeInterviewFollowup(models.Model):
+    RECOMMENDATION_CHOICES = (
+        ('Y','Recommend'),
+        ('M','Not Sure'),
+        ('N','Do not recommend'),
+    )
+    
+    language_barrier = models.BooleanField(default=False)
+    recommendation = models.CharField(max_length=1,choices=RECOMMENDATION_CHOICES)
+    comments = models.TextField(blank=True)
+    member =models.ForeignKey('mig_main.MemberProfile')
+    interview = models.ForeignKey('event_cal.InterviewShift')
+    

@@ -11,13 +11,17 @@ from django.forms.models import modelformset_factory,modelform_factory
 from django.forms import CheckboxSelectMultiple
 from django.core.urlresolvers import reverse
 
-from electees.models import ElecteeGroup, ElecteeGroupEvent,ElecteeResource,EducationalBackgroundForm,BackgroundInstitution,ElecteeInterviewSurvey,SurveyPart,SurveyQuestion,SurveyAnswer
+from event_cal.models import InterviewShift
+from electees.models import ElecteeGroup, ElecteeGroupEvent,ElecteeResource,EducationalBackgroundForm,BackgroundInstitution,ElecteeInterviewSurvey,SurveyPart,SurveyQuestion,SurveyAnswer,ElecteeInterviewFollowup
 from mig_main.models import MemberProfile, AcademicTerm
 from mig_main.utility import Permissions, get_previous_page,  get_message_dict
 from member_resources.views import get_permissions as get_member_permissions
 from history.models import Officer
-from electees.forms import get_unassigned_electees,InstituteFormset,BaseElecteeGroupForm,AddSurveyQuestionsForm,ElecteeSurveyForm
+from electees.forms import get_unassigned_electees,InstituteFormset,BaseElecteeGroupForm,AddSurveyQuestionsForm,ElecteeSurveyForm,InterviewFollowupForm
 from requirements.models import EventCategory,ProgressItem
+
+
+    
 def can_submit_background_form(user):
     if not user_is_member(user):
         return False
@@ -37,6 +41,7 @@ def get_permissions(user):
         'can_edit_surveys':Permissions.can_manage_electee_progress(user),
         'can_complete_surveys':Permissions.can_complete_electee_survey(user),
         'can_submit_background_form':can_submit_background_form(user),
+        'can_submit_interview_followups':user_is_member(user) and user.userprofile.memberprofile.status.name=='Active',
         })
     return permission_dict
 def get_common_context(request):
@@ -48,6 +53,7 @@ def get_common_context(request):
     })
     return context_dict
 def view_electee_groups(request):
+    request.session['current_page']=request.path
     e_groups = ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term()).order_by('points')
     packets = ElecteeResource.objects.filter(term=AcademicTerm.get_current_term(),resource_type__is_packet=True).order_by('resource_type')
     resources = ElecteeResource.objects.filter(term=AcademicTerm.get_current_term(),resource_type__is_packet=False).order_by('resource_type')
@@ -514,3 +520,73 @@ def complete_survey_for_term(request,term_id):
     
 def complete_survey(request):
     return redirect('electees:complete_survey_for_term',AcademicTerm.get_current_term().id)
+
+def complete_interview_followup(request,interview_id):
+    interview = get_object_or_404(InterviewShift,id=interview_id)
+    if not interview.user_can_followup(request.user):
+        request.session['error_message']='Only interviewers may submit evaluations and only after the interview has started'
+        return get_previous_page(request,alternate='electees:view_electee_groups')
+    profile=request.user.userprofile.memberprofile
+    previous_followup=ElecteeInterviewFollowup.objects.filter(interview=interview, member=profile)
+    prefix='followup'
+    if previous_followup.exists():
+        verb = 'Update' 
+        form = InterviewFollowupForm(request.POST or None, prefix=prefix,instance=previous_followup[0])
+    else:
+        verb='Add'
+        blank_form = ElecteeInterviewFollowup(interview=interview, member=profile)
+        form = InterviewFollowupForm(request.POST or None,prefix=prefix,instance=blank_form)
+    if request.method =='POST':
+        if form.is_valid():
+            form.save()
+            request.session['success_message']='Electee interview followup updated successfully'
+            return get_previous_page(request,alternate='electees:view_electee_groups')
+        else:
+            request.session['error_message']='Form is invalid. Please correct the noted errors.'
+
+    template = loader.get_template('generic_form.html')
+    help_text = r'''YOUR EVALUATION HERE IS ONE OF THE MOST IMPORTANT CRITERIA PERMITTING THE ELECTEE TO CONTINUE THE ELECTING PROCESS.
+
+**Recommend**: You are confident that the electee has demonstrated exemplary character and would be a great member of Tau Beta Pi
+**Not Sure**: This should only be selected in the extreme case, in which even after the interview you  still have absolutely no idea whether or not the electee would be a good candidate.
+We trust your judgment as TBP members, so please make a decision (Recommend or Not) if at all possible. Please explain this choice *in detail* so that we can better understand your decision.
+**Do Not Recommend**: You are confident that the electee does not demonstrate exemplary character and would not be a good member of Tau Beta Pi. Please explain this choice *in detail* so that we can better understand your decision.
+
+Remember the [eligibility code of the association](http://www.tbp.org/off/eligCode.cfm), particularly that "the fact that people may not have shown unselfish activity to an appreciable degree throughout their courses of study is no infallible indication that they would not if the opportunity offered."
+
+###Submission of this form constitutes your signature that the information contained herein is an accurate representation of the interview conducted.
+'''
+        
+    context_dict = {
+        'form':form,
+        'prefix':prefix,
+        'has_files':False,
+        'submit_name':verb+' Interview Followup',
+        'form_title':verb+' Submit Interview Followup for Electee: '+','.join([unicode(user_profile) for user_profile in interview.interviewee_shift.attendees.all()])+'---'+interview.interviewee_shift.event.name[:-10],
+        'help_text':help_text,
+        'base':'electees/base_electees.html',
+        'back_button':{'link':reverse('electees:view_electee_groups'),'text':'To Electee Resources'},
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
+    
+    
+def view_my_interview_forms(request):
+    if not user_is_member(request.user) or not request.user.userprofile.memberprofile.status.name=='Active':
+        request.session['error_message']='Only active members can fill out interview followups'
+    userprofile =request.user.userprofile
+    my_interviews = InterviewShift.objects.filter(term=AcademicTerm.get_current_term(),interviewer_shift__attendees__in=[userprofile]).exclude(interviewee_shift__attendees=None)
+    unpacked_interviews =[]
+    for interview in my_interviews:
+        unpacked_interviews.append({'interview':interview,'enabled':interview.user_can_followup(request.user),'completed':ElecteeInterviewFollowup.objects.filter(interview=interview,member=userprofile.memberprofile).exists()})
+    template = loader.get_template('electees/interview_forms.html')  
+    context_dict = {
+        'interviews':unpacked_interviews,
+        'back_button':{'link':reverse('electees:view_electee_groups'),'text':'To Electee Resources'},
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))

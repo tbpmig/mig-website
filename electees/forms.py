@@ -6,10 +6,12 @@ from django.forms.models import inlineformset_factory, BaseInlineFormSet
 
 from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,ModelSelect2Field,Select2Widget
 
-from electees.models import ElecteeGroup,EducationalBackgroundForm,BackgroundInstitution,SurveyQuestion,ElecteeInterviewSurvey,SurveyPart
+from electees.models import ElecteeGroup,EducationalBackgroundForm,BackgroundInstitution,SurveyQuestion,ElecteeInterviewSurvey,SurveyPart,ElecteeInterviewFollowup
 from mig_main.models import MemberProfile,AcademicTerm
 from history.models import Officer
 from mig_main.templatetags.my_markdown import my_markdown
+
+
 def get_unassigned_electees():
     current_electee_groups = ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term())
     current_electees = MemberProfile.get_electees()
@@ -17,6 +19,16 @@ def get_unassigned_electees():
         current_electees=current_electees.exclude(pk__in=group.members.all())
     return current_electees.order_by('standing','last_name')
 
+class InterviewFollowupForm(forms.ModelForm):
+    class Meta:
+        model = ElecteeInterviewFollowup
+        exclude = ['member','interview']
+    def clean(self):
+        cleaned_data = super(InterviewFollowupForm,self).clean()
+        rec= cleaned_data.get('recommendation',None)
+        if rec and ( not rec=='Y' and not cleaned_data.get('comments',None)):
+            raise ValidationError('Comments are required for \'do not recommend\' or \'not sure\'')
+        return cleaned_data
 class BaseInstituteFormSet(BaseInlineFormSet):
     def clean(self):
         if any(self.errors):

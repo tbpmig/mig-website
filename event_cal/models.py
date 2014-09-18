@@ -518,7 +518,14 @@ class InterviewShift(models.Model):
     interviewer_shift = models.ForeignKey(EventShift,related_name='shift_interviewer')
     interviewee_shift = models.ForeignKey(EventShift,related_name='shift_interviewee')
     term = models.ForeignKey('mig_main.AcademicTerm')
-
+    def user_can_followup(interview,user):
+        if not hasattr(user,'userprofile') or not user.userprofile.is_member():
+            return False
+        if not user.userprofile in interview.interviewer_shift.attendees.all():
+            return False
+        if interview.interviewer_shift.start_time>=timezone.now():
+            return False
+        return True
 class MeetingSignIn(models.Model):
     event = models.ForeignKey(CalendarEvent)
     code_phrase = models.CharField(max_length=100)

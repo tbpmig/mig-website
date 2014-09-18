@@ -21,5 +21,7 @@ urlpatterns = patterns('',
     url(r'^preview_survey/$', views.preview_survey,name='preview_survey'),
     url(r'^complete_survey_for_term/(?P<term_id>\d+)/$', views.complete_survey_for_term,name='complete_survey_for_term'),
     url(r'^complete_survey/$', views.complete_survey,name='complete_survey'),
-  
+    url(r'^interview_followup/(?P<interview_id>\d+)/$', views.complete_interview_followup,name='complete_interview_followup'),
+    url(r'^my_interview_forms/$', views.view_my_interview_forms,name='view_my_interview_forms'),
+    
 )

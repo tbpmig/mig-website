@@ -1,0 +1,18 @@
+{% extends "electees/base_electees.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+    <a class="btn btn-default" href="{% url 'electees:view_electee_groups' %}"><i class="glyphicon glyphicon-chevron-left"></i> To Electee Resources</a>
+    <h3>Complete Interview Followup Forms</h3>
+    <p>Here are the followup forms for the interviews you've completed or signed up for. Note that you cannot fill out a form until after the interview. Completed forms are marked in green.</p>
+    <hr>
+    {% for interview in interviews %}
+        <p><a href="{% url 'electees:complete_interview_followup' interview.interview.id %}" {% if not interview.enabled %}disabled="disabled"{% endif %} class="btn {% if interview.completed %}btn-success{% else %}btn-primary{%endif%}">
+        Fill out followup report for {{interview.interview.interviewer_shift.event.name|slice:":-10"}}, Electee: {% for electee in interview.interview.interviewee_shift.attendees.all %} {{electee}}{% endfor %}
+        </a></p>
+    {% empty %}
+        <p>You are not signed up for any interviews this semester</p>
+    {% endfor %}
+</div>
+{% endblock content %}
