@@ -17,7 +17,9 @@ from mig_main.models import AcademicTerm,OfficerPosition,MemberProfile
 from requirements.models import Requirement
 from migweb.settings import DEBUG, twitter_token,twitter_secret
 # Create your models here.
-
+def default_term():
+    #fixes the serialization issue
+    return AcademicTerm.get_current_term()
 class GoogleCalendar(models.Model):
     """
     A mostly infrastructural model that contains the name and calendar ID of a google calendar used by the chapter.
@@ -43,7 +45,7 @@ class CalendarEvent(models.Model):
     google_cal      = models.ForeignKey(GoogleCalendar)
     project_report  = models.ForeignKey('history.ProjectReport',null=True,blank=True,
                                         on_delete = models.SET_NULL)
-    term            = models.ForeignKey('mig_main.AcademicTerm', default=AcademicTerm.get_current_term)    
+    term            = models.ForeignKey('mig_main.AcademicTerm', default=default_term)    
     members_only    = models.BooleanField(default=True)
     needs_carpool   = models.BooleanField(default=False)
     use_sign_in     = models.BooleanField(default=False)

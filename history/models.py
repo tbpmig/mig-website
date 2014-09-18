@@ -22,7 +22,9 @@ from requirements.models import ProgressItem
 def get_next_meeting_minutes_display_order():
     return MeetingMinutes.objects.filter(semester=AcademicTerm.get_current_term()).count()
 
-
+def default_term():
+    #fixes the serialization issue
+    return AcademicTerm.get_current_term()
 # Create your models here.
 class Officer(models.Model):
     user            = models.ForeignKey('mig_main.MemberProfile',
@@ -201,7 +203,7 @@ class NonEventProject(models.Model):
     assoc_officer   = models.ForeignKey('mig_main.OfficerPosition')
     project_report  = models.ForeignKey('history.ProjectReport',null=True,blank=True,
                                         on_delete = models.SET_NULL)
-    term            = models.ForeignKey('mig_main.AcademicTerm', default=AcademicTerm.get_current_term)    
+    term            = models.ForeignKey('mig_main.AcademicTerm', default=default_term)    
     start_date      = models.DateField()
     end_date        = models.DateField()
     location        = models.CharField(max_length=100,blank=True,null=True)
