@@ -1,2 +1,0 @@
-\echo 'updating db'
-\echo 'done updating db'
