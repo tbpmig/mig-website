@@ -16,7 +16,7 @@
         <form method="post" action="{{link}}">
             {% csrf_token %}
             <h4>Add New {{list_name}}</h4>
-        {% if error_lists.bad_uniqnames or error_lists.current_actives or error_list.current_electees %}
+        {% if error_lists.bad_uniqnames or error_lists.current_actives or error_lists.current_electees %}
         <p class="text-danger">There were errors in processing the list of uniqnames</p>
         {% if error_lists.bad_uniqnames %}
         <p class="text-danger">The following uniqnames are invalid:</p>
