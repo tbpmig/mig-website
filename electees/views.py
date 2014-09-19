@@ -511,6 +511,7 @@ def complete_survey_for_term(request,term_id):
     context_dict = {
         'real_form':True,
         'form':form,
+        'survey':current_survey,
         'questions':questions,
     }
     context_dict.update(get_common_context(request))

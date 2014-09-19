@@ -157,7 +157,7 @@ class SurveyPart(models.Model):
     number_of_required_questions = models.PositiveSmallIntegerField(blank=True,null=True)
     display_order = models.PositiveSmallIntegerField(default=1)
     visibility = models.CharField(max_length=1,choices=VISIBILITY_OPTIONS, default='R')
-    
+    instructions = models.TextField(blank=True,null=True)
     def __unicode__(self):
         return self.title
     def __gt__(self,part2):
@@ -204,7 +204,7 @@ class ElecteeInterviewSurvey(models.Model):
     term = models.ForeignKey('mig_main.AcademicTerm')
     questions= models.ManyToManyField(SurveyQuestion)
     due_date = models.DateField()
-    
+    instructions = models.TextField(blank=True,null=True)
     def __unicode__(self):
         return 'Electee Survey for '+unicode(self.term)
        
