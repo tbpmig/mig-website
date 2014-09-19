@@ -2,6 +2,7 @@
 
 {% regroup questions|dictsort:"part" by part as questions_by_part %}
 {% for part in questions_by_part %}
+{{part.grouper.instructions|my_markdown}}
 <h4>{{part.grouper}}</h4>
 {% if part.grouper.number_of_required_questions != None %}
     {% if part.grouper.number_of_required_questions %}
@@ -12,7 +13,6 @@
 {% else %}
 <p>Each question is required:</p>
 {% endif %}
-{{part.grouper.instructions|my_markdown}}
 <ol>
 {% for question in part.list|dictsort:"display_order" %}
 <li>
