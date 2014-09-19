@@ -724,6 +724,15 @@ class Permissions:
         if current_positions.exists():
             return True
         return False
+    @classmethod
+    def can_manage_background_checks(cls,user):
+        if user.is_superuser:
+            return True  
+        current_positions = cls.get_current_officer_positions(user) 
+        query = Q(position__name='President')|Q(position__name='Service Coordinator')
+        if current_positions.filter(query).exists():
+            return True  
+        return False
 class UnicodeWriter:
     def __init__(self, f, dialect=csv.excel, encoding="utf-8-sig", **kwds):
         self.queue = cStringIO.StringIO()

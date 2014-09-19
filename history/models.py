@@ -766,3 +766,12 @@ class OfficerPositionRelationship(models.Model):
 
     def __unicode__(self):
         return unicode(self.predecessor)+'->'+unicode(self.successor)+' in '+unicode(self.effective_term)
+class BackgroundCheck(models.Model):
+    CHECK_CHOICES = (
+        ('U','UofM Background Check'),
+        ('B','BSA Training'),
+        ('A','AAPS Background Check'),
+    )
+    member =models.ForeignKey('mig_main.MemberProfile')
+    date_added = models.DateField(auto_now_add=True)
+    check_type = models.CharField(max_length=1,choices=CHECK_CHOICES)
