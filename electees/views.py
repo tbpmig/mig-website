@@ -488,8 +488,6 @@ def complete_survey_for_term(request,term_id):
                 if existing_answer.exists():
                     old_answer = existing_answer[0]
                     if len(answer):
-                        print existing_answer
-                        print answer
                         old_answer.answer=answer
                         old_answer.save()
                     else:

@@ -8,12 +8,16 @@
 {% include 'datepicker.html' %}
 <script type="text/javascript">
 $(document).ready(function(){
+    options={}
+    options.onError=function(content){
+        consolte.log(content);
+    };
 {% for packed_event in events %}
     {% with event=packed_event.event can_edit_event=packed_event.can_edit %}
 
-         ajaxGet('{% url 'event_cal:get_event_ajax' event.id %}', function(){
+         ajaxGet('{% url 'event_cal:get_event_ajax' event.id %}', {},function(){
             load_social_media();
-        });
+        },options);
     {% endwith %}
 {% endfor %}
      });

@@ -429,6 +429,8 @@ def get_event_ajax(request,event_id):
     event = get_object_or_404(CalendarEvent,id=event_id)
     can_edit = Permissions.can_edit_event(event,request.user)
     has_profile=False
+    for count in range(100000):
+        print count
     if hasattr(request.user,'userprofile'):  
         has_profile = True
     context_dict = {
