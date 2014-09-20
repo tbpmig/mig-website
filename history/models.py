@@ -10,15 +10,35 @@ from django.core.files import File
 from django.core.urlresolvers import reverse
 from django.core.validators import  MinValueValidator
 from django.db import models
+from django.db.models import Q
 from localflavor.us.models import PhoneNumberField
 from stdimage import StdImageField
 
 from event_cal.models import EventShift,EventPhoto
-from mig_main.models import MemberProfile,UserProfile,OfficerPosition,AcademicTerm
+from mig_main.models import MemberProfile,UserProfile,OfficerPosition,AcademicTerm,OfficerTeam
 from mig_main.pdf_field import ContentTypeRestrictedFileField,pdf_types
 from migweb.settings import  DEBUG,twitter_token,twitter_secret
 from requirements.models import ProgressItem
 
+def pack_officers_for_term(term):
+    """
+    Groups the officers into the appropriate teams for display on the about/leadership page. Ensures that the Executive Committee is shown at the top of the page, and that the Vice President, who prior to Fall 2014 was a member of two teams, only showed up in one.
+
+    """
+    officer_set = Officer.objects.filter(term=term)
+    term_advisors = officer_set.filter(position__name='Advisor')
+
+    term_officers =[]
+    for team in OfficerTeam.objects.filter(Q(start_term__lte=term)&(Q(end_term__gte=term)|Q(end_term=None))):
+        disp_order = 1
+        if team.name=='Executive Committee':
+            disp_order = 0
+        query = Q(position__in=team.members.all())
+        if team.name=='Electee and Membership Team':
+            query=query&~Q(position=team.lead)
+        team_data={'order':disp_order,'name':team.name,'lead_name':team.lead.name,'officers':officer_set.filter(query).order_by('position__display_order').values('id')}
+        term_officers.append(team_data)
+    return {'officers':term_officers,'advisors':term_advisors}
 def get_next_meeting_minutes_display_order():
     return MeetingMinutes.objects.filter(semester=AcademicTerm.get_current_term()).count()
 
@@ -775,3 +795,18 @@ class BackgroundCheck(models.Model):
     member =models.ForeignKey('mig_main.MemberProfile')
     date_added = models.DateField(auto_now_add=True)
     check_type = models.CharField(max_length=1,choices=CHECK_CHOICES)
+    
+    def is_valid(self):
+        if self.check_type=='U':
+            if (date.today()-self.date_added).days>3*365:
+                return False
+            return True
+        if self.check_type=='B':
+            if (date.today()-self.date_added).days>3*365:
+                return False
+            return True
+        if self.check_type=='A':
+            if (date.today()-self.date_added).days>1*365:
+                return False
+            return True 
+        return False

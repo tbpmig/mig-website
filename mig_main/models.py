@@ -4,7 +4,9 @@ from django.core.validators import validate_email, RegexValidator,MinValueValida
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db import models
+from django.db.models import Q
 from django.utils.text import slugify
+
 from localflavor.us.models import PhoneNumberField
 from stdimage import StdImageField
 
@@ -52,6 +54,18 @@ class SlideShowPhoto(models.Model):
 class AcademicTerm(models.Model):
     year            = models.PositiveSmallIntegerField(validators = [MinValueValidator(1960)])
     semester_type   = models.ForeignKey('requirements.SemesterType')
+    
+    @classmethod
+    def get_rchron_before(cls):
+        """
+        This gets all of the full terms prior to, and including, the current one. While AcademicTerm objects do have a defined sort order, and thus sorted() could be used, this method is actually faster and allows for more ready exclusion of summer terms.
+        """
+        current = cls.get_current_term()
+        query = Q(year__lte=current.year)&~Q(semester_type__name='Summer')
+        if current.semester_type.name=='Winter':
+            query = query &~(Q(semester_type__name='Fall')&Q(year=current.year))
+        terms = cls.objects.filter(query)
+        return terms.order_by('-year','-semester_type')
     @classmethod
     def get_rchron(cls):
         return cls.objects.all().order_by('-year','-semester_type')

@@ -18,7 +18,7 @@ from about.models import AboutSlideShowPhoto,JoiningTextField
 from history.models import Officer
 from mig_main.models import OfficerPosition, OfficerTeam, AcademicTerm
 from mig_main.utility import get_message_dict,Permissions
-from history.models import GoverningDocument, GoverningDocumentType
+from history.models import GoverningDocument, GoverningDocumentType,pack_officers_for_term
 #from requirements.models import SemesterType
 
 
@@ -40,36 +40,9 @@ def get_common_context(request):
         'main_nav':'about',
         })
     return context_dict
-def get_terms():
-    """
-    This gets all of the full terms prior to, and including, the current one. While AcademicTerm objects do have a defined sort order, and thus sorted() could be used, this method is actually faster and allows for more ready exclusion of summer terms.
-    """
-    current = AcademicTerm.get_current_term()
-    query = Q(year__lte=current.year)&~Q(semester_type__name='Summer')
-    if current.semester_type.name=='Winter':
-        query = query &~(Q(semester_type__name='Fall')&Q(year=current.year))
-    terms = AcademicTerm.objects.filter(query)
-    return terms.order_by('-year','-semester_type')
 
-def pack_officers_for_term(term):
-    """
-    Groups the officers into the appropriate teams for display on the about/leadership page. Ensures that the Executive Committee is shown at the top of the page, and that the Vice President, who prior to Fall 2014 was a member of two teams, only showed up in one.
 
-    """
-    officer_set = Officer.objects.filter(term=term)
-    term_advisors = officer_set.filter(position__name='Advisor')
 
-    term_officers =[]
-    for team in OfficerTeam.objects.filter(Q(start_term__lte=term)&(Q(end_term__gte=term)|Q(end_term=None))):
-        disp_order = 1
-        if team.name=='Executive Committee':
-            disp_order = 0
-        query = Q(position__in=team.members.all())
-        if team.name=='Electee and Membership Team':
-            query=query&~Q(position=team.lead)
-        team_data={'order':disp_order,'name':team.name,'lead_name':team.lead.name,'officers':officer_set.filter(query).order_by('position__display_order').values('id')}
-        term_officers.append(team_data)
-    return {'officers':term_officers,'advisors':term_advisors}
 def index(request):
     """
     The landing page for the about section. Has some overview text (static) and a photo slideshow determined by the records in the AboutSlideShowPhoto table.
@@ -197,7 +170,7 @@ def leadership_for_term(request,term_id):
         "officers":officers,
         'officer_ids':officer_set,
         'request':request,
-        'terms':get_terms()[:5],
+        'terms':AcademicTerm.get_rchron_before()[:5],
         'requested_term':term,
         'is_current':(term_id==AcademicTerm.get_current_term().id),
         'subnav':'leadership',

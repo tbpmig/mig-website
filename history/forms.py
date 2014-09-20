@@ -3,7 +3,7 @@ from django.forms.models import modelformset_factory
 
 from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,ModelSelect2Field,Select2Widget
 
-from history.models import Publication, WebsiteArticle,NonEventProject,NonEventProjectParticipant, Officer,ProjectReportHeader,Award
+from history.models import Publication, WebsiteArticle,NonEventProject,NonEventProjectParticipant, Officer,ProjectReportHeader,Award,BackgroundCheck
 from event_cal.models import EventPhoto
 from mig_main.models import MemberProfile,AcademicTerm,OfficerPosition
 
@@ -90,3 +90,9 @@ class BaseNEPParticipantForm(forms.ModelForm):
     participant = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'26em','placeholder':'Select Participant','closeOnSelect':True}),queryset=MemberProfile.get_members())
     class Meta:
         model = NonEventProjectParticipant
+
+class BaseBackgroundCheckForm(forms.ModelForm):
+    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'26em','placeholder':'Select Participant','closeOnSelect':True}),queryset=MemberProfile.get_members())
+    class Meta:
+        model = BackgroundCheck
+        exclude=['date_added']

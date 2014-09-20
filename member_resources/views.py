@@ -21,8 +21,8 @@ from django.core.urlresolvers import reverse
 from corporate.views import update_resume_zips
 from electees.models import ElecteeGroup, electee_stopped_electing, EducationalBackgroundForm,ElecteeInterviewSurvey,SurveyAnswer,SurveyQuestion,SurveyPart
 from event_cal.models import CalendarEvent, MeetingSignInUserData,InterviewShift
-from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardForm
-from history.models import Award,Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport
+from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardForm,BaseBackgroundCheckForm
+from history.models import Award,Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport,BackgroundCheck
 from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet,ExternalServiceForm
 from member_resources.forms import MeetingMinutesForm,ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet,TBPraiseForm
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
@@ -1166,6 +1166,7 @@ def view_misc_reqs(request):
         'can_change_grad_electee_reqs':Permissions.can_change_grad_electee_requirements(request.user),
         'can_manage_actives':Permissions.can_manage_active_progress(request.user),
         'can_manage_interviews':(Permissions.can_manage_active_progress(request.user) or Permissions.can_manage_electee_progress(request.user)),
+        'can_manage_background_checks':Permissions.can_manage_background_checks(request.user),
         'can_view_interviews':Permissions.can_view_interview_pairings(request.user),
         'active_distinctions':DistinctionType.objects.filter(status_type__name="Active"),
         'ugrad_electee_distinctions':DistinctionType.objects.filter(status_type__name="Electee", standing_type__name="Undergraduate"),
@@ -1860,130 +1861,6 @@ def manage_dues(request):
         'form_title':'Manage Dues Payment',
         'help_text':'When electees pay their initition dues click the checkbox and click submit.',
         'can_add_row':False,
-        }
-    context_dict.update(get_common_context(request))
-    context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
-
-def manage_interview_credit(request):
-    if not (Permissions.can_manage_electee_progress(request.user) or Permissions.can_manage_active_progress(request.user)):
-        request.session['error_message']='You are not authorized to manage actives\' completion of interview hours'
-        return redirect('member_resources:index')
-    interview_types = EventCategory.objects.filter(parent_category__name='Conducted Interviews').order_by('name')
-    interview_progress={}
-    if request.method == 'POST':
-        formset = ManageInterviewsFormSet(request.POST,prefix='active_interview')
-        if formset.is_valid():
-            for form in formset:
-                if not 'member' in form.cleaned_data:
-                    continue
-                member = form.cleaned_data['member']
-                if not member in interview_progress:
-                    progress_row = {}
-                    for interview_type in interview_types:
-                        progress_row[interview_type]=0
-                    interview_progress[member]=progress_row
-                interview_type = form.cleaned_data['interview_type']
-                amount = form.cleaned_data['number_of_interviews']
-                interview_progress[member][interview_type]+=amount
-            for member in interview_progress.keys():
-                progress=interview_progress[member]
-                first = True
-                for interview_type in interview_types:
-                    existing_progress = ProgressItem.objects.filter(member=member,term=AcademicTerm.get_current_term(),event_type=interview_type,name='Interview')
-                    existing_progress_extra = ProgressItem.objects.filter(member=member,term=AcademicTerm.get_current_term(),event_type=interview_type,name='Extra Interview')
-                    mult=1
-                    if interview_type.name=='Grad Interviews 30':
-                        mult=2.0
-                    elif interview_type.name=='Grad Interviews 15':
-                        mult=4.0
-                    if first:
-                        if progress[interview_type]:
-                            first=False
-                        if existing_progress:
-                            if progress[interview_type]:
-                                progress[interview_type]-=1
-                            else:
-                                existing_progress.delete()
-                            if existing_progress_extra:
-                                if progress[interview_type]:
-                                    existing_progress_extra[0].amount_completed=progress[interview_type]/mult
-                                    existing_progress_extra[0].save()
-                                else:
-                                    existing_progress_extra.delete()
-                            elif progress[interview_type]:
-                                p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),date_completed=date.today(),name='Extra Interview')
-                                p.event_type = interview_type
-                                p.amount_completed =progress[interview_type]/mult
-                                p.save()
-                        elif progress[interview_type]:
-                            progress[interview_type]-=1
-                            p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),date_completed=date.today(),name='Interview')
-                            p.event_type = interview_type
-                            p.amount_completed =1
-                            p.save()
-                            if existing_progress_extra:
-                                if progress[interview_type]:
-                                    existing_progress_extra[0].amount_completed=progress[interview_type]/mult
-                                    existing_progress_extra[0].save()
-                                else:
-                                    existing_progress_extra.delete()
-                            elif progress[interview_type]:
-                                p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),date_completed=date.today(),name='Extra Interview')
-                                p.event_type = interview_type
-                                p.amount_completed =progress[interview_type]/mult
-                                p.save()
-                    else:
-                        existing_progress.delete()
-                        if existing_progress_extra:
-                            if progress[interview_type]:
-                                existing_progress_extra[0].amount_completed=progress[interview_type]/mult
-                                existing_progress_extra[0].save()
-                            else:
-                                existing_progress_extra.delete()
-                        elif progress[interview_type]:
-                            p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),date_completed=date.today(),name='Extra Interview')
-                            p.event_type = interview_type
-                            p.amount_completed =progress[interview_type]/mult
-                            p.save()
-            request.session['success_message']='Interview Credit Successfully Updated'
-            return redirect('member_resources:view_misc_reqs')
-        else:
-            request.session['error_message']=INVALID_FORM_MESSAGE
-    else:
-        initial_data=[]
-        progress_items = ProgressItem.objects.filter(term=AcademicTerm.get_current_term(),event_type__parent_category__name='Conducted Interviews').order_by('member__last_name','event_type')
-        members_w_progress = sorted(list(set([progress_item.member for progress_item in progress_items])))
-        for member in members_w_progress:
-            progress=progress_items.filter(member=member)
-            for interview_type in interview_types:
-                hours=0
-                member_progress_items = progress.filter(event_type=interview_type)
-                for progress_item in member_progress_items:
-                    mult=1
-                    if progress_item.name=='Interview':
-                        mult=1
-                    elif progress_item.event_type.name=='Grad Interviews 30':
-                        mult=2
-                    elif progress_item.event_type.name=='Grad Interviews 15':
-                        mult=4
-                    hours+=int(progress_item.amount_completed*mult)
-                if hours:
-                    initial_data.append({'member':member,'interview_type':interview_type,'number_of_interviews':hours})
-        formset=ManageInterviewsFormSet(initial=initial_data,prefix='active_interview')
-    template = loader.get_template('generic_formset.html')
-    context_dict = {
-        'formset':formset,
-        'prefix':'active_interview',
-        'subnav':'misc_reqs',
-        'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Miscellaneous Requirements'},
-        'submit_name':'Update Active\'s Interview Credit',
-        'has_files':False,
-        'base':'member_resources/base_member_resources.html',
-        'form_title':'Manage Active\'s Interview Credit',
-        'help_text':'For each active member that participated in electee interviews, please select the type and number of interviews. You should select the number of interviews completed, *not* the number of hours.',
-        'can_add_row':True,
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -2733,4 +2610,34 @@ def view_interview_pairings(request):
     context_dict.update(get_common_context(request))
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
-        
+
+def add_background_checks(request):
+    if not Permissions.can_manage_background_checks(request.user):
+        request.session['error_message']='You are not authorized to manage background checks'
+        return get_previous_page(request,alternate='member_resources:index')
+    prefix='background'        
+    BackgroundForm = modelformset_factory(BackgroundCheck,form=BaseBackgroundCheckForm)
+    formset = BackgroundForm(request.POST or None,queryset=BackgroundCheck.objects.none(),prefix=prefix)
+    if request.method=='POST':
+        if formset.is_valid():
+            formset.save()
+            request.session['success_message']='Background check statuses added successfully'
+            return get_previous_page(request,alternate='member_resources:index')
+        else:
+            request.session['error_message']='There was an error in your submission, please correct it'
+    template = loader.get_template('generic_formset.html')
+    context_dict ={
+        'formset':formset,
+        'can_add_row':True,
+        'subnav':'misc_reqs',
+        'has_files':False,
+        'prefix':prefix,
+        'submit_name':'Add background checks',
+        'form_title':'Add background checks for memebrs/electees',
+        'help_text':'These are stored to verify that members who attend events with minors have undergone the appropriate screening. They remain valid for a set period of time and then expire. Thus these should only be added when updated, not semesterly.',
+        'base':'member_resources/base_member_resources.html',
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))
