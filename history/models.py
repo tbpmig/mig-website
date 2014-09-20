@@ -1,7 +1,7 @@
 import json
 import os
 import subprocess
-from datetime import date
+from datetime import date,timedelta
 from decimal import Decimal
 from numpy import std,median,mean
 import tweepy
@@ -792,10 +792,22 @@ class BackgroundCheck(models.Model):
         ('B','BSA Training'),
         ('A','AAPS Background Check'),
     )
-    member =models.ForeignKey('mig_main.MemberProfile')
+    member =models.ForeignKey('mig_main.UserProfile')
     date_added = models.DateField(auto_now_add=True)
     check_type = models.CharField(max_length=1,choices=CHECK_CHOICES)
     
+    @classmethod
+    def get_valid_checks_for_user(cls,userprofile):
+        query=Q(date_added__gte=date.today()-timedelta(days=2*365),check_type__in=['B','U'])|Q(date_added__gte=date.today()-timedelta(days=1*365),check_type='A')
+        return cls.objects.filter(member=userprofile).filter(query)
+    @classmethod
+    def user_can_mindset(cls,userprofile):
+        valid_checks = cls.get_valid_checks_for_user(userprofile)
+        return valid_checks.filter(check_type='B').exists() and valid_checks.filter(check_type='A').exists() 
+    @classmethod
+    def user_can_work_w_minors(cls,userprofile):
+        valid_checks = cls.get_valid_checks_for_user(userprofile)
+        return valid_checks.filter(check_type='B').exists() and valid_checks.filter(check_type='U').exists() 
     def is_valid(self):
         if self.check_type=='U':
             if (date.today()-self.date_added).days>2*365:

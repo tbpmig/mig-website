@@ -5,7 +5,7 @@ from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,Model
 
 from history.models import Publication, WebsiteArticle,NonEventProject,NonEventProjectParticipant, Officer,ProjectReportHeader,Award,BackgroundCheck
 from event_cal.models import EventPhoto
-from mig_main.models import MemberProfile,AcademicTerm,OfficerPosition
+from mig_main.models import MemberProfile,AcademicTerm,OfficerPosition,UserProfile
 
 class AwardForm(forms.ModelForm):
     recipient = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select member','closeOnSelect':True}),queryset=MemberProfile.get_members())
@@ -92,7 +92,7 @@ class BaseNEPParticipantForm(forms.ModelForm):
         model = NonEventProjectParticipant
 
 class BaseBackgroundCheckForm(forms.ModelForm):
-    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'26em','placeholder':'Select Participant','closeOnSelect':True}),queryset=MemberProfile.get_members())
+    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'26em','placeholder':'Select Participant','closeOnSelect':True}),queryset=UserProfile.objects.all().order_by('last_name'))
     class Meta:
         model = BackgroundCheck
         exclude=['date_added']
