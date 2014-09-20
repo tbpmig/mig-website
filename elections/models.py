@@ -3,11 +3,13 @@ from datetime import date, timedelta
 from django.db import models
 from django.core.validators import MaxValueValidator, RegexValidator
 
+def default_close_date():
+    return date.today()+timedelta(weeks=3)
 
 class Election(models.Model):
     term        = models.ForeignKey('mig_main.AcademicTerm')
-    open_date = models.DateField(default=date.today())
-    close_date= models.DateField(default=date.today()+timedelta(weeks=3))
+    open_date = models.DateField(default=date.today)
+    close_date= models.DateField(default=default_close_date)
     officers_for_election = models.ManyToManyField('mig_main.OfficerPosition',limit_choices_to={'enabled':True})
     
     def __unicode__(self):

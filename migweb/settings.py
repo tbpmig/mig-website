@@ -176,7 +176,7 @@ LOGGING = {
         },
     }
 }
-
+TEST_RUNNER='django.test.runner.DiscoverRunner'
 ### email settings in local_settings ###
 
 
