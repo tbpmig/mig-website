@@ -243,6 +243,8 @@ def sign_up(request, event_id, shift_id):
                 request.session['error_message']='This event is members-only'
         else:
             request.session['error_message']='You must create a profile before signing up to events' 
+    if 'error_message' in request.session:
+        return {}
     return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,shift_id,reverse('event_cal:unsign_up', args=[event_id, shift_id] ),shift_id)}}
 
 @ajax
@@ -270,6 +272,8 @@ def unsign_up(request, event_id, shift_id):
             request.session['success_message']='You have successfully unsigned up from the event.'
         else:
             request.session['error_message']='You must create a profile before unsigning up'
+    if 'error_message' in request.session:
+        return {}
     return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up', args=[event_id, shift_id] ),shift_id)}}
 
 @login_required
@@ -429,8 +433,6 @@ def get_event_ajax(request,event_id):
     event = get_object_or_404(CalendarEvent,id=event_id)
     can_edit = Permissions.can_edit_event(event,request.user)
     has_profile=False
-    for count in range(100000):
-        print count
     if hasattr(request.user,'userprofile'):  
         has_profile = True
     context_dict = {
