@@ -798,11 +798,11 @@ class BackgroundCheck(models.Model):
     
     def is_valid(self):
         if self.check_type=='U':
-            if (date.today()-self.date_added).days>3*365:
+            if (date.today()-self.date_added).days>2*365:
                 return False
             return True
         if self.check_type=='B':
-            if (date.today()-self.date_added).days>3*365:
+            if (date.today()-self.date_added).days>2*365:
                 return False
             return True
         if self.check_type=='A':
