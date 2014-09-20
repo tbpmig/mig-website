@@ -52,6 +52,8 @@ class CalendarEvent(models.Model):
     allow_advance_sign_up = models.BooleanField(default=True)
     needs_facebook_event = models.BooleanField(default=False)
     needs_flyer = models.BooleanField(default=False)
+    requires_UM_background_check = models.BooleanField(default=False)
+    requires_AAPS_background_check = models.BooleanField(default=False)
     
     before_grace = timedelta(minutes=-30)
     after_grace = timedelta(hours = 1)
