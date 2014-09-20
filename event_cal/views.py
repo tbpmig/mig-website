@@ -18,7 +18,7 @@ from django_ajax.decorators import ajax
 
 from event_cal.forms import BaseEventPhotoForm,BaseEventPhotoFormAlt, BaseAnnouncementForm,BaseEventForm,EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset,MultiShiftFormset,EventEmailForm
 from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift
-from history.models import ProjectReport, Officer,NonEventProject
+from history.models import ProjectReport, Officer,NonEventProject,BackgroundCheck
 from mig_main.models import OfficerPosition,PREFERENCES,UserPreference,MemberProfile,UserProfile,AcademicTerm
 from mig_main.utility import get_previous_page, Permissions, get_message_dict
 from outreach.models import TutoringRecord
@@ -207,7 +207,11 @@ def sign_up(request, event_id, shift_id):
     else:
         if hasattr(request.user,'userprofile'):
             profile = request.user.userprofile
-            if profile.is_member or not event.members_only:
+            if event.requires_AAPS_background_check and not BackgroundCheck.user_can_mindset(profile):
+                request.session['error_message']='You must pass an AAPS background check and complete training to sign up for this event'
+            elif event.requires_UM_background_check and not BackgroundCheck.user_can_work_w_minors(profile):
+                request.session['error_message']='You must pass a UM background check and complete training to sign up for this event'    
+            elif profile.is_member or not event.members_only:
                 if shift.ugrads_only and not profile.is_ugrad():
                     request.session['error_message']='Shift is for undergrads only'
                 elif shift.grads_only and not profile.is_grad():
@@ -244,8 +248,13 @@ def sign_up(request, event_id, shift_id):
         else:
             request.session['error_message']='You must create a profile before signing up to events' 
     if 'error_message' in request.session:
-        return {}
-    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,shift_id,reverse('event_cal:unsign_up', args=[event_id, shift_id] ),shift_id)}}
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-error" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,shift_id,reverse('event_cal:unsign_up', args=[event_id, shift_id] ),shift_id),
+                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
 
 @ajax
 @login_required
@@ -273,8 +282,13 @@ def unsign_up(request, event_id, shift_id):
         else:
             request.session['error_message']='You must create a profile before unsigning up'
     if 'error_message' in request.session:
-        return {}
-    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up', args=[event_id, shift_id] ),shift_id)}}
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-error" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up', args=[event_id, shift_id] ),shift_id),
+                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
 
 @login_required
 def carpool_sign_up(request,event_id):
