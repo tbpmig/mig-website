@@ -14,11 +14,12 @@
 							{% if event.eventshift_set.all|length > 1%}
 								<div id="event-shift">
 							{% endif %}
-							<p id="event-when"><b>When:</b> {{shift.start_time.date}}, {{shift.start_time.time}}&ndash;
-							{% if shift.start_time.date != shift.end_time.date %}
-								{{shift.end_time.date}},
+							<p id="event-when"><b>When:</b> {{shift.start_time|date:"N j, Y" }}, {{shift.start_time|date:"f a"}}&ndash;
+                            
+							{% if shift.start_time|date:"N j, Y"  != shift.end_time|date:"N j, Y"  %}
+								{{shift.end_time|date:"N j, Y"}},
 							{% endif %}
-							{{shift.end_time.time}}
+							{{shift.end_time|date:"f a"}}
 							</p>
 							<p id="event-where"><b>Where:</b> {{shift.location}}</p>
                             {% if event.eventshift_set.all|length > 1%}

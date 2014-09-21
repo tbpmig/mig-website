@@ -1,5 +1,4 @@
 {% extends "member_resources/base_member_resources.html" %}
-{# load staticfiles #}
 {% block content %}
 <div class="row">
 
@@ -22,8 +21,8 @@
                 </td>
                 <td>
                 <p><strong>{{interview.interviewer_shift.event.name|slice:":-9"}}</strong></p>
-                <p>{{interview.interviewer_shift.start_time.date}}</p>
-                <p>{{interview.interviewer_shift.start_time.time}}&ndash;{{interview.interviewer_shift.end_time.time}}<p>
+                <p>{{interview.interviewer_shift.start_time|date:"N j, Y" }}</p>
+                <p>{{interview.interviewer_shift.start_time|date:"f a"}}&ndash;{{interview.interviewer_shift.end_time|date:"f a"}}<p>
                 <p>{{interview.interviewer_shift.location}}</p>
                 </td>
                  <td>
