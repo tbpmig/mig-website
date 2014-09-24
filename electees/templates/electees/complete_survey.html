@@ -7,7 +7,7 @@
     <h3>Electee Interview Survey</h3>
     <p>Please Complete the following Survey. You may save your answers and resume at a later time.</p>
     <p><strong>The survey is due by {{survey.due_date}}</strong></p>
-    {{survey.instructions|my_markdown}}
+    {{survey.instructions}}
     <hr>
     <form action="{{request.path}}" method="post">{% csrf_token %}
         {{form.render|safe}}
