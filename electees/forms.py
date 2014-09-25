@@ -76,7 +76,8 @@ class ElecteeSurveyForm(forms.Form):
             output+="<ul class=\"text-danger\"><li>%s</li></ul>"%"</li><li>".join(self.non_field_errors())
         for part in sorted(parts):
             output+="<h4>"+my_markdown(unicode(part))+"</h4>"
-            output+=my_markdown(unicode(part.instructions))
+            if part.instructions:
+                output+=my_markdown(unicode(part.instructions))
             if not part.number_of_required_questions is None:
                 if part.number_of_required_questions:
                     output+="<p>Please answer at least %d of the following questions:</p>"%part.number_of_required_questions
