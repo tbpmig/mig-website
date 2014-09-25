@@ -384,6 +384,32 @@ class Permissions:
         else:
             return False
     @classmethod
+    def can_view_others_data(cls,user,uniqname2):
+        if user.username == uniqname2:
+            return True
+        profile2 = MemberProfile.objects.filter(uniqname=uniqname2)
+        if not profile2.exists():
+            return False
+        if user.is_superuser:
+            return True
+        if not hasattr(user,'userprofile'):
+            return False
+        if not user.userprofile.is_member():
+            return False
+        current_positions = cls.get_current_officer_positions(user) 
+        if profile2[0].status.name=='Electee':
+            query = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Graduate Student Coordinator')|Q(position__name='Graduate Student Vice President')
+            if current_positions.filter(query).exists():
+                return True
+            else:
+                return False
+        else:
+            query = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Membership Officer')|Q(position__name='Graduate Student Vice President')    
+            if current_positions.filter(query).exists():
+                return True
+            else:
+                return False
+    @classmethod
     def can_view_others_progress(cls,user,uniqname2):
         if user.username == uniqname2:
             return True

@@ -30,8 +30,8 @@
 
 
                 <p class="text-justify"><b>Bio: </b>{{profile.short_bio|my_markdown}}</p>
-                {% if is_user %}
-                <h4>Your info (only visible to you and to admins):</h4>
+                {% if full_view %}
+                {% if is_user %}<h4>Your info (only visible to you and to admins):</h4>{% endif %}
                 <p><b>UMID:</b> {{profile.UMID}}</p>
                 <p><b>Expected Graduation Date:</b> {{profile.expect_grad_date|date:"N j, Y"}}</p>
                 {% if profile.edu_bckgrd_form %}

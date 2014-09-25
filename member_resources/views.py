@@ -360,6 +360,7 @@ def profile(request,uniqname):
         'awards':profile.award_set.all(),
         'distinction_terms':distinction_terms,
         'is_user':is_user,
+        'full_view':is_user or Permissions.can_view_others_data(request.user,uniqname),
         'edit':False,
         'has_distinctions':has_distinctions,
         'subnav':'member_profiles',
