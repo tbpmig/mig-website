@@ -975,7 +975,7 @@ def view_progress_table(request):
                         amount_has = amount_has + amount_has_temp
                     amount_req=amount_req+amount_req_temp
                 has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
-                close_dist = (Decimal(1.0)*amount_has)>(.75*amount_req)
+                close_dist = (Decimal(1.0)*amount_has)>(Decimal('0.75')*amount_req)
                 dist_progress.append(has_dist)
                 dist_progress.append(close_dist)
 
