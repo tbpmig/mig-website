@@ -96,3 +96,25 @@ class BaseBackgroundCheckForm(forms.ModelForm):
     class Meta:
         model = BackgroundCheck
         exclude=['date_added']
+
+class MassAddBackgroundCheckForm(forms.Form):
+    uniqnames = forms.CharField(widget=forms.Textarea,help_text='Separate uniqnames with a newline')
+    check_type = forms.ChoiceField(choices=BackgroundCheck.CHECK_CHOICES)
+    
+    def save(self):
+        uniqnames=self.cleaned_data['uniqnames'].split('\n')
+        no_profiles=[]
+        for uniqname in uniqnames:
+            u = UserProfile.objects.filter(uniqname=uniqname.strip())
+            if not u.exists():
+                no_profiles.append(uniqname.strip())
+                continue
+            else:
+                u=u[0]
+            b=BackgroundCheck(member=u,check_type=self.cleaned_data['check_type'])
+            b.save()
+        if no_profiles:
+            return no_profiles
+        else:
+            return None
+        

@@ -83,6 +83,7 @@
         {% endif %}
         {% if can_manage_background_checks %}
             <li><a href="{% url 'member_resources:add_background_checks' %}">Add Background Checks</a></li>
+            <li><a href="{% url 'member_resources:mass_add_background_checks' %}">Add Many Background Checks</a></li>
         {% endif %}
         {% if can_manage_officers %}
         <li><a href="{% url 'member_resources:manage_officers' current_term.id%}">Manage Officers for Current Term</a></li>

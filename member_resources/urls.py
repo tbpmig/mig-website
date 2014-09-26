@@ -59,4 +59,5 @@ urlpatterns = patterns('',
     url(r'^view_electee_surveys/$',views.view_electee_surveys,name='view_electee_surveys'),
     url(r'^view_interviews/$',views.view_interview_pairings,name='view_interview_pairings'),
     url(r'^manage_background_checks/$',views.add_background_checks,name='add_background_checks'),
+    url(r'^manage_many_background_checks/$',views.mass_add_background_checks,name='mass_add_background_checks'),
 )

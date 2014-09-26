@@ -21,7 +21,7 @@ from django.core.urlresolvers import reverse
 from corporate.views import update_resume_zips
 from electees.models import ElecteeGroup, electee_stopped_electing, EducationalBackgroundForm,ElecteeInterviewSurvey,SurveyAnswer,SurveyQuestion,SurveyPart
 from event_cal.models import CalendarEvent, MeetingSignInUserData,InterviewShift
-from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardForm,BaseBackgroundCheckForm
+from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardForm,BaseBackgroundCheckForm,MassAddBackgroundCheckForm
 from history.models import Award,Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport,BackgroundCheck
 from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet,ExternalServiceForm
 from member_resources.forms import MeetingMinutesForm,ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet,TBPraiseForm
@@ -2634,7 +2634,46 @@ def add_background_checks(request):
         'has_files':False,
         'prefix':prefix,
         'submit_name':'Add background checks',
-        'form_title':'Add background checks for memebrs/electees',
+        'form_title':'Add background checks for members/electees',
+        'help_text':'These are stored to verify that members who attend events with minors have undergone the appropriate screening. They remain valid for a set period of time and then expire. Thus these should only be added when updated, not semesterly.',
+        'base':'member_resources/base_member_resources.html',
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))
+    
+def mass_add_background_checks(request):
+    if not Permissions.can_manage_background_checks(request.user):
+        request.session['error_message']='You are not authorized to manage background checks'
+        return get_previous_page(request,alternate='member_resources:index')
+    prefix='background'    
+    MassAddBackgroundCheckForm    
+    form = MassAddBackgroundCheckForm(request.POST or None,prefix=prefix)
+    if request.method=='POST':
+        if form.is_valid():
+            bad_uniqnames=form.save()
+            if not bad_uniqnames:
+                request.session['success_message']='Background check statuses added successfully'
+                return get_previous_page(request,alternate='member_resources:index')
+            else:
+                request.session['success_message']='Form was valid, some uniqnames added'
+                request.session['warning_message']='The following uniqnames do not have profiles: '+', '.join(bad_uniqnames)
+                form = MassAddBackgroundCheckForm(initial={'uniqnames':'\n'.join(bad_uniqnames),'check_type':form.cleaned_data['check_type']},prefix=prefix)
+                
+        else:
+            request.session['error_message']='There was an error in your submission, please correct it'
+            
+    template = loader.get_template('generic_form.html')
+    print '\n\n\n\n'
+    print form.fields['uniqnames']
+    context_dict ={
+        'form':form,
+        'subnav':'misc_reqs',
+        'has_files':False,
+        'prefix':prefix,
+        'submit_name':'Add background checks',
+        'form_title':'Mass add background checks for members/electees',
         'help_text':'These are stored to verify that members who attend events with minors have undergone the appropriate screening. They remain valid for a set period of time and then expire. Thus these should only be added when updated, not semesterly.',
         'base':'member_resources/base_member_resources.html',
         }
