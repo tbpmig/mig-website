@@ -88,7 +88,7 @@ class Requirement(models.Model):
     distinction_type    = models.ForeignKey(DistinctionType)
     name                = models.CharField(max_length=30)
     term                = models.ManyToManyField(SemesterType)
-    amount_required     = models.PositiveSmallIntegerField()
+    amount_required = models.DecimalField(max_digits=5,decimal_places=2,default=0.00)
     event_category      = models.ForeignKey(EventCategory)
     def __unicode__(self):
         terms = ', '.join([unicode(term) for term in self.term.all()])
