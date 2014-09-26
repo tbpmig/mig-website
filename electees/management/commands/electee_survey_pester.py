@@ -8,6 +8,7 @@ from django.core.urlresolvers import reverse
 from event_cal.models import CalendarEvent
 from electees.models import ElecteeInterviewSurvey
 from mig_main.models import MemberProfile,AcademicTerm
+from requirements.models import ProgressItem,EventCategory
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('--duedate',
@@ -17,13 +18,23 @@ class Command(BaseCommand):
             help='Specify that this pester is the 8pm on the due date one.'),
         )
     def handle(self,*args,**options):
-        current_surveys = ElecteeInterviewSurvey.objects.filter(term = AcademicTerm.get_current_term())
+        term = AcademicTerm.get_current_term()
+        current_surveys = ElecteeInterviewSurvey.objects.filter(term = term)
         if current_surveys.exists():
             current_survey=current_surveys[0]
         else:
             return
         until_due = (current_survey.due_date - date.today()).days
         electees = MemberProfile.get_electees()
+        for electee in electees:
+            completed = current_survey.check_if_electee_completed(electee)
+            existing_progress = ProgressItem.objects.filter(member=electee,term=term,event_type__name='Interview Survey')
+            if existing_progress.exists() and not completed:
+                existing_progress.delete()
+            elif completed and not existing_progress.exists():
+                p = ProgressItem(member=electee,term=term,amount_completed=1,date_completed=date.today(),name='Interview Survey Completed')
+                p.event_type = EventCategory.objects.get(name='Interview Survey')
+                p.save()
         if options['duedate']:
             if until_due==1:
                 due_date = "Both are due tonight."
