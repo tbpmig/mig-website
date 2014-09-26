@@ -10,6 +10,7 @@ class DistinctionType(models.Model):
     name = models.CharField(max_length = 30)
     status_type = models.ForeignKey('mig_main.Status')
     standing_type = models.ManyToManyField('mig_main.Standing')
+    display_order = models.PositiveSmallIntegerField(default=0)
     def __unicode__(self):
         return self.name
 class SemesterType(models.Model):

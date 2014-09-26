@@ -223,7 +223,7 @@ def sorted_reqs2html_recursive(sorted_reqs,progress_items,distinctions,padding):
                 html_string+="<td>"+str(amount)+'</td>\n'
         else:
             html_string+='<td>0</td>\n'
-        for distinction in distinctions.order_by('name'):
+        for distinction in distinctions.order_by('display_order'):
             req = data["requirements"].filter(distinction_type=distinction)
             amount_req = 0
             if req:
@@ -287,7 +287,7 @@ def sorted_reqs2html(sorted_reqs,progress_items,distinctions):
     else:
         html_string+='<th>Requirement for</th>\n'
     html_string+='</tr>\n<tr>\n<th></th>\n<th></th>'
-    for distinction in distinctions.order_by('name'):
+    for distinction in distinctions.order_by('display_order'):
         html_string+='<th>'+distinction.name+'</th>\n'
     html_string+='</tr>\n</thead>'
     return html_string+sorted_reqs2html_recursive(sorted_reqs,progress_items,distinctions,0)+'</table>'
