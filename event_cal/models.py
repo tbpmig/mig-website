@@ -13,7 +13,7 @@ from stdimage import StdImageField
 import tweepy
 
 from event_cal.gcal_functions import get_credentials,get_authorized_http,get_service
-from mig_main.models import AcademicTerm,OfficerPosition,MemberProfile
+from mig_main.models import AcademicTerm,OfficerPosition,MemberProfile,UserProfile
 from requirements.models import Requirement
 from migweb.settings import DEBUG, twitter_token,twitter_secret
 # Create your models here.
@@ -54,6 +54,7 @@ class CalendarEvent(models.Model):
     needs_flyer = models.BooleanField(default=False)
     requires_UM_background_check = models.BooleanField(default=False)
     requires_AAPS_background_check = models.BooleanField(default=False)
+    mutually_exclusive_shifts = models.BooleanField(default=False)
     
     before_grace = timedelta(minutes=-30)
     after_grace = timedelta(hours = 1)
@@ -213,6 +214,8 @@ class CalendarEvent(models.Model):
                 start_time = shift.start_time
         duration+=end_time-start_time
         return duration
+    def get_event_attendees(self):
+        return UserProfile.objects.filter(event_attendee__event=self)
     def get_attendee_hours_at_event(self,profile):
         """
         Determines how many hours the attendee spent at the event by summing the time of all shifts accounting for shifts taht are overlapped.

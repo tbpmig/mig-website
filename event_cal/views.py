@@ -211,6 +211,8 @@ def sign_up(request, event_id, shift_id):
                 request.session['error_message']='You must pass an AAPS background check and complete training to sign up for this event'
             elif event.requires_UM_background_check and not BackgroundCheck.user_can_work_w_minors(profile):
                 request.session['error_message']='You must pass a UM background check and complete training to sign up for this event'    
+            elif event.mutually_exclusive_shifts and profile in event.get_event_attendees():
+                request.session['error_message']='You may only sign up for one shift for this event. Unsign up for the other before continuing'
             elif profile.is_member or not event.members_only:
                 if shift.ugrads_only and not profile.is_ugrad():
                     request.session['error_message']='Shift is for undergrads only'
@@ -248,7 +250,7 @@ def sign_up(request, event_id, shift_id):
         else:
             request.session['error_message']='You must create a profile before signing up to events' 
     if 'error_message' in request.session:
-        return {'fragments':{'#ajax-message':r'''<div id="ajax-error" class="alert alert-danger">
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
     return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,shift_id,reverse('event_cal:unsign_up', args=[event_id, shift_id] ),shift_id),
@@ -282,7 +284,7 @@ def unsign_up(request, event_id, shift_id):
         else:
             request.session['error_message']='You must create a profile before unsigning up'
     if 'error_message' in request.session:
-        return {'fragments':{'#ajax-message':r'''<div id="ajax-error" class="alert alert-danger">
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
     return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up', args=[event_id, shift_id] ),shift_id),
@@ -586,6 +588,7 @@ def create_electee_interviews(request):
             electee_event.save()
             active_event=CalendarEvent.objects.get(id=active_id)
             electee_event.event_type=electee_type
+            electee_event.mutually_exclusive_shifts=True
             electee_event.leaders=leaders
             electee_event.name+=' (Electees)'
             active_event.name+=' (Actives)'
