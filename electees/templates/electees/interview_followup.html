@@ -13,7 +13,7 @@
     <tr><td><em>Interview:</em></td><td> {{follow_up.interview.interviewee_shift.event}}</td></tr>
     
     <tr><td><em>Language Barrier?:</em></td><td> {{follow_up.language_barrier|yesno }}</td></tr>
-    <tr{% if followup.recommendation == 'Y' %} class="success"{% elif followup.recommendation == 'N' %} class="danger" {% else %} class="warning" {%endif %}><td><em>Recommendation:</em></td><td> {{follow_up.get_recommendation_display}}</td></tr>
+    <tr{% if follow_up.recommendation == 'Y' %} class="success"{% elif follow_up.recommendation == 'N' %} class="danger" {% else %} class="warning" {%endif %}><td><em>Recommendation:</em></td><td> {{follow_up.get_recommendation_display}}</td></tr>
     <tr><td><em>Comments:</em></td><td>{{follow_up.comments}}</td></tr>
 </tbody>
 </table>
