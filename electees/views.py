@@ -1,10 +1,15 @@
 import json
+import os
+import zipfile
+import shutil
 from datetime import date
+
 
 from django.http import HttpResponse,Http404
 from django.shortcuts import  get_object_or_404
 from django.shortcuts import redirect
 from django.template import RequestContext, loader
+from django.template.defaultfilters import slugify
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.forms.models import modelformset_factory,modelform_factory
@@ -14,14 +19,43 @@ from django.core.urlresolvers import reverse
 from event_cal.models import InterviewShift
 from electees.models import ElecteeGroup, ElecteeGroupEvent,ElecteeResource,EducationalBackgroundForm,BackgroundInstitution,ElecteeInterviewSurvey,SurveyPart,SurveyQuestion,SurveyAnswer,ElecteeInterviewFollowup
 from mig_main.models import MemberProfile, AcademicTerm
-from mig_main.utility import Permissions, get_previous_page,  get_message_dict
+from mig_main.utility import Permissions, get_previous_page,  get_message_dict,zipdir
 from member_resources.views import get_permissions as get_member_permissions
 from history.models import Officer
 from electees.forms import get_unassigned_electees,InstituteFormset,BaseElecteeGroupForm,AddSurveyQuestionsForm,ElecteeSurveyForm,InterviewFollowupForm
 from requirements.models import EventCategory,ProgressItem
+from migweb.settings import PROJECT_PATH, MEDIA_ROOT
 
+ELECTEE_RESUME_LOCATION = os.path.sep.join([MEDIA_ROOT,'electee_resumes'])
 
+def compile_electee_resumes():
+    try:
+        shutil.rmtree(ELECTEE_RESUME_LOCATION)
+    except OSError:
+        pass
+    os.makedirs(ELECTEE_RESUME_LOCATION)
+    electees = MemberProfile.get_electees()
+    for electee in electees:
+        if electee.resume:
+            standing_dir = os.path.sep.join([ELECTEE_RESUME_LOCATION,slugify(electee.standing.name)])
+            if not os.path.exists(standing_dir):
+                os.makedirs(standing_dir)
+            resume_name=slugify(electee.last_name+'_'+electee.first_name+'_'+electee.uniqname)+'.pdf'
+            shutil.copy(PROJECT_PATH+electee.resume.url,os.path.sep.join([standing_dir,resume_name]))
     
+def update_electee_resume_zips():
+    compile_electee_resumes()
+    current_path = os.getcwd()
+    zip_file_name = os.sep.join([MEDIA_ROOT,'TBP_electee_resumes.zip'])
+    try:
+        os.remove(zip_file_name)
+    except OSError:
+        pass
+    zip_f = zipfile.ZipFile(zip_file_name,'w')
+    os.chdir(ELECTEE_RESUME_LOCATION)
+    zipdir('.',zip_f)
+    zip_f.close()
+    os.chdir(current_path)   
 def can_submit_background_form(user):
     if not user_is_member(user):
         return False
@@ -62,6 +96,7 @@ def view_electee_groups(request):
         'groups':e_groups,
         'resources':resources,
         'packets':packets,
+        'electee_resumes':'TBP_electee_resumes.zip',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))

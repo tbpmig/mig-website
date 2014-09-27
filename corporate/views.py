@@ -14,7 +14,7 @@ from django.template.defaultfilters import slugify
 from corporate.models import CorporateTextField,CorporateResourceGuide
 from migweb.settings import PROJECT_PATH, MEDIA_ROOT
 from mig_main.models import Major, MemberProfile, Standing
-from mig_main.utility import get_message_dict,Permissions
+from mig_main.utility import get_message_dict,Permissions,zipdir
 
 RESUMES_BY_MAJOR_LOCATION = os.path.sep.join([MEDIA_ROOT,'Resumes_by_major'])
 RESUMES_BY_YEAR_LOCATION = os.path.sep.join([MEDIA_ROOT,'Resumes_by_year'])
@@ -32,10 +32,6 @@ def get_common_context(request):
         'main_nav':'corporate',
         })
     return context_dict
-def zipdir(path,zipf):
-    for root,dirs,files in os.walk(path):
-        for f in files:
-            zipf.write(os.path.join(root,f))
 
 def compile_resumes():
     shutil.rmtree(RESUMES_BY_MAJOR_LOCATION)

@@ -1,4 +1,4 @@
-import csv,codecs,cStringIO
+import csv,codecs,cStringIO,os
 from datetime import date
 
 from django.db.models import Q
@@ -14,7 +14,11 @@ from requirements.models import SemesterType
 from history.models import Officer,ProjectReport,OfficerPositionRelationship
 from member_resources.models import ProjectLeaderList
 
-
+def zipdir(path,zipf):
+    for root,dirs,files in os.walk(path):
+        for f in files:
+            zipf.write(os.path.join(root,f))
+            
 def get_officer_position_predecessor_helper(officer,term,officer_set):
     links = officer.officer_relationship_successor.exclude(id__in=officer_set,effective_term__gt=term).order_by('-effective_term')
     if links.exists():

@@ -8,12 +8,15 @@
         {% endif %}
         {% if can_edit_resources %}
             <a href="{% url 'electees:edit_electee_resources' %}" class="btn btn-warning">Edit Electee Resources</a>
+            <a class="btn btn-warning" href="/media/{{electee_resumes}}"><i class="glyphicon glyphicon-file"></i> Download Electee Resumes</a> 
+
         {% endif %}
         {% if can_edit_surveys %}
             <a href="{% url 'electees:manage_survey' %}" class="btn btn-warning">Manage Electee Survey</a>
         {% endif %}
         {% if can_edit_resources or can_edit_surveys %}
         </div>
+        <p></p>
         {% endif %}
         {% if can_complete_surveys or can_submit_background_form or can_submit_interview_followups%}
         <div class="btn-group">
