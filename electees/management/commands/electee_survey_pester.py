@@ -24,7 +24,7 @@ class Command(BaseCommand):
             current_survey=current_surveys[0]
         else:
             return
-        until_due = (current_survey.due_date - date.today()).days
+        until_due = (current_survey.due_date - date.today()).days+1
         electees = MemberProfile.get_electees()
         for electee in electees:
             completed = current_survey.check_if_electee_completed(electee)
