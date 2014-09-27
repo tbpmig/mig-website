@@ -1,0 +1,22 @@
+{% extends "electees/base_electees.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-offset-2 col-md-8 ">
+    <h3>View interview feedback</h3>
+    <table class="table table-striped table-rounded">
+    <tbody>
+    <tr>
+    <td><strong>Electee:</strong></td><td> {% for electee in follow_up.interview.interviewee_shift.attendees.all %} {{electee}}{% endfor %}</td>
+    </tr>
+    <tr><td><strong>Interviewer: </strong></td><td>{{follow_up.member}}</td></tr>
+    <tr><td><em>Interview:</em></td><td> {{follow_up.interview.interviewee_shift.event}}</td></tr>
+    
+    <tr><td><em>Language Barrier?:</em></td><td> {{follow_up.language_barrier|yesno }}</td></tr>
+    <tr{% if followup.recommendation == 'Y' %} class="success"{% elif followup.recommendation == 'N' %} class="danger" {% else %} class="warning" {%endif %}><td><em>Recommendation:</em></td><td> {{follow_up.get_recommendation_display}}</td></tr>
+    <tr><td><em>Comments:</em></td><td>{{follow_up.comments}}</td></tr>
+</tbody>
+</table>
+    </div>
+</div>
+{% endblock content %}

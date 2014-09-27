@@ -606,7 +606,21 @@ Remember the [eligibility code of the association](http://www.tbp.org/off/eligCo
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
     
+def view_interview_follow_up(request,follow_up_id):
+    follow_up = get_object_or_404(ElecteeInterviewFollowup,id=follow_up_id)
+    if not Permissions.can_see_follow_up(request.user):
+        request.session['error_message']='You are not authorized to view this followup'
+        return get_previous_page(request,alternate='electees:view_electee_groups')
+    template = loader.get_template('electees/interview_followup.html')
     
+    context_dict = {
+        'follow_up':follow_up,
+        'base':'electees/base_electees.html',
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
 def view_my_interview_forms(request):
     if not user_is_member(request.user) or not request.user.userprofile.memberprofile.status.name=='Active':
         request.session['error_message']='Only active members can fill out interview followups'

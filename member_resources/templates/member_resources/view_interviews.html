@@ -24,6 +24,11 @@
                 <p>{{interview.interviewer_shift.start_time|date:"N j, Y" }}</p>
                 <p>{{interview.interviewer_shift.start_time|date:"f a"}}&ndash;{{interview.interviewer_shift.end_time|date:"f a"}}<p>
                 <p>{{interview.interviewer_shift.location}}</p>
+                {% if can_view_follow_ups %}
+                 {% for follow_up in interview.electeeinterviewfollowup_set.all %}
+                <p><a href="{% url 'electees:view_interview_follow_up' follow_up.id %}">View Followup from {{follow_up.member}}</a></p>
+                {% endfor %}
+                {% endif %}
                 </td>
                  <td>
                 {% for active in interview.interviewer_shift.attendees.all %}

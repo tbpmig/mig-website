@@ -2606,6 +2606,7 @@ def view_interview_pairings(request):
         'interviews':interview_shifts,
         'subnav':'misc_reqs',
         'base':'member_resources/base_member_resources.html',
+        'can_view_follow_ups':Permissions.can_see_follow_up(request.user),
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))

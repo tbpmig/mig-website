@@ -736,6 +736,12 @@ class Permissions:
             return True
         return False
     @classmethod
+    def can_see_follow_up(cls,user):
+        if cls.can_view_interview_pairings(user):
+            return True
+        #switch flipped part
+        return False
+    @classmethod
     def can_view_calendar_admin(cls,user):
         return cls.can_add_event_photo(user) or cls.can_create_events(user) or cls.can_add_announcements(user) or cls.can_generate_announcements(user) 
 
