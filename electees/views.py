@@ -624,6 +624,7 @@ def view_interview_follow_up(request,follow_up_id):
 def view_my_interview_forms(request):
     if not user_is_member(request.user) or not request.user.userprofile.memberprofile.status.name=='Active':
         request.session['error_message']='Only active members can fill out interview followups'
+        return get_previous_page(request,alternate='electees:view_electee_groups')
     userprofile =request.user.userprofile
     my_interviews = InterviewShift.objects.filter(term=AcademicTerm.get_current_term(),interviewer_shift__attendees__in=[userprofile]).exclude(interviewee_shift__attendees=None)
     unpacked_interviews =[]
