@@ -3,7 +3,7 @@
 {% block content %}
 <div class="row">
     <div class="col-md-12">
-    <h3>Manage Electee Survey</h3>
+    <h3>Manage Electee Interview Process</h3>
     <hr>
     <a href="{%url 'electees:edit_survey' %}" class="btn {% if survey_exists %}btn-success{% else %}btn-danger{%endif%}">Add/Edit Survey</a>
     <a href="{%url 'electees:edit_survey_parts' %}" class="btn {% if parts_exist %}btn-success{% else %}btn-danger{%endif%}">Add/Edit Survey Parts</a>
@@ -16,5 +16,9 @@
         <a  class="btn btn-danger" disabled="disabled">Preview Survey</a>
     {% endif %}
     </div>
+    <div class="col-md-12">
+        <a href="{%url 'electees:edit_electee_process_visibility' %}" class="btn btn-primary">Update Visibility Settings</a>
+    </div>
+    
 </div>
 {% endblock content %}

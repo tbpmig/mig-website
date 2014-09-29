@@ -17,7 +17,7 @@ from django.forms import CheckboxSelectMultiple
 from django.core.urlresolvers import reverse
 
 from event_cal.models import InterviewShift
-from electees.models import ElecteeGroup, ElecteeGroupEvent,ElecteeResource,EducationalBackgroundForm,BackgroundInstitution,ElecteeInterviewSurvey,SurveyPart,SurveyQuestion,SurveyAnswer,ElecteeInterviewFollowup
+from electees.models import ElecteeGroup, ElecteeGroupEvent,ElecteeResource,EducationalBackgroundForm,BackgroundInstitution,ElecteeInterviewSurvey,SurveyPart,SurveyQuestion,SurveyAnswer,ElecteeInterviewFollowup,ElecteeProcessVisibility
 from mig_main.models import MemberProfile, AcademicTerm
 from mig_main.utility import Permissions, get_previous_page,  get_message_dict,zipdir
 from member_resources.views import get_permissions as get_member_permissions
@@ -658,3 +658,35 @@ def view_interview_pairings(request):
     context_dict.update(get_common_context(request))
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
+
+def edit_electee_process_visibility(request):
+    if not Permissions.can_manage_electee_progress(request.user):
+        request.session['error_message']='You are not authorized to edit the electee process visibility settings.'
+        return redirect('electees:view_electee_groups')
+    current_vis = ElecteeProcessVisibility.objects.get_or_create(term=AcademicTerm.get_current_term())
+    VisibilityForm = modelform_factory(ElecteeProcessVisibility,exclude=['term'])
+    prefix='visibility'
+    form = VisibilityForm(request.POST or None ,prefix=prefix,instance=current_vis[0])
+    if request.method =='POST':
+        if form.is_valid():
+            form.save()
+            request.session['success_message']='Electee settings updated successfully'
+            return redirect('electees:manage_survey')
+        else:
+            request.session['error_message']='Form is invalid. Please correct the noted errors.'
+
+    template = loader.get_template('generic_form.html')
+    context_dict = {
+        'form':form,
+        'prefix':prefix,
+        'has_files':False,
+        'submit_name':'Update Visibility Settings',
+        'form_title':'Update Electee Visibility Settings for %s'%(unicode(AcademicTerm.get_current_term())),
+        'help_text':'Change whether certain electee items are visible to all actives.',
+        'base':'electees/base_electees.html',
+        'back_button':{'link':reverse('electees:manage_survey'),'text':'To Survey Manager'},
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))    
