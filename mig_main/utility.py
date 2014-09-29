@@ -1,13 +1,13 @@
 import csv,codecs,cStringIO,os
 from datetime import date
-
+ 
 from django.db.models import Q
 from django.shortcuts import redirect
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 
 
-from electees.models import ElecteeGroup
+from electees.models import ElecteeGroup,ElecteeProcessVisibility
 from event_cal.models import CalendarEvent
 from mig_main.models import AcademicTerm, OfficerPosition, MemberProfile
 from requirements.models import SemesterType
@@ -726,15 +726,9 @@ class Permissions:
             return False
         if not p.is_member():
             return False
-        if user.is_superuser:
-            return True  
-        current_positions = cls.get_current_officer_positions(user) 
-        query = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Graduate Student Vice President')
-        if current_positions.exists():
-            return True  
-        if p.memberprofile.status.name=='Electee':
+        else:
             return True
-        return False
+        
     @classmethod
     def can_see_follow_up(cls,user):
         p=cls.get_profile(user)
@@ -748,6 +742,14 @@ class Permissions:
         if current_positions.exists():
             return True
         #switch flipped part
+        try: 
+            vis = ElecteeProcessVisibility.objects.get(term=AcademicTerm.get_current_term())
+            if vis.followups_visible and p.is_active():
+                return True
+            return False
+        except ObjectDoesNotExist:
+            return False
+        
         return False
     @classmethod
     def can_view_calendar_admin(cls,user):

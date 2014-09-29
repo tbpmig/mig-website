@@ -33,7 +33,11 @@
         {% if can_complete_surveys or can_submit_background_form or can_submit_interview_followups%}
         </div>
         {% endif %}
-
+        {% if can_view_interview_pairings %}
+        <div class="btn-group">
+            <a href="{% url 'electees:view_interview_pairings' %}" class="btn btn-primary">View Interview Slate</a>
+        </div>
+        {% endif %}
         <h3>Electee Resources</h3>
         <h4>Full Packets</h4>
     {% regroup packets|dictsort:"resource_type.id" by resource_type as packets_by_type %}

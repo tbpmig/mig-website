@@ -233,3 +233,6 @@ class ElecteeInterviewFollowup(models.Model):
     member =models.ForeignKey('mig_main.MemberProfile')
     interview = models.ForeignKey('event_cal.InterviewShift')
     
+class ElecteeProcessVisibility(models.Model):
+    term = models.ForeignKey('mig_main.AcademicTerm',unique=True)
+    followups_visible = models.BooleanField(default=False)

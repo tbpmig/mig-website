@@ -76,6 +76,7 @@ def get_permissions(user):
         'can_complete_surveys':Permissions.can_complete_electee_survey(user),
         'can_submit_background_form':can_submit_background_form(user),
         'can_submit_interview_followups':user_is_member(user) and user.userprofile.memberprofile.status.name=='Active',
+        'can_view_interview_pairings':Permissions.can_view_interview_pairings(user),
         })
     return permission_dict
 def get_common_context(request):
@@ -638,4 +639,22 @@ def view_my_interview_forms(request):
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
+    
+def view_interview_pairings(request):
+    if not Permissions.can_view_interview_pairings(request.user):
+        request.session['error_message']='You are not authorized to view interview state'
+        return get_previous_page(request,alternate='member_resources:index')
+        
+    interview_shifts = InterviewShift.objects.filter(term=AcademicTerm.get_current_term()).order_by('interviewer_shift__start_time')
+    template = loader.get_template('member_resources/view_interviews.html')
+    context_dict ={
+        'interviews':interview_shifts,
+        'subnav':'misc_reqs',
+        'base':'member_resources/base_member_resources.html',
+        'can_view_follow_ups':Permissions.can_see_follow_up(request.user),
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))

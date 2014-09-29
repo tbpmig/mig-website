@@ -52,9 +52,7 @@
         {% if can_manage_interviews %}
             <li><a href="{% url 'member_resources:manage_active_group_meetings' %}">Manage Active's Group Meeting Attendance</a></li>
         {% endif %}
-        {% if can_view_interviews %}
-            <li><a href="{% url 'member_resources:view_interview_pairings' %}">View Interview Slate</a></li>
-        {% endif %}
+
         </ul>
         {% endif %}
     </div>
