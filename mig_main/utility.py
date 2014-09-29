@@ -730,14 +730,22 @@ class Permissions:
             return True  
         current_positions = cls.get_current_officer_positions(user) 
         query = Q(position__name='President')|Q(position__name='Vice President')|Q(position__name='Graduate Student Vice President')
-        if current_positions.filter(query).exists():
+        if current_positions.exists():
             return True  
         if p.memberprofile.status.name=='Electee':
             return True
         return False
     @classmethod
     def can_see_follow_up(cls,user):
-        if cls.can_view_interview_pairings(user):
+        p=cls.get_profile(user)
+        if not p:
+            return False
+        if not p.is_member():
+            return False
+        if user.is_superuser:
+            return True  
+        current_positions = cls.get_current_officer_positions(user) 
+        if current_positions.exists():
             return True
         #switch flipped part
         return False
@@ -766,6 +774,15 @@ class Permissions:
             return True  
         current_positions = cls.get_current_officer_positions(user) 
         query = Q(position__name='President')|Q(position__name='Service Coordinator')
+        if current_positions.filter(query).exists():
+            return True  
+        return False
+        @classmethod
+    def can_view_demographics(cls,user):
+        if user.is_superuser:
+            return True  
+        current_positions = cls.get_current_officer_positions(user) 
+        query = Q(position__name='President')|Q(position__name='Membership Officer')
         if current_positions.filter(query).exists():
             return True  
         return False
