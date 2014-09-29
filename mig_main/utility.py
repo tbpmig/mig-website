@@ -777,7 +777,7 @@ class Permissions:
         if current_positions.filter(query).exists():
             return True  
         return False
-        @classmethod
+    @classmethod
     def can_view_demographics(cls,user):
         if user.is_superuser:
             return True  
