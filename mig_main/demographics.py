@@ -1,11 +1,12 @@
 import numpy
 from matplotlib import pyplot
 from django.db.models import Count
+from django.http import HttpResponse
 
 from event_cal.models import CalendarEvent
 from history.models import Distinction,Officer
 from mig_main.models import MemberProfile,Major,Status,Standing,AcademicTerm,ShirtSize,TBPChapter,ALUM_MAIL_FREQ_CHOICES,GENDER_CHOICES
-from mig_main.utility import get_previous_full_term
+from mig_main.utility import get_previous_full_term,UnicodeWriter
 from requirements.models import ProgressItem,DistinctionType,SemesterType
 
 
@@ -136,3 +137,21 @@ def get_year_when_join_distribution(**kwargs):
 
 def get_area_chart_of_distribution(dist):
     pass
+
+    
+def get_members_for_COE():
+    members = MemberProfile.get_actives().exclude(standing__name='Alumni')
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition']='attachment; filename="MemberData.csv"'
+
+    writer = UnicodeWriter(response)
+    writer.writerow([ 'First Name','Last Name','uniqname','Active?','Officer?','Standing','Major'])
+    for member in members:
+        was_active='Active' if Distinction.objects.filter(member=member,term=get_previous_full_term(AcademicTerm.get_current_term())).exists() else 'Inactive'
+        officer_terms = Officer.objects.filter(user=member,term__in=[get_previous_full_term(AcademicTerm.get_current_term()),AcademicTerm.get_current_term()])
+        if officer_terms.exists():
+            officer_pos = ', '.join([unicode(officer.position)+' '+', '.join([unicode(term) for term in officer.term.all()]) for officer in officer_terms ])
+        else:
+            officer_pos='Member'
+        writer.writerow([member.first_name,member.last_name,member.uniqname,was_active,officer_pos,member.standing.name,', '.join([ major.name for major in member.major.all()])])
+    return response

@@ -27,6 +27,7 @@ from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm
 from member_resources.forms import MeetingMinutesForm,ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet,TBPraiseForm
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
 from migweb.context_processors import profile_setup
+from mig_main.demographics import get_members_for_COE
 from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,TBPraise,PREFERENCES
 from mig_main.utility import  Permissions, get_previous_page,get_next_term, get_next_full_term,get_current_event_leaders,get_current_group_leaders,get_message_dict,UnicodeWriter,get_officer_positions_predecessors
 from outreach.models import TutoringRecord
@@ -1169,6 +1170,7 @@ def view_misc_reqs(request):
         'can_manage_interviews':(Permissions.can_manage_active_progress(request.user) or Permissions.can_manage_electee_progress(request.user)),
         'can_manage_background_checks':Permissions.can_manage_background_checks(request.user),
         'can_view_interviews':Permissions.can_view_interview_pairings(request.user),
+        'can_view_demographics':Permissions.can_view_demographics(request.user),
         'active_distinctions':DistinctionType.objects.filter(status_type__name="Active"),
         'ugrad_electee_distinctions':DistinctionType.objects.filter(status_type__name="Electee", standing_type__name="Undergraduate"),
         'grad_electee_distinctions':DistinctionType.objects.filter(status_type__name="Electee",standing_type__name="Graduate"),
@@ -2648,8 +2650,7 @@ def mass_add_background_checks(request):
     if not Permissions.can_manage_background_checks(request.user):
         request.session['error_message']='You are not authorized to manage background checks'
         return get_previous_page(request,alternate='member_resources:index')
-    prefix='background'    
-    MassAddBackgroundCheckForm    
+    prefix='background'        
     form = MassAddBackgroundCheckForm(request.POST or None,prefix=prefix)
     if request.method=='POST':
         if form.is_valid():
@@ -2682,3 +2683,8 @@ def mass_add_background_checks(request):
     context_dict.update(get_common_context(request))
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
+def download_member_data(request):
+    if not Permissions.can_view_demographics(request.user):
+        request.session['error_message']='You are not authorized to view member data'
+        return get_previous_page(request,alternate='member_resources:index')
+    return get_members_for_COE()

@@ -110,6 +110,14 @@
         </div>
         {% endif %}
         </ul>
+        {% if can_view_demographics %}
+        <h3>Member Demographics</h3>
+        <ul>
+             <li><a href="{% url 'member_resources:download_member_data' %}">Download COE Member Data</a></li>
+        </ul>
+        {% endif %}
     </div>
+    
+    
 </div>
 {% endblock content %}
