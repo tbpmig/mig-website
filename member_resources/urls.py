@@ -60,5 +60,6 @@ urlpatterns = patterns('',
     url(r'^manage_background_checks/$',views.add_background_checks,name='add_background_checks'),
     url(r'^manage_many_background_checks/$',views.mass_add_background_checks,name='mass_add_background_checks'),
     url(r'^download_member_data/$',views.download_member_data,name='download_member_data'),
+    url(r'^view_electee_survey/(?P<uniqname>[a-z]{3,8})/$',views.view_electee_survey,name='view_electee_survey'),
     
 )

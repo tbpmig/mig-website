@@ -2569,7 +2569,7 @@ def view_electee_surveys_for_term(request,term_id):
             output_table+="<th>%s</th>"%(my_markdown(question.text))
     output_table+="</tr></thead><tbody>"
     for electee in electees:
-        output_table+="<tr><td>%s</td>"%unicode(electee)
+        output_table+="<tr><td><a href=\"%s\">%s</a></td>"%(reverse('member_resources:view_electee_survey',args=[electee.uniqname]),unicode(electee))
         for part in sorted(parts):
             for question in questions.filter(part=part).distinct().order_by('display_order'):
                 electee_answers = answers.filter(submitter=electee,question=question)
@@ -2670,3 +2670,71 @@ def download_member_data(request):
         request.session['error_message']='You are not authorized to view member data'
         return get_previous_page(request,alternate='member_resources:index')
     return get_members_for_COE()
+    
+def view_electee_survey(request,uniqname):
+    if not hasattr(request.user,'userprofile') or not request.user.userprofile.is_member():
+        request.session['error_message']='You are not authorized to view electee surveys awards.'
+        return get_previous_page(request,alternate='member_resources:index')
+    electee = get_object_or_404(MemberProfile,uniqname=uniqname)
+    if not electee.is_electee():
+        raise Http404
+    user_visibilities = set(['M'])
+    if Permissions.can_manage_electee_progress(request.user):
+        user_visibilities.add('R')
+        user_visibilities.add('E')
+        user_visibilities.add('A')
+    profile = request.user.userprofile.memberprofile
+    if profile.status.name=='Electee':
+        user_visibilities.add('E')
+    elif profile.status.name=='Active':
+        user_visibilities.add('A')
+    term = AcademicTerm.get_current_term()
+    interview_shifts = InterviewShift.objects.filter(interviewer_shift__attendees__in=[profile])
+    current_surveys = ElecteeInterviewSurvey.objects.filter(term=term)
+
+    if current_surveys.exists():
+        current_survey=current_surveys[0]
+    else:
+        current_survey=None
+    
+    if current_survey:
+        questions = current_survey.questions.all()
+        answers =SurveyAnswer.objects.filter(question__in=questions,term=term).distinct()
+        parts = SurveyPart.objects.filter(surveyquestion__in=questions).distinct()
+        
+        if term == AcademicTerm.get_current_term():
+            electees=MemberProfile.get_electees()
+        else:
+            electees=MemberProfile.objects.filter(surveyanswer__in=answers)
+    else:
+        answers=[]
+        parts = []
+        electees=[]
+    output_table = '<thead><tr><th>Electee</th>'
+    data=[]
+    for part in sorted(parts):
+        part_data={}
+        part_data['part']=part
+        part_data['qas']=[]
+        for question in questions.filter(part=part).distinct().order_by('display_order'):
+            electee_answers = answers.filter(submitter=electee,question=question)
+            if part.visibility in user_visibilities or electee ==profile or interview_shifts.filter(interviewee_shift__attendees__in=[electee]).exists():
+                if electee_answers.exists():
+                    part_data['qas'].append({'q':question,'a':electee_answers[0].answer})
+                else:
+                    part_data['qas'].append({'q':question,'a':'No answer given'})
+            else:
+                part_data['qas'].append({'q':question,'a':'Answer Hidden'})
+        data.append(part_data)
+       
+    template = loader.get_template('member_resources/survey_responses.html')
+    context_dict ={
+        'electee':electee,
+        'data':data,
+        'subnav':'history',
+        'base':'member_resources/base_member_resources.html',
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))
