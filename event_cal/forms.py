@@ -17,7 +17,7 @@ class BaseEventPhotoForm(ModelForm):
     project_report = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Report','closeOnSelect':True}),queryset=ProjectReport.objects.all(),required=False)
     class Meta:
         model = EventPhoto
-
+        fields = ['event','project_report','caption','photo']
 class BaseEventPhotoFormAlt(ModelForm):
     event = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Event','closeOnSelect':True}),queryset=CalendarEvent.objects.all(),required=False)
     class Meta:
@@ -29,6 +29,7 @@ class BaseAnnouncementForm(ModelForm):
 
     class Meta:
         model = AnnouncementBlurb
+        fields=['start_date','end_date','title','text','contacts','sign_up_link']
 
 class BaseEventForm(ModelForm):
     TWEET_CHOICES= (
@@ -40,6 +41,7 @@ class BaseEventForm(ModelForm):
     tweet_option = forms.ChoiceField(choices=TWEET_CHOICES,initial='N')
     class Meta:
         model = CalendarEvent
+        exclude=('completed','google_event_id','project_report')
     def clean(self):
         cleaned_data = super(BaseEventForm,self).clean()
         members_only = cleaned_data.get('members_only')

@@ -9,7 +9,7 @@ from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,Model
 
 from electees.models import ElecteeGroup
 from mig_main.models import AcademicTerm,Major,MemberProfile, TBPChapter,UserProfile,UserPreference,PREFERENCES,TBPraise
-from history.models import MeetingMinutes, Officer,Distinction
+from history.models import  Distinction
 from requirements.models import Requirement,EventCategory,ProgressItem,DistinctionType
 def max_peer_interviews_validator(value):
     requirement = Requirement.objects.filter(event_category__name='Peer Interviews')
@@ -49,10 +49,7 @@ class NonMemberProfileForm(ModelForm):
         model = UserProfile
         exclude = ('user','uniqname')
 
-class MeetingMinutesForm(ModelForm):
-    semester = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'10em','placeholder':'Select Term','closeOnSelect':True}),queryset=AcademicTerm.get_rchron(),initial=AcademicTerm.get_current_term())
-    class Meta:
-        model = MeetingMinutes
+
 
 class ManageElecteeStillElectingForm(Form):
     electee = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled','readonly':'readonly'}))
@@ -100,8 +97,6 @@ class ManageProjectLeaderForm(Form):
     member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=MemberProfile.get_members())
     is_project_leader = forms.BooleanField(required=False)
 ManageProjectLeadersFormSet = formset_factory(ManageProjectLeaderForm,extra=3)
-
-ManageOfficersFormSet = modelformset_factory(Officer)
 
 class MassAddProjectLeadersForm(Form):
     uniqnames = forms.CharField(widget=forms.Textarea)

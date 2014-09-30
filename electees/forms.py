@@ -38,7 +38,7 @@ class BaseInstituteFormSet(BaseInlineFormSet):
                 if form.cleaned_data['degree_start_date']>form.cleaned_data['degree_end_date']:
                     raise ValidationError("The degree must have started before it can end.")
 
-InstituteFormset = inlineformset_factory(EducationalBackgroundForm, BackgroundInstitution,formset=BaseInstituteFormSet,extra=1)
+InstituteFormset = inlineformset_factory(EducationalBackgroundForm, BackgroundInstitution,formset=BaseInstituteFormSet,extra=1,fields=['name','degree_type','major','degree_start_date','degree_end_date'])
 
 class BaseElecteeGroupForm(forms.ModelForm):
 #    tagged_members = ModelSelect2MultipleField()

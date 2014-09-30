@@ -17,7 +17,7 @@ from django.forms import CheckboxSelectMultiple
 from django.core.urlresolvers import reverse
 
 from event_cal.models import InterviewShift
-from electees.models import ElecteeGroup, ElecteeGroupEvent,ElecteeResource,EducationalBackgroundForm,BackgroundInstitution,ElecteeInterviewSurvey,SurveyPart,SurveyQuestion,SurveyAnswer,ElecteeInterviewFollowup,ElecteeProcessVisibility
+from electees.models import ElecteeGroup, ElecteeGroupEvent,ElecteeResource,EducationalBackgroundForm,ElecteeInterviewSurvey,SurveyPart,SurveyQuestion,SurveyAnswer,ElecteeInterviewFollowup,ElecteeProcessVisibility
 from mig_main.models import MemberProfile, AcademicTerm
 from mig_main.utility import Permissions, get_previous_page,  get_message_dict,zipdir
 from member_resources.views import get_permissions as get_member_permissions
