@@ -26,4 +26,6 @@ urlpatterns = patterns('',
     url(r'^view_interview_followup/(?P<follow_up_id>\d+)/$', views.view_interview_follow_up,name='view_interview_follow_up'),
     url(r'^view_interviews/$',views.view_interview_pairings,name='view_interview_pairings'),
     url(r'^edit_visibility/$',views.edit_electee_process_visibility,name='edit_electee_process_visibility'),
+    url(r'^interview_followup_table/$', views.view_interview_follow_up_table,name='view_interview_follow_up_table'),
+    
 )

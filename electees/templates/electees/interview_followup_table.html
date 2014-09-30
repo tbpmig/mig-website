@@ -1,0 +1,34 @@
+{% extends "electees/base_electees.html" %}
+{% block content %}
+<div class="row">
+
+    <div class="col-md-offset-2 col-md-8">
+        <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Electee</th>
+                {% for interviewer in interviewer_headers %}
+                <th>{{interviewer}}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+        {% for electee in electees %}
+            <tr>
+                <td>
+                {{electee.electee}}
+                </td>
+                {% for followup in electee.followups %}
+                <td {% if followup.recommendation == 'Y' %} class="success"{% elif followup.recommendation == 'N' %} class="danger" {% else %} class="warning" {%endif %}><a href="{% url 'electees:view_interview_follow_up' followup.id %}"> {{followup.member}}</a></td>
+                
+                {% endfor %}
+                
+            </tr>
+        {% endfor %}
+        </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock content %}
+

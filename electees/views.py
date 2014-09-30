@@ -77,6 +77,7 @@ def get_permissions(user):
         'can_submit_background_form':can_submit_background_form(user),
         'can_submit_interview_followups':user_is_member(user) and user.userprofile.memberprofile.status.name=='Active',
         'can_view_interview_pairings':Permissions.can_view_interview_pairings(user),
+        'can_view_followups':Permissions.can_see_follow_up(user),
         })
     return permission_dict
 def get_common_context(request):
@@ -622,6 +623,7 @@ def view_interview_follow_up(request,follow_up_id):
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
 def view_my_interview_forms(request):
     if not user_is_member(request.user) or not request.user.userprofile.memberprofile.status.name=='Active':
         request.session['error_message']='Only active members can fill out interview followups'
@@ -647,7 +649,7 @@ def view_interview_pairings(request):
         return get_previous_page(request,alternate='member_resources:index')
         
     interview_shifts = InterviewShift.objects.filter(term=AcademicTerm.get_current_term()).order_by('interviewer_shift__start_time')
-    template = loader.get_template('member_resources/view_interviews.html')
+    template = loader.get_template('electees/view_interviews.html')
     context_dict ={
         'interviews':interview_shifts,
         'subnav':'misc_reqs',
@@ -685,6 +687,29 @@ def edit_electee_process_visibility(request):
         'help_text':'Change whether certain electee items are visible to all actives.',
         'base':'electees/base_electees.html',
         'back_button':{'link':reverse('electees:manage_survey'),'text':'To Survey Manager'},
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))  
+    
+def view_interview_follow_up_table(request):
+    if not Permissions.can_see_follow_up(request.user):
+        request.session['error_message']='You are not authorized to view followups'
+        return get_previous_page(request,alternate='electees:view_electee_groups')
+    electees = MemberProfile.get_electees()
+    electee_data = []
+    num_followups=0
+    for electee in electees:
+        follow_ups = ElecteeInterviewFollowup.objects.filter(interview__interviewee_shift__attendees=electee)
+        num_followups=follow_ups.count() if follow_ups.count()>num_followups else num_followups
+        electee_data.append({'electee':electee,'followups':follow_ups})
+    template = loader.get_template('electees/interview_followup_table.html')
+    interviewer_headers = ['Interviewer %d'%count for count in range(1,num_followups+1)]
+    context_dict = {
+        'interviewer_headers':interviewer_headers,
+        'electees':electee_data,
+        'base':'electees/base_electees.html',
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
