@@ -26,6 +26,7 @@ class GoogleCalendar(models.Model):
     """
     name = models.CharField(max_length = 40)
     calendar_id = models.CharField(max_length=100)
+    display_order = models.PositiveSmallIntegerField(default=0)
     def __unicode__(self):
         return self.name
 class CalendarEvent(models.Model):
