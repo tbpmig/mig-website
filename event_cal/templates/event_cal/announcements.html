@@ -14,7 +14,7 @@
 {% if announcement_parts %}
 </ul>
 {% endif %}
-{% regroup announcement_events|dictsort:"google_cal.id" by google_cal as grouped_events %}
+{% regroup announcement_events|dictsort:"google_cal.display_order" by google_cal as grouped_events %}
 {% for grouped_event in grouped_events %}
     {% with category_name=grouped_event.grouper.name %}
     <strong>{{category_name|slice:":-9"}}</strong>
@@ -43,7 +43,7 @@
 {% endfor %}
 <hr style="height:1px;border:none;color:#bbb;background-color:#bbb;" />
 <h4><a href="{% url 'event_cal:list' %}">Upcoming Events</a></h4>
-{% regroup announcement_events|dictsort:"google_cal.id" by google_cal as grouped_events %}
+{% regroup announcement_events|dictsort:"google_cal.display_order" by google_cal as grouped_events %}
 {% for grouped_event in grouped_events %}
     {% with category_name=grouped_event.grouper.name %}
     <strong>{{category_name|slice:":-9"}}</strong>
