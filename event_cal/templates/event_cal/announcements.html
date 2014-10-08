@@ -3,16 +3,32 @@
 {% load my_markdown %}
 
 {% block cal_content %}
-<h4>Overview</h4>
-<ol>
-    {% for part in announcement_parts %}
+<h4>Contents</h4>
+{% if announcement_parts %}
+<strong>General Announcements</strong>
+<ul>
+{% endif %}
+{% for part in announcement_parts %}
     <li>{{part.title}}</li>
+{% endfor %}
+{% if announcement_parts %}
+</ul>
+{% endif %}
+{% regroup announcement_events|dictsort:"google_cal.id" by google_cal as grouped_events %}
+{% for grouped_event in grouped_events %}
+    {% with category_name=grouped_event.grouper.name %}
+    <strong>{{category_name|slice:":-9"}}</strong>
+    <ul>
+    {% endwith %}
+    {% for event in grouped_event.list %}
+        <li>{{event.name}}</li>
     {% endfor %}
-    {% for event in announcement_events %}
-    <li>{{event.name}}</li>
-    {% endfor %}
-</ol>
+    </ul>
+{% endfor %}
+<hr style="height:1px;border:none;color:#bbb;background-color:#bbb;" />
+{% if announcement_parts %}
 <h4>Announcements</h4>
+{% endif %}
 {% for part in announcement_parts %}
 <h5><strong>{{part.title}}</strong></h5>
 <p>{{part.text|my_markdown}}</p>
@@ -21,17 +37,31 @@
 {% if part.sign_up_link %}
 <p>Link: <a href="{{part.sign_up_link}}">{{part.sign_up_link}}</a></p>
 {% endif %}
-<hr>
+{% if not forloop.last %}
+<hr style="height:1px;border:none;color:#ddd;background-color:#ddd;" />
+{%endif %}
 {% endfor %}
+<hr style="height:1px;border:none;color:#bbb;background-color:#bbb;" />
 <h4><a href="{% url 'event_cal:list' %}">Upcoming Events</a></h4>
-{% for event in announcement_events %}
+{% regroup announcement_events|dictsort:"google_cal.id" by google_cal as grouped_events %}
+{% for grouped_event in grouped_events %}
+    {% with category_name=grouped_event.grouper.name %}
+    <strong>{{category_name|slice:":-9"}}</strong>
+    {% endwith %}
+    {% for event in grouped_event.list %}
 <h5><a href="{% url 'event_cal:event_detail' event.id %}">{{event.name}}</a></h5>
 <p><b>When: </b> {% if event.eventshift_set.all|length > 1 %}Shifts between {{event.get_start_and_end.start|date:"P M d, Y"}} and {{event.get_start_and_end.end|date:"P M d, Y"}}{%else%}{{event.get_start_and_end.start|date:"P"}} to {{event.get_start_and_end.end|date:"P, M d, Y"}}{% endif%}</p>
 <p><b>Where: </b>{% for location in event.get_locations %}{{location}}{% if event.get_locations|length > 2 and not forloop.last %}, {% endif %}{% if event.get_locations|length > 1 and forloop.revcounter == 2 %} and {% endif %}{% endfor %}</p>
 <p><b>What/Why: </b>{{event.announce_text|my_markdown}}</p>
 <p>Contacts: {% for leader in event.leaders.all %}
 <a href="mailto:{{leader.uniqname}}@umich.edu">{{ leader }}</a>{% if event.leaders.all|length > 2 and not forloop.last %}, {% endif %}{% if event.leaders.all|length > 1 and forloop.revcounter == 2 %} and {% endif %}{% endfor %}</p>
-<hr>
+{% if not forloop.last %}
+<hr style="height:1px;border:none;color:#ddd;background-color:#ddd;" />
+{%endif %}
+{% endfor %}
+{% if not forloop.last %}
+<hr style="height:1px;border:none;color:#ccc;background-color:#ccc;" />
+{%endif %}
 {% endfor %}
 
 {% endblock cal_content %}
