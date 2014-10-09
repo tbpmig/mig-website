@@ -82,7 +82,7 @@ ManageUgradPaperWorkFormSet = formset_factory(ManageUgradPaperWorkForm,extra=0)
     
 class ManageActiveGroupMeetingsForm(Form):
     member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=ElecteeGroup.get_current_leaders())
-    group_meetings = forms.IntegerField(min_value=0)
+    group_meetings = forms.IntegerField(min_value=0,label='Team Meetings')
 
 ManageActiveGroupMeetingsFormSet = formset_factory(ManageActiveGroupMeetingsForm,extra=1)
 
