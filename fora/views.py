@@ -6,6 +6,8 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.template import RequestContext, loader
 from django.utils import timezone
 
+from django_ajax.decorators import ajax
+
 from fora.models import Forum,ForumThread,ForumMessage,MessagePoint,get_user_points
 from member_resources.views import get_permissions as get_member_permissions
 from mig_main.utility import get_previous_page, get_message_dict, Permissions
@@ -119,61 +121,91 @@ def delete_forum(request,forum_id):
         return get_previous_page(request,alternate='fora:index')
     forum.delete()
     return redirect('fora:index')
-    
+
+@ajax    
 def upvote_comment(request,comment_id):
     if not hasattr(request.user,'userprofile') or not request.user.userprofile.is_member():
         request.session['error_message']='You must be logged in and a member to vote'
-        return redirect('fora:index')
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong> %s</div>'''%(request.session.pop('error_message'))}}
     message=get_object_or_404(ForumMessage,id=comment_id)
     profile = request.user.userprofile.memberprofile
     
     if profile in message.get_upvoters():
         request.session['error_message']='You have already upvoted this post'
-        return get_previous_page(request,alternate='fora:index')
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong> %s</div>'''%(request.session.pop('error_message'))}}
     existing_downvotes = MessagePoint.objects.filter(user=profile,message=message,plus_point=False)
     existing_downvotes.delete()
     upvote=MessagePoint(user=profile,message=message,plus_point=True)
     upvote.save()
-    return get_previous_page(request,alternate='fora:index')
+    return {'fragments':{'#upvote'+comment_id:r'''<a id="upvote%s" class="btn btn-warning" onclick="$('#downvote%s').attr('disabled',true);$('#upvote%s').attr('disabled',true);ajaxGet('%s',function(){$('#upvote%s').attr('disabled',false);$('#downvote%s').attr('disabled',false);})">Withdraw upvote</a>'''%(comment_id,comment_id,comment_id,reverse('fora:withdraw_upvote',args=[comment_id]),comment_id,comment_id),
+        '#downvote'+comment_id:r'''<a id="downvote%s" class="btn btn-primary" onclick="$('#downvote%s').attr('disabled',true);$('#upvote%s').attr('disabled',true);ajaxGet('%s',function(){$('#upvote%s').attr('disabled',false);$('#downvote%s').attr('disabled',false);})">Switch to downvote</a>'''%(comment_id,comment_id,comment_id,reverse('fora:downvote_comment',args=[comment_id]),comment_id,comment_id),
+        '#points'+comment_id:r'''<span id="points11">%d</span>'''%(message.get_net_points()),
+    }}
+
+@ajax    
 def withdraw_upvote(request,comment_id):
     if not hasattr(request.user,'userprofile') or not request.user.userprofile.is_member():
         request.session['error_message']='You must be logged in and a member to vote'
-        return redirect('fora:index')
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong> %s</div>'''%(request.session.pop('error_message'))}}
     message=get_object_or_404(ForumMessage,id=comment_id)
     profile = request.user.userprofile.memberprofile
     existing_upvotes = MessagePoint.objects.filter(user=profile,message=message,plus_point=True)
     existing_upvotes.delete()
 
-    return get_previous_page(request,alternate='fora:index')
-    
+    return {'fragments':{'#upvote'+comment_id:r'''<a id="upvote%s" class="btn btn-success" onclick="$('#downvote%s').attr('disabled',true);$('#upvote%s').attr('disabled',true);ajaxGet('%s',function(){$('#upvote%s').attr('disabled',false);$('#downvote%s').attr('disabled',false);})">Upvote</a>'''%(comment_id,comment_id,comment_id,reverse('fora:upvote_comment',args=[comment_id]),comment_id,comment_id),
+        '#downvote'+comment_id:r'''<a id="downvote%s" class="btn btn-danger" onclick="$('#downvote%s').attr('disabled',true);$('#upvote%s').attr('disabled',true);ajaxGet('%s',function(){$('#upvote%s').attr('disabled',false);$('#downvote%s').attr('disabled',false);})">Downvote</a>'''%(comment_id,comment_id,comment_id,reverse('fora:downvote_comment',args=[comment_id]),comment_id,comment_id),
+        '#points'+comment_id:r'''<span id="points11">%d</span>'''%(message.get_net_points()),
+    }}
+
+@ajax    
 def withdraw_downvote(request,comment_id):
     if not hasattr(request.user,'userprofile') or not request.user.userprofile.is_member():
         request.session['error_message']='You must be logged in and a member to vote'
-        return redirect('fora:index')
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong> %s</div>'''%(request.session.pop('error_message'))}}
     message=get_object_or_404(ForumMessage,id=comment_id)
     profile = request.user.userprofile.memberprofile
     existing_downvotes = MessagePoint.objects.filter(user=profile,message=message,plus_point=False)
     existing_downvotes.delete()
 
-    return get_previous_page(request,alternate='fora:index')
-    
+    return {'fragments':{'#downvote'+comment_id:r'''<a id="downvote%s" class="btn btn-danger" onclick="$('#downvote%s').attr('disabled',true);$('#upvote%s').attr('disabled',true);ajaxGet('%s',function(){$('#upvote%s').attr('disabled',false);$('#downvote%s').attr('disabled',false);})">Downvote</a>'''%(comment_id,comment_id,comment_id,reverse('fora:downvote_comment',args=[comment_id]),comment_id,comment_id),
+        '#upvote'+comment_id:r'''<a id="upvote%s" class="btn btn-success" onclick="$('#downvote%s').attr('disabled',true);$('#upvote%s').attr('disabled',true);ajaxGet('%s',function(){$('#upvote%s').attr('disabled',false);$('#downvote%s').attr('disabled',false);})">Upvote</a>'''%(comment_id,comment_id,comment_id,reverse('fora:upvote_comment',args=[comment_id]),comment_id,comment_id),
+        '#points'+comment_id:r'''<span id="points11">%d</span>'''%(message.get_net_points()),
+    }}
+@ajax   
 def downvote_comment(request,comment_id):
     if not hasattr(request.user,'userprofile') or not request.user.userprofile.is_member():
         request.session['error_message']='You must be logged in and a member to vote'
-        return redirect('fora:index')
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong> %s</div>'''%(request.session.pop('error_message'))}}
     message=get_object_or_404(ForumMessage,id=comment_id)
     profile = request.user.userprofile.memberprofile
     if get_user_points(profile)<=0:
         request.session['error_message']='Downvoting costs 1 point. You lack sufficient points.'
-        return redirect('fora:index')
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong> %s</div>'''%(request.session.pop('error_message'))}}
     if profile in message.get_downvoters():
         request.session['error_message']='You have already downvoted this post'
-        return get_previous_page(request,alternate='fora:index')
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong> %s</div>'''%(request.session.pop('error_message'))}}
     existing_upvotes = MessagePoint.objects.filter(user=profile,message=message,plus_point=True)
     existing_upvotes.delete()
     downvote=MessagePoint(user=profile,message=message,plus_point=False)
     downvote.save()
-    return get_previous_page(request,alternate='fora:index')
+    return {'fragments':{'#downvote'+comment_id:r'''<a id="downvote%s" class="btn btn-primary" onclick="$('#downvote%s').attr('disabled',true);$('#upvote%s').attr('disabled',true);ajaxGet('%s',function(){$('#upvote%s').attr('disabled',false);$('#downvote%s').attr('disabled',false);})">Withdraw downvote</a>'''%(comment_id,comment_id,comment_id,reverse('fora:withdraw_downvote',args=[comment_id]),comment_id,comment_id),
+        '#upvote'+comment_id:r'''<a id="upvote%s" class="btn btn-success" onclick="$('#downvote%s').attr('disabled',true);$('#upvote%s').attr('disabled',true);ajaxGet('%s',function(){$('#upvote%s').attr('disabled',false);$('#downvote%s').attr('disabled',false);})">Switch to Upvote</a>'''%(comment_id,comment_id,comment_id,reverse('fora:upvote_comment',args=[comment_id]),comment_id,comment_id),
+        '#points'+comment_id:r'''<span id="points11">%d</span>'''%(message.get_net_points()),
+    }}
 def add_comment(request,forum_id,reply_to_id):
     if not hasattr(request.user,'userprofile') or not request.user.userprofile.is_member():
         raise PermissionDenied()

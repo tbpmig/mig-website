@@ -10,7 +10,7 @@
         <div style="padding-left:{{reply.depth}}px;">
         {% endif %}
         <div class="forum-post"> 
-        <h4>{{reply.reply.title}} ({{reply.comment_points}} points)</h4>
+        <h4>{{reply.reply.title}} (<span id="points{{reply.reply.id}}">{{reply.comment_points}}</span> points)</h4>
         <p><em>By: {{reply.reply.creator}} (User points: {{reply.user_points}}) {{reply.reply.time_created|date:"d N Y, P"}}</em></p>
         {{reply.reply.content|my_markdown}}
         {% if can_comment %}
@@ -18,18 +18,18 @@
             <div class="btn-group pull-right">
                 {% if profile != reply.reply.creator %}
                 {% if profile in reply.reply.get_upvoters %}
-                <a class="btn btn-warning" href="{% url 'fora:withdraw_upvote' reply.reply.id %}">Withdraw upvote</a>
+                <a id="upvote{{reply.reply.id}}" class="btn btn-warning" onclick="$('#upvote{{reply.reply.id}}').attr('disabled',true);ajaxGet('{% url 'fora:withdraw_upvote' reply.reply.id %}',function(){$('#upvote{{reply.reply.id}}').attr('disabled',false);})">Withdraw upvote</a>
                 {% elif profile in reply.reply.get_downvoters %}
-                <a class="btn btn-success" href="{% url 'fora:upvote_comment' reply.reply.id %}">Switch to upvote</a>
+                <a id="upvote{{reply.reply.id}}" class="btn btn-success" onclick="$('#upvote{{reply.reply.id}}').attr('disabled',true);ajaxGet('{% url 'fora:upvote_comment' reply.reply.id %}',function(){$('#upvote{{reply.reply.id}}').attr('disabled',false);})">Switch to upvote</a>
                 {% else %}
-                <a class="btn btn-success" href="{% url 'fora:upvote_comment' reply.reply.id %}">Upvote</a>
+                <a id="upvote{{reply.reply.id}}" class="btn btn-success" onclick="$('#upvote{{reply.reply.id}}').attr('disabled',true);ajaxGet('{% url 'fora:upvote_comment' reply.reply.id %}',function(){$('#upvote{{reply.reply.id}}').attr('disabled',false);})">Upvote</a>
                 {% endif %}
                 {% if profile in reply.reply.get_downvoters %}
-                <a class="btn btn-primary" href="{% url 'fora:withdraw_downvote' reply.reply.id %}">Withdraw downvote</a>
+                <a id="downvote{{reply.reply.id}}" class="btn btn-primary" onclick="$('#downvote{{reply.reply.id}}').attr('disabled',true);ajaxGet('{% url 'fora:withdraw_downvote' reply.reply.id %}',function(){$('#downvote{{reply.reply.id}}').attr('disabled',false);})">Withdraw downvote</a>
                 {% elif profile in reply.reply.get_upvoters and can_downvote%}
-                <a class="btn btn-danger" href="{% url 'fora:downvote_comment' reply.reply.id %}">Switch to downvote</a>
+                <a id="downvote{{reply.reply.id}}" class="btn btn-danger" onclick="$('#downvote{{reply.reply.id}}').attr('disabled',true);ajaxGet('{% url 'fora:downvote_comment' reply.reply.id %}',function(){$('#downvote{{reply.reply.id}}').attr('disabled',false);})">Switch to downvote</a>
                 {% elif can_downvote %}
-                <a class="btn btn-danger" href="{% url 'fora:downvote_comment' reply.reply.id %}">Downvote</a>
+                <a id="downvote{{reply.reply.id}}" class="btn btn-danger" onclick="$('#downvote{{reply.reply.id}}').attr('disabled',true);ajaxGet('{% url 'fora:downvote_comment' reply.reply.id %}',function(){$('#downvote{{reply.reply.id}}').attr('disabled',false);})">Downvote</a>
                 {% else %}
                 <a class="btn btn-danger" disabled="disabled">Insufficient points to downvote</a>
                 {% endif %}
