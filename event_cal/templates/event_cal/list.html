@@ -10,7 +10,7 @@
 $(document).ready(function(){
     options={}
     options.onError=function(content){
-        consolte.log(content);
+        console.log(content);
     };
 {% for packed_event in events %}
     {% with event=packed_event.event can_edit_event=packed_event.can_edit %}

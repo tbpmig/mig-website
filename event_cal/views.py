@@ -464,21 +464,18 @@ def get_event_ajax(request,event_id):
 def my_events(request):
     request.session['current_page']=request.path
     my_events = []
-    events_im_leading = []
     has_profile = False
     if hasattr(request.user,'userprofile'):
         has_profile = True
-        my_events = CalendarEvent.objects.filter(term=AcademicTerm.get_current_term(),eventshift__attendees__uniqname=request.user.userprofile.uniqname).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
-
-        events_im_leading = CalendarEvent.objects.filter(term=AcademicTerm.get_current_term(),leaders__uniqname=request.user.userprofile.uniqname).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
-
+        query = Q(term=AcademicTerm.get_current_term(),eventshift__attendees__uniqname=request.user.userprofile.uniqname)|Q(term=AcademicTerm.get_current_term(),leaders__uniqname=request.user.userprofile.uniqname)
+        my_events = CalendarEvent.objects.filter(query).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
+        
     template = loader.get_template('event_cal/my_events.html')
     packed_events=[]
     for event in my_events:
         packed_events.append({'event':event,'can_edit':Permissions.can_edit_event(event,request.user)})
     context_dict = {
         'my_events':packed_events,
-        'events_im_leading':events_im_leading,
         'has_profile':has_profile,
         'subnav':'my_events',
         }

@@ -1,6 +1,24 @@
 {% extends "event_cal/base_event_cal.html" %}
 {% load staticfiles %}
+{% block js %}
 
+<script type="text/javascript">
+$(document).ready(function(){
+    options={}
+    options.onError=function(content){
+        console.log(content);
+    };
+{% for packed_event in my_events %}
+    {% with event=packed_event.event can_edit_event=packed_event.can_edit %}
+
+         ajaxGet('{% url 'event_cal:get_event_ajax' event.id %}', {},function(){
+            load_social_media();
+        },options);
+    {% endwith %}
+{% endfor %}
+     });
+ </script>
+{% endblock js %}
 {% block cal_content %}
 {% with only_mine=True %}
 <h3>My Events</h3>
@@ -8,7 +26,9 @@
     {% for packed_event in my_events %}
     {% with event=packed_event.event can_edit_event=packed_event.can_edit %}
 <li>
-{% include 'event_cal/event.html' %}
+<div id="event{{event.id}}">
+<p>Loading {{event.name}}...</p>
+</div>
 </li>
 {% endwith %}
 {% empty %}
@@ -22,24 +42,5 @@
 {% endfor %}
 </ul>
 {% endwith %}
-{% if events_im_leading|length > 0 %}
-<h3>Events I'm Leading</h3>
-<ul id="event-list">
-    {% for event in events_im_leading %}
-    {% with can_edit_event=True %}
-<li>
-{% include 'event_cal/event.html' %}
-    {% if event.can_complete_event %}
-        <a class="btn btn-success btn-sm" href="{% url 'event_cal:complete_event' event.id %}">Complete Event and Assign Hours</a>
-    {% endif %}
-    {% if event.completed %}
-    <a class="btn btn-info btn-sm" href="{% url 'event_cal:event_project_report' event.id %}">Add/Update Project Report</a>
-    <a class="btn btn-warning btn-sm" href="{% url 'event_cal:update_completed_event' event.id %}">Update Event Progress</a>
-    <a class="btn btn-info btn-sm" href="{% url 'event_cal:add_project_report_to_event' event.id %}">Add/Swap Existing Project Report</a>
-    {% endif %}
-</li>
-{% endwith %}
-{% endfor %}
-</ul>
-{% endif %}
+
 {% endblock cal_content %}
