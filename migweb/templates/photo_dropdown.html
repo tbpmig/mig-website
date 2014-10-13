@@ -1,0 +1,10 @@
+<li id="eventphoto{{photo.id}}" role="presentation">
+    <img style="max-width:200px;" role="menuitem" tabindex="-1" src="{{photo.photo.thumbnail.url}}" {% if not for_event %}onClick="addtext('{{photo.photo.thumbnail.url}}','{{photo.caption}}')"{% endif %}></img>
+    {% if for_event %}
+    <div class="btn-group">
+        <button type="button" class="btn-default" onClick="addtext('{{photo.photo.thumbnail.url}}','{{photo.caption|escapejs}}','id_event-description')">Add to Description</button>
+        <button type="button" class="btn-default" onClick="addtext('{{photo.photo.thumbnail.url}}','{{photo.caption|escapejs}}','id_event-announce_text')">Add to Announcement</button>
+    </div>
+    {% endif %}
+   <hr/>
+</li>

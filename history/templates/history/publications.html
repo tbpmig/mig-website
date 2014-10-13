@@ -10,6 +10,18 @@
         var textAreaTxt = jQuery("#id_body").val();
         jQuery("#id_body").val(textAreaTxt.substring(0,caretPos)+newtext+textAreaTxt.substring(caretPos));
     }
+    $(document).ready(function(){
+    options={}
+    options.onError=function(content){
+        console.log(content);
+    };
+{% for photo in event_photos %}
+{% if not forloop.first %}
+    ajaxGet('{% url 'get_article_photo_ajax' photo.id %}', {},function(){
+        },options);
+{% endif %}
+{% endfor %}
+     });
 </script>
 {% endblock %}
 
@@ -46,7 +58,11 @@
                     <a class="btn btn-default" id="photoSelect" role="button" data-toggle="dropdown" href="#">Add Photo <span class="caret"></span></a>
                     <ul id="menu1" class="dropdown-menu scrollable-menu" role="menu" aria-labelledby="photoSelect">
                         {% for photo in event_photos %}
-                        <li role="presentation"><img style="max-width:150px;" role="menuitem" tabindex="-1" src="{{photo.photo.thumbnail.url}}" onClick="addtext('{{photo.photo.thumbnail.url}}','{{photo.caption}}')"></img></li>
+                        {% if forloop.first %}
+                            {% include 'photo_dropdown.html' %}
+                        {% else %}
+                            <li role="presentation" id="eventphoto{{photo.id}}">Loading...</li>
+                        {% endif %}
                         {% endfor %}
                     </ul>
                 </div>

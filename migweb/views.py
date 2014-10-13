@@ -14,7 +14,7 @@ from django.utils import timezone
 from django_ajax.decorators import ajax
 import tweepy
 
-from event_cal.models import CalendarEvent
+from event_cal.models import CalendarEvent,EventPhoto
 from history.models   import WebsiteArticle
 from mig_main.models import SlideShowPhoto
 from mig_main.utility import get_quick_links, get_message_dict
@@ -61,9 +61,31 @@ def get_slide_ajax(request,slide_id):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    event_html = loader.render_to_string('slideshow_photo.html',context_dict)
-    return {'fragments':{'#slideshow_photo'+slide_id:event_html}}
-        
+    slide_html = loader.render_to_string('slideshow_photo.html',context_dict)
+    return {'fragments':{'#slideshow_photo'+slide_id:slide_html}}
+@ajax
+def get_eventphoto_ajax(request,photo_id):
+    photo = get_object_or_404(EventPhoto,id=photo_id)
+    context_dict = {
+        'photo':photo,
+        'for_event':True,
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    photo_html = loader.render_to_string('photo_dropdown.html',context_dict)
+    return {'fragments':{'#eventphoto'+photo_id:photo_html}}
+@ajax
+def get_article_photo_ajax(request,photo_id):
+    photo = get_object_or_404(EventPhoto,id=photo_id)
+    context_dict = {
+        'photo':photo,
+        'for_event':False,
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    photo_html = loader.render_to_string('photo_dropdown.html',context_dict)
+    return {'fragments':{'#eventphoto'+photo_id:photo_html}}
+            
 def cf_companies(request):
     request.session['current_page']=request.path
     
