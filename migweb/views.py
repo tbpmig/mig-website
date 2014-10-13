@@ -7,9 +7,11 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth import logout, login
 from django.contrib.auth.models import User
 from django.http import HttpResponse, HttpResponseRedirect,Http404
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.template import RequestContext, loader
 from django.utils import timezone
+
+from django_ajax.decorators import ajax
 import tweepy
 
 from event_cal.models import CalendarEvent
@@ -51,7 +53,17 @@ def home(request):
     context = RequestContext(request, context_dict)
     
     return HttpResponse(template.render(context))
-    
+@ajax
+def get_slide_ajax(request,slide_id):
+    slide = get_object_or_404(SlideShowPhoto,id=slide_id)
+    context_dict = {
+        'slide':slide,
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    event_html = loader.render_to_string('slideshow_photo.html',context_dict)
+    return {'fragments':{'#slideshow_photo'+slide_id:event_html}}
+        
 def cf_companies(request):
     request.session['current_page']=request.path
     

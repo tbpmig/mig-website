@@ -28,5 +28,6 @@ urlpatterns = patterns('',
     url(r'^piday/$',RedirectView.as_view(url='/outreach/pi_day/')),
     url(r'^twitter_oauth/$','migweb.views.twitter_oauth',name='twitter_oauth'),
     url(r'^init_twitter/$','migweb.views.initialize_twitter',name='initialize_twitter'),
+    url(r'^slide_ajax/(?P<slide_id>\d+)/$','migweb.views.get_slide_ajax',name='get_slide_ajax'),
     #url(r'^settings/',include('dbsettings.urls')),
 )+static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)

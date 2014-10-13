@@ -25,7 +25,8 @@
                     </ol>
                     <div class="carousel-inner">
                         {% for slide in slideshow_photos %}
-                        <div class="item {%if forloop.first%}active{%endif%}">
+                        {%if forloop.first%}
+                        <div class="item {%if forloop.first%}active{%endif%}" id="slideshow_photo{{slide.id}}">
                             <a href="{{slide.link}}" title="{{slide.title}}">
                                 <img src="{% static slide.photo.thumbnail.url %}" alt="{{slide.title}}" />
                             
@@ -35,6 +36,11 @@
                             </div>
                         </a>
                         </div>
+                        {% else %}
+                        <div class="item" id="slideshow_photo{{slide.id}}">
+                        <p>Loading...</p>
+                        </div>
+                        {% endif %}
                         {% endfor %}
                     </div>
                 {% if slideshow_photos|length > 1 %}
@@ -82,11 +88,23 @@
 
 {% endblock %}
 {% block js_bottom %}
-<script>
-	$(document).ready(function() {
-		$('.carousel').carousel({
-	interval: 8000
-    })
-    });
-</script>
+<script type="text/javascript">
+$(document).ready(function(){
+    options={}
+    options.onError=function(content){
+        console.log(content);
+    };
+{% for slide in slideshow_photos %}
+   {%if not forloop.first%}
+
+         ajaxGet('{% url 'get_slide_ajax' slide.id %}', {},function(){
+         $('.carousel').carousel({
+            interval: 8000
+            })
+           },options);
+{% endif %}
+{% endfor %}
+     });
+ </script>
+
 {% endblock %}
