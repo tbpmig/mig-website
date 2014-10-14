@@ -3,7 +3,7 @@ mig-website
 
 This repository contains all of the publicly accessible source code for the website for Michigan Gamma chapter of Tau Beta Pi. To see how this all comes together, visit [the website](https://tbp.engin.umich.edu), (note that most of the content is behind user authentication controls available only to members).
 
-Lincense
+License
 ---------
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License. A copy of the license is included in the repository.
