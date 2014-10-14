@@ -5,6 +5,10 @@ from mig_main.models import MemberProfile
 from mig_main.templatetags.my_markdown import my_markdown
 # Create your models here.
 def get_user_points(memberprofile):
+    """
+    Calculates the points associated with a particular user. This is based on the posts they've created, the number of up and down votes their posts
+    have received, and the number of downcvotes they themselves have given.
+    """
     point_objects = MessagePoint.objects.filter(message__creator=memberprofile)
     votes_count = 2*point_objects.filter(plus_point=True,message__hidden=False).count()-point_objects.filter(plus_point=False).count()
     spent_downvotes = MessagePoint.objects.filter(user=memberprofile,plus_point=False).count()
@@ -15,7 +19,7 @@ class Forum(models.Model):
     name = models.CharField(max_length=128)
     
     def get_first_threads(self):
-        threads=self.forumthread_set.filter(hidden=False).order_by('time_created')
+        threads=self.forumthread_set.filter(hidden=False).order_by('-time_created')
         return threads[:9]
 class ForumThread(models.Model):
     title = models.CharField(max_length=256)
