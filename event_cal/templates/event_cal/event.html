@@ -171,7 +171,7 @@
                     {% for shift in event.eventshift_set.all|dictsort:"start_time" %}
                     {% if not only_mine or user.userprofile in shift.attendees.all %}
                     {% with total_attending=shift.attendees.count %}
-                        <tr>
+                        <tr id="eventshift{{shift.id}}">
                             <td>{{ shift.start_time|date:"D. N d, Y P" }}</td>
                             <td>{{ shift.end_time|date:"D. N d, Y P" }}</td>
                             <td>{{ shift.location}}{% if shift.on_campus%} (on campus){% else %} (off campus){%endif%}</td>
@@ -280,7 +280,7 @@
                                 <td>You must login to sign-up
                             {% endif %}
                             {% if can_edit_event %}
-                                <td><a class="btn btn-primary btn-sm confirmation" href="{% url 'event_cal:delete_shift' event.id shift.id %}"><i class="glyphicon glyphicon-remove"></i> Delete shift</a></td>
+                                <td><a id="deleteshift{{shift.id}}" class="btn btn-primary btn-sm confirmation" onclick="$('#deleteshift{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:delete_shift' event.id shift.id %}',function(){})"><i class="glyphicon glyphicon-remove"></i> Delete shift</a></td>
                             {% endif %}
                         </tr>
                     {% endwith %}

@@ -797,19 +797,29 @@ def delete_event(request, event_id):
     else:
         request.session['error_message']='You do not have sufficient permissions to delete this event, or it has already been completed.'
         return redirect('event_cal:index')
-
+@ajax
 def delete_shift(request,event_id, shift_id):
     e= get_object_or_404(CalendarEvent,id=event_id)
     s= get_object_or_404(EventShift,id=shift_id)
     if Permissions.can_edit_event(e,request.user):
-        s.delete_gcal_event_shift()
-        s.delete()
-        request.session['success_message']='Event shift deleted successfully'
-        return get_previous_page(request,alternate='event_cal:list')
+        if not e.completed  and e.eventshift_set.all().count() > 1:
+            s.delete_gcal_event_shift()
+            s.delete()
+            request.session['success_message']='Event shift deleted successfully'
+        else:
+            request.session['error_message']='Shifts can only be deleted for open events with more than one shift.'
+    
     else:
         request.session['error_message']='You do not have sufficient permissions to delete this shift.'
-        return redirect('even_cal:index')
 
+    if 'error_message' in request.session:
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+    return {'fragments':{'#eventshift'+shift_id:'',
+                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
 def email_participants(request,event_id):
     e= get_object_or_404(CalendarEvent,id=event_id)
     if not Permissions.can_edit_event(e,request.user) or not hasattr(request.user,'userprofile') or not request.user.userprofile.is_member():
