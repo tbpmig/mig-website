@@ -1,0 +1,7 @@
+<div class="btn-group-vertical" id="forum_threads{{forum.id}}">
+
+{% for thread in forum_threads %}
+
+<a href="{% url 'fora:view_thread' thread.id %}" class="btn btn-small btn-default">{{thread.title}}</a>
+{% endfor %}
+</div>

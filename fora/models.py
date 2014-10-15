@@ -1,3 +1,5 @@
+from math import ceil
+
 from django.db import models
 from django.core.urlresolvers import reverse
 
@@ -18,9 +20,17 @@ def get_user_points(memberprofile):
 class Forum(models.Model):
     name = models.CharField(max_length=128)
     
-    def get_first_threads(self):
+    def get_num_thread_pages(self):
+        return max(ceil(self.forumthread_set.filter(hidden=False).count()/9.0),1)
+
+    def get_thread_page(self,page_num):
+        if self.get_num_thread_pages() < page_num:
+        
+            return None
         threads=self.forumthread_set.filter(hidden=False).order_by('-time_created')
-        return threads[:9]
+        return threads[9*page_num:9*(page_num+1)]
+    def get_first_threads(self):
+        return self.get_thread_page(0)
 class ForumThread(models.Model):
     title = models.CharField(max_length=256)
     forum = models.ForeignKey(Forum)

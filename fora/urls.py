@@ -14,5 +14,6 @@ urlpatterns = patterns('',
     url(r'^withdraw_downvote/(?P<comment_id>\d+)/$',views.withdraw_downvote,name='withdraw_downvote'),
     url(r'^new_forum/$',views.create_forum,name='create_forum'),
     url(r'^delete_forum/(?P<forum_id>\d+)/$',views.delete_forum,name='delete_forum'),
+    url(r'^get_thread_page/(?P<forum_id>\d+)-(?P<page_num>\d+)/$',views.get_thread_page,name='get_thread_page'),
     
 )

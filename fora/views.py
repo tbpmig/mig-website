@@ -206,6 +206,34 @@ def downvote_comment(request,comment_id):
         '#upvote'+comment_id:r'''<a id="upvote%s" class="btn btn-success" onclick="$('#downvote%s').attr('disabled',true);$('#upvote%s').attr('disabled',true);ajaxGet('%s',function(){$('#upvote%s').attr('disabled',false);$('#downvote%s').attr('disabled',false);})">Switch to Upvote</a>'''%(comment_id,comment_id,comment_id,reverse('fora:upvote_comment',args=[comment_id]),comment_id,comment_id),
         '#points'+comment_id:r'''<span id="points11">%d</span>'''%(message.get_net_points()),
     }}
+    
+@ajax
+def get_thread_page(request,forum_id,page_num):
+    page_num=int(page_num)
+    forum = get_object_or_404(Forum,id=forum_id)
+    threads = forum.get_thread_page(page_num)
+    max_pages = forum.get_num_thread_pages()
+    if page_num >0:
+        down_options = r'''onclick="ajaxGet('%s',function(){})"'''%(reverse('fora:get_thread_page',args=[forum_id,page_num-1]))
+    else:
+        down_options = r'''class="disabled"'''
+    if page_num < (max_pages-1):
+        up_options = r'''onclick="ajaxGet('%s',function(){})"'''%(reverse('fora:get_thread_page',args=[forum_id,page_num+1]))
+    else:
+        up_options = r'''class="disabled"'''
+    context_dict = {
+        'forum':forum,
+        'forum_threads':threads,
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    thread_list_html = loader.render_to_string('fora/thread_list.html',context_dict)
+    print thread_list_html
+    return {'fragments':{'#forum_pager'+forum_id:r'''<ul class="pagination" id="forum_pager%s">
+  <li><a href="#" %s>&laquo;</a></li>
+  <li><a href="#" %s>&raquo;</a></li>
+</ul>'''%(forum_id,down_options,up_options),
+        '#forum_threads'+forum_id:thread_list_html}}
 def add_comment(request,forum_id,reply_to_id):
     if not hasattr(request.user,'userprofile') or not request.user.userprofile.is_member():
         raise PermissionDenied()

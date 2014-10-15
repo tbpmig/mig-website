@@ -1,19 +1,31 @@
 <hr/>
 <h3>{{forum.name}}</h3>
-<hr/>
-<div class="btn-group-vertical">
-{% for thread in forum.get_first_threads %}
+{% if can_create_forum or can_create_thread %}
+<div class="btn-group">
 
-<a href="{% url 'fora:view_thread' thread.id %}" class="btn btn-small btn-default">{{thread.title}}</a>
-{% endfor %}
-
-{% if can_create_thread %}
-    <a href="{% url 'fora:create_thread' forum.id %}" class="btn btn-small btn-primary">Create new thread</a>
-{% endif %}
-{% if can_create_forum %}
-        <a href="{% url 'fora:delete_forum' forum.id %}" class="btn btn-small btn-danger confirmation">Delete forum</a>
+    {% if can_create_thread %}
+        <a href="{% url 'fora:create_thread' forum.id %}" class="btn btn-small btn-primary">Create new thread</a>
     {% endif %}
+    {% if can_create_forum %}
+            <a href="{% url 'fora:delete_forum' forum.id %}" class="btn btn-small btn-danger confirmation">Delete forum</a>
+    {% endif %}
+    
 </div>
+{% endif %}
+<hr/>
+
+{% if forum.get_num_thread_pages > 1 %}
+<ul class="pagination" id="forum_pager{{forum.id}}">
+  <li><a href="#" class="disabled">&laquo;</a></li>
+  <li><a href="#" onclick="ajaxGet('{% url 'fora:get_thread_page' forum.id  '1' %}',function(){})">&raquo;</a></li>
+</ul>
+<br/>
+{% endif %}
+{% with forum_threads=forum.get_first_threads %}
+{% include 'fora/thread_list.html' %}
+{% endwith %}
+
+
 
 
 
