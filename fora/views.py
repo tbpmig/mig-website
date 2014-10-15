@@ -48,7 +48,7 @@ def view_thread(request,thread_id):
     if thread_id:
         active_thread=get_object_or_404(ForumThread,id=thread_id)
     else:
-        threads=ForumThread.objects.filter(hidden=False).order_by('time_created')
+        threads=ForumThread.objects.filter(hidden=False).order_by('-time_created')
         if threads.exists():
             active_thread=threads[0]
         else:
