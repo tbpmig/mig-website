@@ -131,13 +131,16 @@ class TBPChapter(models.Model):
     def __unicode__(self):
         return self.state+'-'+self.letter
 class OfficerPosition(models.Model):
-        
+    POSITION_TYPE_CHOICES = (
+        ("O", "Officer"),
+        ("C", "Chair"),
+    ) 
     name            = models.CharField(max_length = 45)
     description     = models.TextField()
     email           = models.EmailField(max_length=254)
     enabled         = models.BooleanField(default=True)
     display_order   = models.PositiveIntegerField(default=0)
-
+    position_type   = models.CharField(max_length=1,choices=POSITION_TYPE_CHOICES,default = 'O')
     @classmethod
     def get_current(cls):
         return cls.objects.filter(enabled=True).order_by('display_order')

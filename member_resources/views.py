@@ -1270,6 +1270,7 @@ def manage_officers(request,term_id):
         'base':'member_resources/base_member_resources.html',
         'submit_name':'Update Officers',
         'form_title':'Add/Remove Members as Officers for %s'%(unicode(term)),
+        'help_text':'Add or update the bios and pictures for officers. This will affect their permissions for the given term.',
         'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Membership Management'},
         }
     context_dict.update(get_common_context(request))

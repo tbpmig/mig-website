@@ -17,7 +17,7 @@
             totalForms = $('#id_' + options.prefix + '-TOTAL_FORMS'),
             maxForms = $('#id_' + options.prefix + '-MAX_NUM_FORMS'),
             childElementSelector = 'input,select,textarea,label,div',
-            scriptElementSelector = 'script:last',
+            scriptElementSelector = 'script',
             $$ = $(this),
 
             applyExtraClasses = function(row, ndx) {
@@ -192,8 +192,9 @@
                     updateElementIndex($(this), options.prefix, formCount);
                 });
                 if(row.find('.select2-container')){
-                    row.find('.select2-container:first').remove();
-                    row.find('select:first').each(function(){
+                    console.log($('.select2-container'))
+                    row.find('.select2-container').remove();
+                    row.find('select').each(function(){
                         $(this).removeClass('select2-offscreen');
                     })
 

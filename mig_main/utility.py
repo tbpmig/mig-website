@@ -221,7 +221,7 @@ class Permissions:
         if not profile:
             return Officer.objects.none()
         term = get_previous_full_term(AcademicTerm.get_current_term())
-        positions = Officer.objects.filter(user=profile,term = term)
+        positions = Officer.objects.filter(user=profile,term = term,position__position_type='O')
         return positions
     
     @classmethod
@@ -236,7 +236,17 @@ class Permissions:
         term = AcademicTerm.get_current_term()
         if term.semester_type.name=='Summer':
             term = get_next_full_term(term)
-        current_positions = Officer.objects.filter(user=profile,term = term)
+        current_positions = Officer.objects.filter(user=profile,term = term,position__position_type='O')
+        return current_positions
+    @classmethod
+    def get_current_chair_positions(cls,user):
+        profile = cls.get_profile(user)
+        if not profile:
+            return Officer.objects.none()
+        term = AcademicTerm.get_current_term()
+        if term.semester_type.name=='Summer':
+            term = get_next_full_term(term)
+        current_positions = Officer.objects.filter(user=profile,term = term,position__position_type='C')
         return current_positions
     @classmethod
     def can_create_events(cls,user):
@@ -244,6 +254,9 @@ class Permissions:
             return True
         current_positions = cls.get_current_officer_positions(user)
         if current_positions.exists():
+            return True
+        current_chairs = cls.get_current_chair_positions(user)
+        if current_chairs.exists():
             return True
         profile = cls.get_profile(user)
         if not profile:
