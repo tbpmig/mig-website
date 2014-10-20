@@ -186,7 +186,7 @@ def officer(request,officer_id):
     if officer.position.name=='Advisor':
         is_not_advisor=False
     is_current=False
-    if officer.term == AcademicTerm.get_current_term():
+    if AcademicTerm.get_current_term() in officer.term.all():
         is_current=True
     context_dict = {
         'officer':officer,
