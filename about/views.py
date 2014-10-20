@@ -185,11 +185,13 @@ def officer(request,officer_id):
     is_not_advisor=True
     if officer.position.name=='Advisor':
         is_not_advisor=False
-
+    is_current=False
+    if officer.term == AcademicTerm.get_current_term():
+        is_current=True
     context_dict = {
         'officer':officer,
         'is_not_advisor':is_not_advisor,
-        'is_current':(officer.term.id==AcademicTerm.get_current_term().id),
+        'is_current':is_current,
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
