@@ -189,6 +189,7 @@ def officer(request,officer_id):
     context_dict = {
         'officer':officer,
         'is_not_advisor':is_not_advisor,
+        'is_current':(officer.term.id==AcademicTerm.get_current_term().id),
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
