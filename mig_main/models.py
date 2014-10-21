@@ -158,7 +158,13 @@ class OfficerTeam(models.Model):
     end_term = models.ForeignKey(AcademicTerm,related_name='teams_ending_in_term',null=True,blank=True) 
     def __unicode__(self):
         return self.name
-        
+
+class Committee(models.Model):
+    name = models.CharField(max_length=128)
+    description = models.TextField()
+    is_active=models.BooleanField(default=True)
+    def __unicode__(self):
+        return self.name
 class Standing(models.Model):
     name        = models.CharField(max_length = 20)
     enabled     = models.BooleanField(default=True)

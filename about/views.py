@@ -15,7 +15,7 @@ from django.db.models import Q,Count
 from django_ajax.decorators import ajax
 
 from about.models import AboutSlideShowPhoto,JoiningTextField
-from history.models import Officer
+from history.models import Officer,CommitteeMember
 from mig_main.models import OfficerPosition, OfficerTeam, AcademicTerm
 from mig_main.utility import get_message_dict,Permissions
 from history.models import GoverningDocument, GoverningDocumentType,pack_officers_for_term
@@ -168,6 +168,7 @@ def leadership_for_term(request,term_id):
 
     context_dict = {
         "officers":officers,
+        'committee_members':CommitteeMember.objects.filter(term=term),
         'officer_ids':officer_set,
         'request':request,
         'terms':AcademicTerm.get_rchron_before()[:5],

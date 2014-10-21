@@ -1,5 +1,5 @@
 from django.contrib import admin
-from mig_main.models import UserProfile, OfficerPosition, Standing, Status, Major, ShirtSize, TBPChapter, AcademicTerm, OfficerTeam, MemberProfile,CurrentTerm,SlideShowPhoto,UserPreference
+from mig_main.models import UserProfile, OfficerPosition, Standing, Status, Major, ShirtSize, TBPChapter, AcademicTerm, OfficerTeam, MemberProfile,CurrentTerm,SlideShowPhoto,UserPreference,Committee
 
 class MemberProfileAdmin(admin.ModelAdmin):
     fieldsets = [
@@ -24,3 +24,4 @@ admin.site.register(UserProfile)
 admin.site.register(CurrentTerm)
 admin.site.register(SlideShowPhoto)
 admin.site.register(UserPreference)
+admin.site.register(Committee)

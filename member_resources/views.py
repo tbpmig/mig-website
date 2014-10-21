@@ -21,14 +21,14 @@ from django.core.urlresolvers import reverse
 from corporate.views import update_resume_zips
 from electees.models import ElecteeGroup, electee_stopped_electing, EducationalBackgroundForm,ElecteeInterviewSurvey,SurveyAnswer,SurveyQuestion,SurveyPart
 from event_cal.models import CalendarEvent, MeetingSignInUserData,InterviewShift
-from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardForm,BaseBackgroundCheckForm,MassAddBackgroundCheckForm,MeetingMinutesForm
-from history.models import Award,Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport,BackgroundCheck
+from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardForm,BaseBackgroundCheckForm,MassAddBackgroundCheckForm,MeetingMinutesForm,CommitteeMemberForm
+from history.models import Award,Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport,BackgroundCheck,CommitteeMember
 from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet,ExternalServiceForm
 from member_resources.forms import ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet,TBPraiseForm
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
 from migweb.context_processors import profile_setup
 from mig_main.demographics import get_members_for_COE
-from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,TBPraise,PREFERENCES
+from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,TBPraise,PREFERENCES,Committee
 from mig_main.utility import  Permissions, get_previous_page,get_next_term, get_next_full_term,get_current_event_leaders,get_current_group_leaders,get_message_dict,UnicodeWriter,get_officer_positions_predecessors
 from outreach.models import TutoringRecord
 from requirements.models import DistinctionType, Requirement, ProgressItem, EventCategory
@@ -1150,6 +1150,7 @@ def view_misc_reqs(request):
         'can_add_electee_members':Permissions.can_add_electee_members(request.user),
         'can_manage_project_leaders':Permissions.can_manage_project_leaders(request.user),
         'can_manage_officers':Permissions.can_manage_officers(request.user),
+        'can_manage_committees':Permissions.can_manage_committees(request.user),
         'terms':AcademicTerm.objects.all().exclude(semester_type__name='Summer').exclude(id=current_term.id).exclude(id=next_term.id).order_by('-year','-semester_type'),
         'current_term':current_term,
         'next_term':next_term,
@@ -1278,6 +1279,76 @@ def manage_officers(request,term_id):
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
+def manage_committee_members(request,term_id):    
+    if not Permissions.can_manage_committees(request.user):
+        request.session['error_message']='You are not authorized to manage chapter committee members.'
+        return redirect('member_resources:index')
+    ManageCommitteesFormSet = modelformset_factory(CommitteeMember,form=CommitteeMemberForm,can_delete=True)
+    term =get_object_or_404(AcademicTerm,id=term_id)
+    prefix='committees'
+    formset = ManageCommitteesFormSet(request.POST or None,prefix=prefix,queryset=CommitteeMember.objects.filter(term=term))
+    if request.method =='POST':
+        if formset.is_valid():
+            instances = formset.save(commit=False)
+            for instance in instances:
+                instance.term=term
+                instance.save()
+            for instance in formset.deleted_objects:
+                instance.delete()
+            request.session['success_message']='Committee Members updated successfully'
+            return redirect('member_resources:view_misc_reqs')
+        else:
+            request.session['error_message']=INVALID_FORM_MESSAGE
+ 
+    template = loader.get_template('generic_formset.html')
+    context_dict = {
+        'formset':formset,
+        'prefix':prefix,
+        'subnav':'misc_reqs',
+        'can_add_row':True,
+        'has_files':False,
+        'base':'member_resources/base_member_resources.html',
+        'submit_name':'Update Committee Members',
+        'form_title':'Add/Remove members as committee members for %s'%(unicode(term)),
+        'help_text':'Add or update the committee members for the given term. This will cause them to display on the leadership page.',
+        'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Membership Management'},
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
+def manage_committees(request):    
+    if not Permissions.can_manage_officers(request.user):
+        request.session['error_message']='You are not authorized to manage chapter committees.'
+        return redirect('member_resources:index')
+    ManageCommitteesFormSet = modelformset_factory(Committee)
+    prefix='committees'
+    formset = ManageCommitteesFormSet(request.POST or None,prefix=prefix,queryset=Committee.objects.all())
+    if request.method =='POST':
+        if formset.is_valid():
+            formset.save()
+            request.session['success_message']='Committees updated successfully'
+            return redirect('member_resources:view_misc_reqs')
+        else:
+            request.session['error_message']=INVALID_FORM_MESSAGE
+ 
+    template = loader.get_template('generic_formset.html')
+    context_dict = {
+        'formset':formset,
+        'prefix':prefix,
+        'subnav':'misc_reqs',
+        'can_add_row':True,
+        'has_files':False,
+        'base':'member_resources/base_member_resources.html',
+        'submit_name':'Update Committees',
+        'form_title':'Add/Edit Committees',
+        'help_text':'Add or update the committees for the chapter. This will cause them to display on the leadership (for each that has at least one member).',
+        'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Membership Management'},
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
 def add_electee_DA_PA_status(request):   
     if not Permissions.can_manage_active_progress(request.user):
         request.session['error_message']='You are not authorized to manage electee DA/PA status.'

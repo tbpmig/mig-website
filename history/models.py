@@ -60,7 +60,13 @@ class Officer(models.Model):
         return MemberProfile.objects.filter(officer__in = current_officers).distinct().order_by('last_name','first_name','uniqname')
     def __unicode__(self):
         return self.user.get_full_name()+': '+self.position.name
-
+class CommitteeMember(models.Model):
+    committee=models.ForeignKey('mig_main.Committee')
+    term = models.ForeignKey('mig_main.AcademicTerm')
+    member = models.ForeignKey('mig_main.MemberProfile')
+    is_chair = models.BooleanField(default=False)
+    def __unicode__(self):
+        return unicode(self.member) +(' chair' if self.is_chair else ' member')+' of the '+unicode(self.committee)+' for '+unicode(self.term)
 class Distinction(models.Model):
     member          = models.ForeignKey('mig_main.MemberProfile')
     term            = models.ForeignKey('mig_main.AcademicTerm')

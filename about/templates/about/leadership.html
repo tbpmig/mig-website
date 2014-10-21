@@ -94,8 +94,49 @@
                         <hr/>
                     </div>
                 </div>
+                
 			</div>
 			{% endif %}
+            {% if committee_members %}
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a data-toggle="collapse" data-parent="#OfficerAccordion{{term_id}}" href="#committeesCollapse{{term_id}}">
+							Committees
+                        </a>
+                    </h4>
+				</div>
+                <div id="committeesCollapse{{term_id}}" class="panel-collapse collapse in">
+                    <div class="panel-body">
+                        {% regroup committee_members|dictsort:"committee.id" by committee as members_by_committee%}
+                        
+                        {% for committee in members_by_committee%} 
+                            {% if forloop.counter0|divisibleby:"2" %}
+                            <div class="row">
+                                <div class="col-sm-12 col-lg-6">
+                            {% endif %}
+                            <p><strong>{{committee.grouper.name}}</strong> {% if not committee.grouper.is_active %} (now inactive) {% endif %}</p>
+                            <ul>
+                            {% regroup committee.list|dictsortreversed:"is_chair" by is_chair as members_by_chair_status %}
+                            {% for status in members_by_chair_status %}
+                                {% for committee_member in status.list|dictsortreversed:"member" %}
+                                <li>{{committee_member.member}}{% if committee_member.is_chair %}, chair{% endif %}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            </ul>
+                            {% if forloop.counter|divisibleby:"2" or forloop.last %}
+                            </div>
+
+                            {% endif %}
+                        {% if forloop.counter|divisibleby:"2" or forloop.last %}
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                        <hr/>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 		</div>
 	</div>
 </div>
