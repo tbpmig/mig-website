@@ -2368,7 +2368,7 @@ def update_preferences(request):
                 value_name = [d['values'][int(value)] for d in PREFERENCES if d['name']==key][0]
                 up = UserPreference(user=request.user.userprofile,preference_type=key,preference_value=value_name)
                 up.save()
-            request.session['success_message']='Preferences successfully updated (though not really)'
+            request.session['success_message']='Preferences successfully updated'
             return redirect('member_resources:profile',request.user.userprofile.uniqname)
         else:
             request.session['error_message']=INVALID_FORM_MESSAGE
