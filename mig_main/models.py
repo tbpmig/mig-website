@@ -238,7 +238,43 @@ class UserProfile(models.Model):
         return name
     def __unicode__(self):
         return self.get_full_name()+" ("+self.uniqname+")"
-    
+    def __gt__(self,user2):
+        if not hasattr(user2,'last_name'):
+            return True
+        if self.last_name > user2.last_name:
+            return True
+        if self.last_name < user2.last_name:
+            return False
+        if not hasattr(user2,'first_name'):
+            return True
+        if self.first_name > user2.first_name:
+            return True
+        if self.first_name < user2.first_name:
+            return False
+        if not hasattr(user2,'middle_name'):
+            return True
+        return self.middle_name >user2.middle_name
+    def __lt__(self,user2):
+        if not hasattr(user2,'last_name'):
+            return False
+        if self.last_name < user2.last_name:
+            return True
+        if self.last_name > user2.last_name:
+            return False
+        if not hasattr(user2,'first_name'):
+            return False
+        if self.first_name < user2.first_name:
+            return True
+        if self.first_name > user2.first_name:
+            return False
+        if not hasattr(user2,'middle_name'):
+            return False   
+        return self.middle_name < user2.middle_name
+
+    def __le__(self,user2):
+        return not (self > user2)
+    def __ge__(self,user2):
+        return not (self < user2)
     def get_casual_name(self):
         if len(self.nickname)>0:
             return self.nickname

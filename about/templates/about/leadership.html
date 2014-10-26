@@ -119,7 +119,7 @@
                             <ul>
                             {% regroup committee.list|dictsortreversed:"is_chair" by is_chair as members_by_chair_status %}
                             {% for status in members_by_chair_status %}
-                                {% for committee_member in status.list|dictsortreversed:"member" %}
+                                {% for committee_member in status.list|dictsort:"member" %}
                                 <li>{{committee_member.member}}{% if committee_member.is_chair %}, chair{% endif %}</li>
                                 {% endfor %}
                             {% endfor %}
