@@ -165,6 +165,7 @@ class MeetingMinutes(models.Model):
             ('MM','Main Meetings'),
             ('OF','Officer Meetings'),
             ('AD','Advisory Board Meetings'),
+            ('CM','Committee Meeting Minutes'),
         ]
     meeting_type = models.CharField(max_length=2,
             choices=MEETING_TYPES,

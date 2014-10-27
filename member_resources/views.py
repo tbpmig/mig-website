@@ -1043,7 +1043,8 @@ def main_meeting_minutes(request):
     return get_minutes_view(request,'MM','Meeting Minutes')
 def new_initiatives_meeting_minutes(request):
     return get_minutes_view(request,'NI','New Initiatives Meeting Minutes')
-
+def committee_meeting_minutes(request):
+    return get_minutes_view(request,'CM','Committee Meeting Minutes')
 
 def upload_minutes(request):
     if not Permissions.can_upload_minutes(request.user):
@@ -1122,7 +1123,7 @@ def access_history(request):
         request.session['error_message']='You are not authorized to access reports/history.'
         return redirect('member_resources:index')
 
-    template = loader.get_template('member_resources/manage_reports.html')
+    template = loader.get_template('member_resources/access_history.html')
     context_dict = {
         'can_view_feedback':Permissions.can_view_meeting_feedback(request.user),
         'can_access_project_reports':Permissions.can_access_project_reports(request.user),

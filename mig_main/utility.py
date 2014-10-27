@@ -304,10 +304,7 @@ class Permissions:
 
     @classmethod
     def can_access_history(cls, user):
-        if cls.get_profile(user):
-            return True
-        else:
-            return False
+        return True
 
     @classmethod
     def can_access_project_reports(cls,user):
@@ -373,8 +370,8 @@ class Permissions:
         if user.is_superuser:
             return True
         current_positions = cls.get_current_officer_positions(user) 
-        query = Q(position__name='President')|Q(position__name='Secretary')|Q(position__name='New Initiatives Officer')|Q(position__name='Chapter Development Officer')
-        if current_positions.filter(query).exists():
+        current_chairs = cls.get_current_chair_positions(user)
+        if current_positions.exists() or current_chairs.exists():
             return True
         else:
             return False

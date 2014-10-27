@@ -14,6 +14,7 @@
         <ul class = "nav nav-pills nav-stacked">
             {% if user_is_member %}
             <li {% if minutes_name == 'Officer Meeting Minutes' %}class="active"{% endif%}><a href="{% url 'member_resources:officer_meeting_minutes' %}" >Officer Meeting Minutes</a></li>
+            <li {% if minutes_name == 'Committee Meeting Minutes' %}class="active"{% endif%}><a href="{% url 'member_resources:committee_meeting_minutes' %}" >Committee Meeting Minutes</a></li>
             {% endif %}
             <li {% if minutes_name == 'Meeting Minutes' %}class="active"{% endif%}><a href="{% url 'member_resources:main_meeting_minutes' %}" >General Meeting Minutes</a></li>
             {% if user_is_member %}
