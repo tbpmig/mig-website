@@ -113,8 +113,8 @@
                         {% for committee in members_by_committee%} 
                             {% if forloop.counter0|divisibleby:"2" %}
                             <div class="row">
-                                <div class="col-sm-12 col-lg-6">
                             {% endif %}
+                            <div class="col-sm-12 col-md-6">
                             <p><strong>{{committee.grouper.name}}</strong> {% if not committee.grouper.is_active %} (now inactive) {% endif %}</p>
                             <ul>
                             {% regroup committee.list|dictsortreversed:"is_chair" by is_chair as members_by_chair_status %}
@@ -124,10 +124,9 @@
                                 {% endfor %}
                             {% endfor %}
                             </ul>
-                            {% if forloop.counter|divisibleby:"2" or forloop.last %}
+                            
                             </div>
 
-                            {% endif %}
                         {% if forloop.counter|divisibleby:"2" or forloop.last %}
                         </div>
                         {% endif %}
