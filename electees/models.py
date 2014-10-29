@@ -104,8 +104,8 @@ class ElecteeGroup(models.Model):
         self.sum_group_points()
         return self.points
     def get_ranking(self):
-        res= ElecteeGroup.objects.filter(term=self.term,points__gt=self.points).aggregate(ranking=Count('points'))
-        return res['ranking']+1
+        return ElecteeGroup.objects.filter(term=self.term,points__gt=self.points).count()+1
+
 class ElecteeGroupEvent(models.Model):
     electee_group = models.ForeignKey(ElecteeGroup,verbose_name='Electee Team')
     description = models.TextField()
