@@ -1,11 +1,23 @@
 from datetime import date
 from django.db.models import Q
+from django.http import HttpResponse
 from mig_main.utility import get_previous_full_term
 from history.models import Distinction,Officer
-from requirements.models import ProgressItem,DistinctionType,Requirement
+from requirements.models import ProgressItem,DistinctionType,Requirement,EventCategory
 from mig_main.models import AcademicTerm,MemberProfile
-from member_resources.views import package_requirements
+from mig_main.utility import UnicodeWriter
 
+#TODO: remove duplication
+def package_requirements(requirements):
+    sorted_reqs={}
+    return add_child_reqs(sorted_reqs,requirements,None)
+def add_child_reqs(sorted_reqs,requirements,parent):
+    event_categories = EventCategory.objects.filter(parent_category=parent)
+    for event_category in event_categories:
+        reqs = requirements.filter(event_category=event_category)
+        if reqs:
+            sorted_reqs[event_category]={"children":add_child_reqs({},requirements,event_category),"requirements":reqs}
+    return sorted_reqs
 def package_progress(progress_items):
     packaged_progress={}
     for progress_item in progress_items:
@@ -100,3 +112,34 @@ def get_active_members_only_if_they_come(term):
     set2=set(members.filter(query_inactives_need_meeting).distinct()[:]).intersection(set(get_actives_with_status(DistinctionType.objects.get(name='Active'))))
     
     return list(set1.union(set2))
+
+    
+def get_quorum_list():
+    term = AcademicTerm.get_current_term()
+    all_actives = MemberProfile.get_actives()
+    active_actives = get_active_members(term)
+    members_who_graduated = get_members_who_graduated()
+    actual_actives = get_active_members_who_came_to_something(term)
+    potential_actives = get_active_members_only_if_they_come(term)
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition']='attachment; filename="MemberStatus.csv"'
+
+    writer = UnicodeWriter(response)
+    writer.writerow([ 'First Name','Last Name','uniqname','Active?','Alumni?','Present'])
+    for m in all_actives:
+        if m in potential_actives:
+            active='If present'
+        elif m in actual_actives:
+            active='Yes'
+        elif m.standing.name=='Alumni':
+            active='Confirm Manually'
+        else:
+            active='No'
+        if m in members_who_graduated:
+            alum_text = 'Maybe'
+        elif m.standing.name=='Alumni':
+            alum_text = 'Yes'
+        else:
+            alum_text='No'
+        writer.writerow([m.first_name,m.last_name,m.uniqname,active,alum_text,''])
+    return response
