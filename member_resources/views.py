@@ -26,7 +26,7 @@ from history.models import Award,Officer, MeetingMinutes,Distinction,NonEventPro
 from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet,ExternalServiceForm
 from member_resources.forms import ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet,TBPraiseForm
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
-from member_resources.quorum import get_quorum_list
+from member_resources.quorum import get_quorum_list,get_quorum_list_elections
 from migweb.context_processors import profile_setup
 from mig_main.demographics import get_members_for_COE
 from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,TBPraise,PREFERENCES,Committee
@@ -2750,6 +2750,12 @@ def download_active_status(request):
         request.session['error_message']='You are not authorized to view member data'
         return get_previous_page(request,alternate='member_resources:index')
     return get_quorum_list()
+    
+def download_elections_voters(request):
+    if not Permissions.can_view_demographics(request.user):
+        request.session['error_message']='You are not authorized to view member data'
+        return get_previous_page(request,alternate='member_resources:index')
+    return get_quorum_list_elections()
     
 def view_electee_survey(request,uniqname):
     if not hasattr(request.user,'userprofile') or not request.user.userprofile.is_member():
