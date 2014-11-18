@@ -14,7 +14,7 @@ class Command(BaseCommand):
         actual_actives = get_active_members_who_came_to_something(term)
         potential_actives = get_active_members_only_if_they_come(term)
         body_template = r'''Hi %(member)s,
-This is a friendly reminder that we have a critical voting meeting tonight at 6:30pm in 1013 Dow.
+This is a friendly reminder that we have a critical voting meeting tonight at 6:30pm in 1013 Dow and we need to have a quorum of active members present.
 Our records indicate that %(status)s
 
 %(alumni)s
@@ -41,4 +41,4 @@ The TBP Website'''
             else:
                 alum_text=''
             body=body_template%{'member':m.first_name,'status':status_text,'alumni':alum_text}
-            send_mail('[TBP] Third Actives voting status update.',body,'tbp.mi.g@gmail.com',[m.get_email(),'tbp-website@umich.edu'] ,fail_silently=False)
+            send_mail('[TBP] Voting meeting active status update.',body,'tbp.mi.g@gmail.com',[m.get_email(),'tbp-website@umich.edu'] ,fail_silently=False)
