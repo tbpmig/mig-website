@@ -143,3 +143,36 @@ def get_quorum_list():
             alum_text='No'
         writer.writerow([m.first_name,m.last_name,m.uniqname,active,alum_text,''])
     return response
+    
+def get_quorum_list_elections():
+    term = AcademicTerm.get_current_term()
+    all_actives = MemberProfile.get_actives()
+    electees = MemberProfile.get_electees()
+    active_actives = get_active_members(term)
+    members_who_graduated = get_members_who_graduated()
+    actual_actives = get_active_members_who_came_to_something(term)
+    potential_actives = get_active_members_only_if_they_come(term)
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition']='attachment; filename="MemberStatus.csv"'
+
+    writer = UnicodeWriter(response)
+    writer.writerow([ 'First Name','Last Name','uniqname','Active?','Alumni?','Present'])
+    for m in all_actives:
+        if m in potential_actives:
+            active='If present'
+        elif m in actual_actives:
+            active='Yes'
+        elif m.standing.name=='Alumni':
+            active='Confirm Manually'
+        else:
+            active='No'
+        if m in members_who_graduated:
+            alum_text = 'Maybe'
+        elif m.standing.name=='Alumni':
+            alum_text = 'Yes'
+        else:
+            alum_text='No'
+        writer.writerow([m.first_name,m.last_name,m.uniqname,active,alum_text,''])
+    for m in electees:
+        writer.writerow([m.first_name,m.last_name,m.uniqname,'Electee','No',''])
+    return response
