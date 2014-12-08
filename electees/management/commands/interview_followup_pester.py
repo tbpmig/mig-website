@@ -17,7 +17,11 @@ This can be done by visiting https://tbp.engin.umich.edu%(link)s  and following 
 
 Thanks,
 The TBP Website'''
-        interviews = InterviewShift.objects.filter(interviewer_shift__end_time__lte=timezone.localtime(timezone.now()),term=AcademicTerm.get_current_term())
+        now = timezone.localtime(timezone.now())
+        if now.month == 12 or now.month == 4:
+            # This means that the semester may be turning over, so the evals could be deleted
+            return
+        interviews = InterviewShift.objects.filter(interviewer_shift__end_time__lte=now,term=AcademicTerm.get_current_term())
         for interview in interviews.exclude(interviewee_shift__attendees=None):
             for member in interview.interviewer_shift.attendees.all():
                 completed_followup = ElecteeInterviewFollowup.objects.filter(interview=interview,member=member).exists()
