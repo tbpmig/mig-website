@@ -148,7 +148,7 @@ class AddElecteeStatusForm(forms.ModelForm):
     def save(self,commit=True):
         approved=self.cleaned_data.pop('approve',False)
         if approved:
-            return super(AddElecteeStatusFormActiveStatusForm, self).save(commit=commit)
+            return super(AddElecteeStatusForm, self).save(commit=commit)
         else:
             return None
 
