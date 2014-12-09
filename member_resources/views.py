@@ -2538,7 +2538,7 @@ def manage_awards_for_term(request,term_id):
                 instance.term = term
                 instance.save()
             request.session['success_message']='Awards updated successfully'
-            return redirect('member_resourcs:access_history')
+            return redirect('member_resources:access_history')
         else:
             request.session['error_message']='Form contained errors, was not saved.'
     else:
