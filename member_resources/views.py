@@ -1448,10 +1448,10 @@ def add_active_statuses(request):
                     gift='N/A'
                 else:
                     gift='Not specified'
-                initial.append({'member':active,'distinction_type':distinction,'gift':gift})
+                initial.append({'member':active,'distinction_type':distinction,'gift':gift,'approve':False})
         ManageActiveCurrentStatusFormSet.extra=len(initial)+1
-        formset = ManageActiveCurrentStatusFormSet(queryset=Distinction.objects.none(),prefix='current_status')
-#        formset = ManageActiveCurrentStatusFormSet(queryset=Distinction.objects.none(),initial=initial,prefix='current_status')
+        #formset = ManageActiveCurrentStatusFormSet(queryset=Distinction.objects.none(),prefix='current_status')
+        formset = ManageActiveCurrentStatusFormSet(queryset=Distinction.objects.none(),initial=initial,prefix='current_status')
     template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
