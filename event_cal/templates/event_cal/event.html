@@ -153,6 +153,10 @@
                 <a data-toggle="collapse" data-parent="#shifts{{ event.id }}" href="#shiftscol{{ event.id }}">
                     Shifts
                 </a>
+                {% if full_view and has_profile %}
+                &nbsp;
+                <a href="{% url 'event_cal:event_detail_table' event.id %}">(View attendees as table)</a>
+                {% endif %}
             </h5>
         </div>
         <div id="shiftscol{{ event.id }}" class="panel-collapse collapse{% if full_view%} in{% endif %}">

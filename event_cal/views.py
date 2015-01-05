@@ -1428,3 +1428,42 @@ def edit_announcements(request):
     context_dict.update(get_common_context(request))
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
+
+def event_detail_table(request,event_id):
+    #need to do permissions here
+    has_profile =False
+    user_is_member=False
+    if hasattr(request.user,'userprofile'):  
+        has_profile = True
+        try:
+            request.user.userprofile.memberprofile
+            user_is_member = True
+        except ObjectDoesNotExist:
+            pass
+    if not has_profile:
+        request.session['error_message']='You must be logged in and have a profile to view the table view.'
+        return get_previous_page(request,alternate='event_cal:index')        
+    request.session['current_page']=request.path
+    template = loader.get_template('event_cal/table_view.html')
+    event = get_object_or_404(CalendarEvent,id=event_id)
+    shifts = event.eventshift_set.order_by('start_time')
+    times = sorted(set([timezone.localtime(shift.start_time).time() for shift in shifts]))
+    dates = sorted(set([timezone.localtime(shift.start_time).date() for shift in shifts]))
+    organized_shifts = [{'time':time,'dates':[None for date in dates]} for time in times]
+    for time_count,time in enumerate(times):
+        for date_count,date in enumerate(dates):
+            shift = shifts.filter(start_time=timezone.make_aware(datetime.combine(date,time),timezone.get_default_timezone()))
+            if shift:
+                organized_shifts[time_count]['dates'][date_count]=shift[0]
+    context_dict = {
+        'event':event,
+        'can_edit_event':Permissions.can_edit_event(event,request.user),
+        'shifts':organized_shifts,
+        'dates':dates,
+        'has_profile':hasattr(request.user,'userprofile'),
+        'subnav':'list',
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))

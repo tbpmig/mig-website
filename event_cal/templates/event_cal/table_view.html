@@ -1,0 +1,88 @@
+{% extends "event_cal/base_event_cal.html" %}
+{% load staticfiles %}
+{% load my_markdown %}
+
+{% block cal_content %}
+
+{% url 'event_cal:event_detail' event.id as event_page %}
+<div class="row">
+    <div class="col-md-6">
+        <a class="btn btn-default" href="{% url 'event_cal:event_detail' event.id %}"><i class="glyphicon glyphicon-chevron-left"></i> Back to main view</a>
+    </div>
+</div>
+<div style="position:relative;">
+<h3>{{event.name}}</h3>
+{% if can_edit_event %}
+<div class="location-upper-right">
+<a href="{% url 'event_cal:edit_event' event.id %}"><i class="glyphicon glyphicon-edit"></i> Edit</a>
+<a href="{% url 'event_cal:delete_event' event.id %}" class="confirmation"><i class="glyphicon glyphicon-remove"></i> Delete</a>
+</div>
+{% endif %}
+{% if not event.members_only %}
+<div class="fb-like" data-kid-directed-site="true" data-href="https://tbp.engin.umich.edu{{event_page}}" data-layout="button_count" data-action="like" data-show-faces="false" data-share="true"></div><br/>
+<div class="g-plusone" data-size="medium" data-href="https://tbp.engin.umich.edu{{ event_page|slice:":-1"}}"></div>
+<p><a href="https://twitter.com/intent/tweet?screen_name=tbpmig" data-url="https://tbp.engin.umich.edu{{event_page}}" data-count="none" class="twitter-mention-button" data-lang="en">Tweet</a></p>                       
+{% endif %}
+{% if has_profile and user.userprofile.is_member %}
+    {% if user.userprofile.is_active %}
+    <p><b>Event/Requirement Type:</b> {{event.get_relevant_active_event_type}}</p>
+    {% elif user.userprofile.is_ugrad %}
+        <p><b>Event/Requirement Type:</b> {{event.get_relevant_ugrad_electee_event_type}}</p>
+    {% else %}
+        <p><b>Event/Requirement Type:</b> {{event.get_relevant_grad_electee_event_type}}</p>
+    {% endif %}
+{% else %}
+    <p><b>Event Type:</b> {{event.event_type}}</p>
+{% endif %}
+    
+        
+<p class="text-justify">{{event.description|capfirst|my_markdown}}</p>
+<p><b>Project Leaders: </b>
+{% for leader in event.leaders.all %}
+<a href="{% url 'member_resources:profile' leader.uniqname %}">{{ leader }}</a>{% if event.leaders.all|length > 2 and not forloop.last %}, {% endif %}{% if event.leaders.all|length > 1 and forloop.revcounter == 2 %} and {% endif %}{% endfor %}</p>
+</div>
+
+    <table class="table table-striped table-bordered">
+    <thead>
+    <tr>
+    <th>
+        
+        </th>
+    {% for date in dates %}
+        <th>
+        {{ date}}
+        </th>
+    {%endfor%}
+    </tr>
+    </thead>
+    <tbody>
+    {% for time_row in shifts %}
+        <tr>
+        <td>
+            {{time_row.time|time:"P"}}
+        </td>
+        {% for shift in time_row.dates %}
+            <td>
+            {% if shift %}
+                <ul>
+                {% for attendee in shift.attendees.all %}
+                    {% url 'member_resources:profile' attendee.uniqname as profile_url %}
+                    <li>
+                    {% if attendee.is_member %}
+                        <a href="{{profile_url}}">{{attendee}}</a>
+                    {% else %}
+                        {{attendee}}
+                    {% endif %}
+                    </li>
+                {% endfor %}
+                </ul>
+            {%else %}
+            No Shift
+            {%endif%}
+            </td>
+        {%endfor%}
+        </tr>   
+    {% endfor %}
+    </tbody>
+    </table>
+{% endblock cal_content %}

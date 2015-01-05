@@ -28,6 +28,7 @@ urlpatterns = patterns('',
     url(r'^update_event/(?P<event_id>\d+)/$',views.update_completed_event, name='update_completed_event'),
     url(r'^delete_shift/(?P<event_id>\d+)-(?P<shift_id>\d+)/$',views.delete_shift, name='delete_shift'),
     url(r'event/(?P<event_id>\d+)/$',views.event_detail, name='event_detail'),
+    url(r'event_table_view/(?P<event_id>\d+)/$',views.event_detail_table, name='event_detail_table'),
     # don't change this order-- YAY regex!
     url(r'unsign_up/(?P<event_id>\d+)-(?P<shift_id>\d+)/$',views.unsign_up, name='unsign_up'),
     url(r'sign_up/(?P<event_id>\d+)-(?P<shift_id>\d+)/$',views.sign_up, name='sign_up'),
