@@ -28,7 +28,37 @@ from event_cal.gcal_functions import initialize_gcal, process_auth,get_credentia
 
 GCAL_USE_PREF = [d for d in PREFERENCES if d.get('name') == 'google_calendar_add'][0]
 GCAL_ACCT_PREF = [d for d in PREFERENCES if d.get('name') == 'google_calendar_account'][0]
-
+def add_user_to_shift(profile,shift):
+    shift.attendees.add(profile)
+    gcal_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_add')
+    if gcal_pref.exists():
+        use_cal_pref = gcal_pref[0].preference_value
+    else:
+        use_cal_pref = GCAL_USE_PREF['default']
+    if use_cal_pref == 'always':
+        email_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_account')
+        if email_pref.exists():
+            cal_email_pref = email_pref[0].preference_value
+        else:
+            cal_email_pref = GCAL_ACCT_PREF['default']
+        if cal_email_pref =='umich' or not profile.is_member() or not profile.memberprofile.alt_email:
+            email_to_use = profile.uniqname+'@umich.edu'
+        else:
+            email_to_use = profile.memberprofile.alt_email
+        shift.add_attendee_to_gcal(profile.get_firstlast_name(),email_to_use)
+        
+def remove_user_from_shift(profile,shift):  
+    shift.attendees.remove(profile)
+    email_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_account')
+    if email_pref.exists():
+        cal_email_pref = email_pref[0].preference_value
+    else:
+        cal_email_pref = GCAL_ACCT_PREF['default']
+    if cal_email_pref =='umich' or not profile.is_member() or not profile.memberprofile.alt_email:
+        email_to_use = profile.uniqname+'@umich.edu'
+    else:
+        email_to_use = profile.memberprofile.alt_email
+    shift.delete_gcal_attendee(email_to_use)
 
 def get_permissions(user):
     return {
@@ -223,24 +253,7 @@ def sign_up(request, event_id, shift_id):
                 elif shift.actives_only and not profile.is_active():
                     request.session['error_message']='Shift is for actives only'
                 else:
-                    shift.attendees.add(request.user.userprofile)
-                    gcal_pref = UserPreference.objects.filter(user=request.user.userprofile,preference_type='google_calendar_add')
-                    if gcal_pref.exists():
-                        use_cal_pref = gcal_pref[0].preference_value
-                    else:
-                        use_cal_pref = GCAL_USE_PREF['default']
-                    if use_cal_pref == 'always':
-                        email_pref = UserPreference.objects.filter(user=request.user.userprofile,preference_type='google_calendar_account')
-                        if email_pref.exists():
-                            cal_email_pref = email_pref[0].preference_value
-                        else:
-                            cal_email_pref = GCAL_ACCT_PREF['default']
-                        if cal_email_pref =='umich' or not request.user.userprofile.is_member() or not request.user.userprofile.memberprofile.alt_email:
-                            email_to_use = request.user.userprofile.uniqname+'@umich.edu'
-                        else:
-                            email_to_use = request.user.userprofile.memberprofile.alt_email
-                        shift.add_attendee_to_gcal(request.user.userprofile.get_firstlast_name(),email_to_use)
-
+                    add_user_to_shift(request.user.userprofile,shift)
                     request.session['success_message']='You have successfully signed up for the event'
                     if event.needs_carpool:
                         request.session['info_message']='If you need or can give a ride, please also sign up for the carpool'
@@ -267,17 +280,7 @@ def unsign_up(request, event_id, shift_id):
         request.session['error_message']='You cannot unsign-up for an event that has started'
     else:
         if hasattr(request.user,'userprofile'):
-            shift.attendees.remove(request.user.userprofile)
-            email_pref = UserPreference.objects.filter(user=request.user.userprofile,preference_type='google_calendar_account')
-            if email_pref.exists():
-                cal_email_pref = email_pref[0].preference_value
-            else:
-                cal_email_pref = GCAL_ACCT_PREF['default']
-            if cal_email_pref =='umich' or not request.user.userprofile.is_member() or not request.user.userprofile.memberprofile.alt_email:
-                email_to_use = request.user.userprofile.uniqname+'@umich.edu'
-            else:
-                email_to_use = request.user.userprofile.memberprofile.alt_email
-            shift.delete_gcal_attendee(email_to_use)
+            remove_user_from_shift(request.user.userprofile,shift)
             CarpoolPerson.objects.filter(event=event,person=request.user.userprofile).delete()
 
             request.session['success_message']='You have successfully unsigned up from the event.'

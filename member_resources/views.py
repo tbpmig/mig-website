@@ -7,6 +7,7 @@ import logging
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.core.mail import send_mail
 from django import forms
 from django.http import HttpResponse, Http404 #HttpResponseRedirect
 from django.shortcuts import  get_object_or_404
@@ -29,7 +30,7 @@ from member_resources.models import ActiveList, GradElecteeList, UndergradElecte
 from member_resources.quorum import get_quorum_list,get_quorum_list_elections
 from migweb.context_processors import profile_setup
 from mig_main.demographics import get_members_for_COE
-from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,TBPraise,PREFERENCES,Committee
+from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,TBPraise,PREFERENCES,Committee,OfficerPosition
 from mig_main.utility import  Permissions, get_previous_page,get_next_term, get_next_full_term,get_current_event_leaders,get_current_group_leaders,get_message_dict,UnicodeWriter,get_officer_positions_predecessors
 from outreach.models import TutoringRecord
 from requirements.models import DistinctionType, Requirement, ProgressItem, EventCategory
@@ -57,6 +58,45 @@ INVALID_FORM_MESSAGE='The form is invalid. Please correct the noted errors.'
 #}
 #logging.config.dictConfig(LOGGING)
 #logger = logging.getLogger('django.request')
+
+def notify_membership(profile,was_alumni):
+    if not profile.standing.name=='Alumni' and not was_alumni:
+        return
+    mem=OfficerPosition.objects.get(name='Membership Officer')
+    if profile.standing.name=='Alumni':
+        body = r'''Hi current membership officer,
+
+This is an automated notice that a member, %(member_name)s (%(uniqname)s), has updated their (alumni) info on the website. Their new info is:
+
+Wants to receive corporate emails: %(corp_email)s
+Desired Email Frequency: %(email_frequency)s
+Job Field: %(job_field)s
+Employer: %(employer)s
+Preferred Email: %(preferred_email)s
+Interested in Speaking at a Meeting: %(meeting_speak)s
+
+Thanks,
+The TBP Website'''%{'member_name':profile.get_firstlast_name(),
+                    'uniqname':profile.uniqname,
+                    'corp_email':'Yes' if profile.jobs_email else 'No',
+                    'email_frequency':profile.get_alum_mail_freq_display(),
+                    'job_field':profile.job_field,
+                    'employer':profile.employer,
+                    'preferred_email':profile.get_email(),
+                    'meeting_speak':'Yes' if profile.meeting_speak else 'No'}
+    else:
+        body = r'''Hi current membership officer,
+
+This is an automated notice that a member, %(member_name)s (%(uniqname)s), has updated their (alumni) info on the website. They were previously considered an alum, but now are not.
+Their new standing is: %(standing)s
+
+They should be added to the appropriate email lists.
+
+Thanks,
+The TBP Website'''%{'member_name':profile.get_firstlast_name(),
+                    'uniqname':profile.uniqname,
+                    'standing':profile.standing.name}
+    send_mail('[TBP] Notice of alumni profile update.',body,'tbp.mi.g@gmail.com',[mem.email] ,fail_silently=False)
 
 def get_electees_with_status(distinction):
     
@@ -385,18 +425,20 @@ def profile_edit(request,uniqname):
         request.session['error_message']="You are not authorized to edit this profile"
         return redirect('member_resources:profile', uniqname)
     profile = MemberProfile.objects.get(uniqname__exact=uniqname)
+    was_alumni=(profile.standing.name=='Alumni')
     if request.method == 'POST':
         if profile.status.name == 'Active':
             form = MemberProfileForm(request.POST, request.FILES, instance= profile)
         else:
             form = ElecteeProfileForm(request.POST, request.FILES, instance= profile)
         if form.is_valid():
-            form.save()
+            profile=form.save()
             #update_resume_zips()
             if is_user:
                 intro_string = 'Your'
             else:
                 intro_string = profile.get_firstlast_name()+'\'s'
+            notify_membership(profile,was_alumni)
             request.session['success_message']=intro_string+' profile was updated successfully.'
             return redirect('member_resources:profile', uniqname)
         else:
