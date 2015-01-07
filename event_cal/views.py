@@ -17,7 +17,7 @@ from django.db.models import Min,Q
 from django_ajax.decorators import ajax
 
 from event_cal.forms import BaseEventPhotoForm,BaseEventPhotoFormAlt, BaseAnnouncementForm,BaseEventForm,EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset,MultiShiftFormset,EventEmailForm
-from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift
+from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift,WaitlistSlot
 from history.models import ProjectReport, Officer,NonEventProject,BackgroundCheck
 from mig_main.models import OfficerPosition,PREFERENCES,UserPreference,MemberProfile,UserProfile,AcademicTerm
 from mig_main.utility import get_previous_page, Permissions, get_message_dict
@@ -28,6 +28,25 @@ from event_cal.gcal_functions import initialize_gcal, process_auth,get_credentia
 
 GCAL_USE_PREF = [d for d in PREFERENCES if d.get('name') == 'google_calendar_add'][0]
 GCAL_ACCT_PREF = [d for d in PREFERENCES if d.get('name') == 'google_calendar_account'][0]
+
+def notify_waitlist_move(event,shift,profile):
+    body = r'''Hi %(name)s,
+
+This is an automated notice that you have been moved off of the waitlist for the event: %(event)s and have automatically been added to the list of attendees.
+Your shift is listed as starting at %(start_time)s, so plan accordingly. %(carpool)s
+
+If you no longer plan to attend the event, please unsign-up so that another person may take your spot.
+The event is viewable at: https://tbp.engin.umich.edu%(link)s
+
+Thanks,
+The TBP Website'''%{'name':profile.get_firstlast_name(),
+                    'event':event.name,
+                    'start_time':timezone.localtime(shift.start_time).strftime("%I:%M %p on %A, %B %d, %Y"),
+                    'carpool':'The event is listed as needing a carpool, please visit the event page to sign up for the carpool' if event.needs_carpool else '',
+                    'link':reverse('event_cal:event_detail',args=(event.id,))}
+    
+    send_mail('[TBP] You\'ve been moved off an event waitlist.',body,'tbp.mi.g@gmail.com',[profile.get_email()] ,fail_silently=False)
+
 def add_user_to_shift(profile,shift):
     shift.attendees.add(profile)
     gcal_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_add')
@@ -225,6 +244,80 @@ def event_detail(request,event_id):
     context_dict.update(get_common_context(request))
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
+
+@ajax
+@login_required
+def add_to_waitlist(request,event_id,shift_id):
+    event = get_object_or_404(CalendarEvent,id=event_id)
+    shift = get_object_or_404(EventShift,id=shift_id)
+    if shift.start_time < timezone.now():
+        request.session['error_message']='You cannot sign up for an event in the past'
+    elif not (shift.max_attendance and (shift.attendees.count() >= shift.max_attendance)):
+        request.session['error_message']='Shift isn\'t full'
+    elif shift.max_attendance==0:
+        request.session['error_message']='Shift has capacity 0, unable to add to waitlist'
+    else:
+        if hasattr(request.user,'userprofile'):
+            profile = request.user.userprofile
+            existing_waitlist = WaitlistSlot.objects.filter(shift=shift,user=profile).exists()
+            if existing_waitlist:
+                request.session['error_message']='You are already on the waitlist'
+            elif event.requires_AAPS_background_check and not BackgroundCheck.user_can_mindset(profile):
+                request.session['error_message']='You must pass an AAPS background check and complete training to sign up for this event'
+            elif event.requires_UM_background_check and not BackgroundCheck.user_can_work_w_minors(profile):
+                request.session['error_message']='You must pass a UM background check and complete training to sign up for this event'    
+            elif event.mutually_exclusive_shifts and profile in event.get_event_attendees():
+                request.session['error_message']='You may only sign up for one shift for this event. Unsign up for the other before continuing'
+            elif profile.is_member or not event.members_only:
+                if shift.ugrads_only and not profile.is_ugrad():
+                    request.session['error_message']='Shift is for undergrads only'
+                elif shift.grads_only and not profile.is_grad():
+                    request.session['error_message']='Shift is for grads only'
+                elif shift.electees_only and not profile.is_electee():
+                    request.session['error_message']='Shift is for electees only'
+                elif shift.actives_only and not profile.is_active():
+                    request.session['error_message']='Shift is for actives only'
+                else:
+                    waitlist=WaitlistSlot(shift=shift,user=profile)
+                    waitlist.save()
+                    request.session['success_message']='You have successfully been added to the waitlist.'
+            else:
+                request.session['error_message']='This event is members-only'
+        else:
+            request.session['error_message']='You must create a profile before signing up to events' 
+    if 'error_message' in request.session:
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+    return {'fragments':{'#shift-waitlist'+shift_id:r'''<a id="shift-waitlist%s" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-waitlist%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Leave waitlist (there are currently %s users ahead of you).</a>'''%(shift_id,shift_id,reverse('event_cal:remove_from_waitlist', args=[event_id, shift_id] ),shift_id,shift.get_users_waitlist_spot(profile)),
+                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
+
+@ajax
+@login_required
+def remove_from_waitlist(request, event_id, shift_id):
+    event = get_object_or_404(CalendarEvent,id=event_id)
+    shift = get_object_or_404(EventShift,id=shift_id)
+    if shift.start_time < timezone.now():
+        request.session['error_message']='You cannot unsign-up for an event that has started'
+    else:
+        if hasattr(request.user,'userprofile'):
+            existing_waitlist = WaitlistSlot.objects.filter(shift=shift,user=request.user.userprofile)
+            existing_waitlist.delete()
+            request.session['success_message']='You have successfully unsigned up from the waitlist.'
+        else:
+            request.session['error_message']='You must create a profile before unsigning up'
+    if 'error_message' in request.session:
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+    return {'fragments':{'#shift-waitlist'+shift_id:r'''<a id="shift-waitlist%s" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-waitlist%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Add self to waitlist (there
+                are currently %s users ahead of you)</a>'''%(shift_id,shift_id,reverse('event_cal:add_to_waitlist', args=[event_id, shift_id] ),shift_id,shift.get_waitlist_length()),
+                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}} 
+
 @ajax
 @login_required
 def sign_up(request, event_id, shift_id):
@@ -281,6 +374,12 @@ def unsign_up(request, event_id, shift_id):
     else:
         if hasattr(request.user,'userprofile'):
             remove_user_from_shift(request.user.userprofile,shift)
+            waitlist=shift.get_ordered_waitlist()
+            if waitlist.exists():
+                w=waitlist[0]
+                add_user_to_shift(w.user,shift)
+                notify_waitlist_move(event,shift,w.user)
+                w.delete()
             CarpoolPerson.objects.filter(event=event,person=request.user.userprofile).delete()
 
             request.session['success_message']='You have successfully unsigned up from the event.'
@@ -876,7 +975,7 @@ def edit_event(request, event_id):
             if formset.is_valid():
                 event.save()
                 form.save_m2m()
-                formset.save()
+                shifts=formset.save()
                 event.add_event_to_gcal()
                 tweet_option = form.cleaned_data.pop('tweet_option','N')
                 if tweet_option=='T':
@@ -885,6 +984,14 @@ def edit_event(request, event_id):
                     event.tweet_event(True)
                 event.notify_publicity(needed_flyer =needed_flyer,needed_facebook=needed_facebook,edited=True)
                 request.session['success_message']='Event updated successfully'
+                for shift in shifts:
+                    waitlist=shift.get_ordered_waitlist()
+                    for w in waitlist:
+                        if shift.is_full():
+                            break
+                        add_user_to_shift(w.user,shift)
+                        notify_waitlist_move(event,shift,w.user)
+                        w.delete()
                 return redirect('event_cal:event_detail',event_id)
             else:
                 request.session['error_message']='Either there were errors in your shift(s) or you forgot to include one.'
@@ -1034,6 +1141,7 @@ def complete_event(request, event_id):
                 instance.save()
             confirmed_attendees=MemberProfile.objects.filter(progressitem__related_event=e)
             for shift in e.eventshift_set.all():
+                shift.waitlistslot_set.all().delete()
                 for attendee in shift.attendees.exclude(pk__in=confirmed_attendees):
                     if attendee.is_member():
                         shift.attendees.remove(attendee)

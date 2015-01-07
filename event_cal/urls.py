@@ -32,6 +32,8 @@ urlpatterns = patterns('',
     # don't change this order-- YAY regex!
     url(r'unsign_up/(?P<event_id>\d+)-(?P<shift_id>\d+)/$',views.unsign_up, name='unsign_up'),
     url(r'sign_up/(?P<event_id>\d+)-(?P<shift_id>\d+)/$',views.sign_up, name='sign_up'),
+    url(r'add_to_waitlist/(?P<event_id>\d+)-(?P<shift_id>\d+)/$',views.add_to_waitlist, name='add_to_waitlist'),
+    url(r'remove_from_waitlist/(?P<event_id>\d+)-(?P<shift_id>\d+)/$',views.remove_from_waitlist, name='remove_from_waitlist'),
     url(r'meeting_sign_in/(?P<event_id>\d+)-(?P<shift_id>\d+)/$',views.meeting_sign_in, name='meeting_sign_in'),
     url(r'authorize_google_cal/',views.gcal_test,name='gcal_test'),
 	#url(r'^add_project_report/$',views.project_report, name='project_report'),

@@ -520,8 +520,18 @@ class EventShift(models.Model):
                         gcal_event['attendees'][:]=[a for a in gcal_event['attendees'] if a.get('email') !=email]
                         service.events().update(calendarId=event.google_cal.calendar_id,eventId=self.google_event_id,body=gcal_event).execute()
             except:
-                return        
-
+                return   
+    def get_ordered_waitlist(self):
+        return self.waitlistslot_set.all().order_by('time_added')
+    def get_waitlist_length(self):
+        return self.waitlistslot_set.count()
+    def get_users_waitlist_spot(self,profile):
+        user_waitlist=WaitlistSlot.objects.filter(shift=self,user=profile)
+        if not user_waitlist:
+            return self.get_waitlist_length()
+        return WaitlistSlot.objects.filter(shift=self,time_added__lt=user_waitlist[0].time_added).count()
+    def get_users_on_waitlist(self):
+        return UserProfile.objects.filter(waitlistslot__in=self.waitlistslot_set.all())
 class InterviewShift(models.Model):
     interviewer_shift = models.ForeignKey(EventShift,related_name='shift_interviewer')
     interviewee_shift = models.ForeignKey(EventShift,related_name='shift_interviewee')
@@ -580,3 +590,8 @@ class CarpoolPerson(models.Model):
                             choices=LOCATION_CHOICES,
                             default='CC')
     number_seats = models.PositiveSmallIntegerField(null=True,blank=True)
+
+class WaitlistSlot(models.Model):
+    shift = models.ForeignKey(EventShift)
+    time_added = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey('mig_main.UserProfile')

@@ -103,14 +103,25 @@
         {% else %}
             {% if not event.use_sign_in and not event.allow_advance_sign_up %}
                 <p>Event does not support sign-in/up.</p>
-            {% elif shift.is_full %}
-                <p>Event is full.</p>
             {% elif event.use_sign_in and shift.is_before_start %}
                 <p>Event sign-in is not open until event starts.</p>
             {% elif event.use_sign_in %}
                 <p>Sign in not allowed after the event ends.</p>
-            {% else %}
+            {% elif not shift.is_before_start %}
                 <p>Sign up not allowed after the event starts.</p>
+            {% elif shift.is_full and shift.max_attendance %}
+                <p>Shift is full.</p>
+                {% if user.userprofile in shift.get_users_on_waitlist %}
+                <p><a id="shift-waitlist{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:remove_from_waitlist' event.id shift.id %}',function(){$('#shift-waitlist{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Leave waitlist (there
+                are currently {% for w in shift.get_ordered_waitlist %}{% if w.user == user.userprofile %}{{forloop.counter0}}{%endif%}{%endfor%} users ahead of you).</a></p>
+                {% else %}
+                <p><a id="shift-waitlist{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:add_to_waitlist' event.id shift.id %}',function(){$('#shift-waitlist{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Add self to waitlist (there
+                are currently {{shift.get_waitlist_length}} users ahead of you).</a></p>
+                {% endif %}
+            {% elif shift.is_full %}
+                <p>Shift is full, total capacity 0. Waitlist is disabled.</p>
+            {% else %}
+                <p>See, this is awkward. You can't sign in/up, but for the life of me I can't figure out why. You should tell the website chair...</p>
             {% endif %}
         {% endif %}
     {% endif %}
@@ -267,14 +278,22 @@
         {% else %}
             {% if not event.use_sign_in and not event.allow_advance_sign_up %}
                 <td>Event does not support sign-in/up.</td>
-            {% elif shift.is_full %}
-                <td>Shift is full.</td>
-            {% elif event.use_sign_in and shift.is_before_start %}
-                <td>Event sign-in is not open until event starts.</td>
-            {% elif event.use_sign_in %}
-                <td>Sign in not allowed after the event ends.</td>
-            {% else %}
+            {% elif not shift.is_before_start %}
                 <td>Sign up not allowed after the event starts.</td>
+            {% elif shift.is_full and shift.max_attendance %}
+                <td><p>Shift is full.</p>
+                {% if user.userprofile in shift.get_users_on_waitlist %}
+                <p><a id="shift-waitlist{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:remove_from_waitlist' event.id shift.id %}',function(){$('#shift-waitlist{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Leave waitlist (there
+                are currently {% for w in shift.get_ordered_waitlist %}{% if w.user == user.userprofile %}{{forloop.counter0}}{%endif%}{%endfor%} users ahead of you).</a></p>
+                {% else %}
+                <p><a id="shift-waitlist{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:add_to_waitlist' event.id shift.id %}',function(){$('#shift-waitlist{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Add self to waitlist (there
+                are currently {{shift.get_waitlist_length}} users ahead of you).</a></p>
+                {% endif %}
+                </td>
+            {% elif shift.is_full %}
+                <td>Shift is full, total capacity 0. Waitlist is disabled.</td>
+            {% else %}
+                <td>See, this is awkward. You can't sign in/up, but for the life of me I can't figure out why. You should tell the website chair...</td>
             {% endif %}
         {% endif %}
     {% endif %}
