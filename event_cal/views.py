@@ -1502,7 +1502,8 @@ def create_electee_interviews(request):
             active_event.save()
             electee_event.save()
             for shift_form in formset:
-                if not shift_form.is_valid():
+                if not shift_form.is_valid() or not shift_form.has_changed():
+                    #if it hasn't changed, then it's an extra blank form
                     continue
                 cleaned_data=shift_form.cleaned_data
                 shift_date=cleaned_data['date']

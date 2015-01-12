@@ -107,7 +107,7 @@ class InterviewShiftForm(Form):
         ('UI','Undergrad interviewee, any active interviewer'),
         ('GI','Grad interviewee, any active interviewer'),
         )
-    interview_type = forms.ChoiceField(choices=type_choices)
+    interview_type = forms.ChoiceField(choices=type_choices,initial='N')
     def clean(self):
         """
         Ensures that not both grads and undergrads -only options have been checked. Also makes sure start and end times make sense.
@@ -116,7 +116,6 @@ class InterviewShiftForm(Form):
         start_time = cleaned_data.get('start_time')
         end_time = cleaned_data.get('end_time')
         error_list = []
-        
         if not start_time or not end_time or start_time> end_time:
             error_list.append(ValidationError(_('The event shift must start before it can end; use am/pm to specify.')))
         if error_list:
