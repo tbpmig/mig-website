@@ -365,7 +365,7 @@ class CalendarEvent(models.Model):
                 if shift.google_event_id:
                     try:
                         if previous_cal and not (previous_cal == self.google_cal):
-                            service.events().move(calendarId=previous_cal.calendar_id, eventId=shift.google_event_id, destination=self.google_cal.calendar_id)
+                            service.events().move(calendarId=previous_cal.calendar_id, eventId=shift.google_event_id, destination=self.google_cal.calendar_id).execute()
                         gcal_event = service.events().get(calendarId=self.google_cal.calendar_id,eventId=shift.google_event_id).execute()
                         if gcal_event['status']=='cancelled':
                             gcal_event={}
