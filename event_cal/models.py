@@ -56,7 +56,7 @@ class CalendarEvent(models.Model):
     requires_UM_background_check = models.BooleanField(default=False)
     requires_AAPS_background_check = models.BooleanField(default=False)
     mutually_exclusive_shifts = models.BooleanField(default=False)
-    
+    allow_overlapping_sign_ups     = models.BooleanField(default=False)
     before_grace = timedelta(minutes=-30)
     after_grace = timedelta(hours = 1)
     @classmethod
@@ -397,6 +397,12 @@ class CalendarEvent(models.Model):
             return False
         else:
             return True
+    def does_shift_overlap_with_users_other_shifts(self,shift,profile):
+        attendee_shifts = self.eventshift_set.filter(attendees__in=[profile]).distinct()
+        overlapping_query=Q(start_time__lt=shift.start_time,end_time__lte=shift.end_time)|Q(start_time__gte=shift.end_time,end_time__gt=shift.end_time)
+        overlapping_shifts = attendee_shifts.exclude(overlapping_query)
+        return overlapping_shifts.exists()
+        
 class EventShift(models.Model):
     event = models.ForeignKey(CalendarEvent)
     start_time      = models.DateTimeField()
@@ -595,3 +601,7 @@ class WaitlistSlot(models.Model):
     shift = models.ForeignKey(EventShift)
     time_added = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey('mig_main.UserProfile')
+
+class InterviewPairing(models.Model):
+    first_shift = models.ForeignKey(EventShift,related_name='pairing_first')
+    second_shift = models.ForeignKey(EventShift,related_name='pairing_second')

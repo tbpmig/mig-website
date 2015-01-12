@@ -29,7 +29,11 @@ urlpatterns = patterns('',
     url(r'^delete_shift/(?P<event_id>\d+)-(?P<shift_id>\d+)/$',views.delete_shift, name='delete_shift'),
     url(r'event/(?P<event_id>\d+)/$',views.event_detail, name='event_detail'),
     url(r'event_table_view/(?P<event_id>\d+)/$',views.event_detail_table, name='event_detail_table'),
-    # don't change this order-- YAY regex!
+    url(r'interview_view_electees/(?P<event_id>\d+)/$',views.interview_view_electees, name='interview_view_electees'),
+    url(r'interview_view_actives/(?P<event_id>\d+)/$',views.interview_view_actives, name='interview_view_actives'),
+    # don't change this order-- YAY regex!\
+    url(r'unsign_up_paired/(?P<event_id>\d+)-(?P<shift_id>\d+)/$',views.unsign_up_paired, name='unsign_up_paired'),
+    url(r'sign_up_paired/(?P<event_id>\d+)-(?P<shift_id>\d+)/$',views.sign_up_paired, name='sign_up_paired'),
     url(r'unsign_up/(?P<event_id>\d+)-(?P<shift_id>\d+)/$',views.unsign_up, name='unsign_up'),
     url(r'sign_up/(?P<event_id>\d+)-(?P<shift_id>\d+)/$',views.sign_up, name='sign_up'),
     url(r'add_to_waitlist/(?P<event_id>\d+)-(?P<shift_id>\d+)/$',views.add_to_waitlist, name='add_to_waitlist'),

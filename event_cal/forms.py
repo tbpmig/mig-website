@@ -98,7 +98,8 @@ class InterviewShiftForm(Form):
     start_time = forms.TimeField(input_formats=valid_time_formats)
     end_time = forms.TimeField(input_formats=valid_time_formats)
     duration = forms.IntegerField(min_value=1,label='Interview Shift Length (min)')
-    location = forms.CharField()
+    locations = forms.CharField(label='Comma-separated list of room locations')
+    number_of_parts = forms.IntegerField(min_value=1,max_value=2)
     type_choices = (
         ('N','Normal: Any electee, any active'),
         ('U','Undergrads only (interviewer and interviewee)'),

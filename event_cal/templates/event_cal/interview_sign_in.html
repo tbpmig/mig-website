@@ -1,0 +1,79 @@
+<ul>
+{% for interviewee in actual_shift.attendees.all %}
+    {% url 'member_resources:profile' interviewee.uniqname as profile_url %}
+    <li>
+    {% if interviewee.is_member %}
+        <a href="{{profile_url}}">{{interviewee}}</a>
+    {% else %}
+        {{interviewee}}
+    {% endif %}
+    </li>
+{% empty %}
+    {% if is_interviewer %}
+    <p>No Interviewers yet</p>
+    {% else %}
+    <p>Interview Slot Open</p>
+    {% endif %}
+{% endfor %}
+</ul>
+{% if actual_shift.attendees.count < 1 or user.userprofile in actual_shift.attendees.all %}
+{% if user.is_authenticated and has_profile %}
+    {% if user.userprofile.is_member and user.userprofile.memberprofile in event.get_attendees_with_progress %}
+        {% if event.use_sign_in %}
+            <p>You are already signed in to the event.</p>
+        {% else %}
+            <p>You have already received credit for this event.</p>
+        {% endif %}
+    {% elif user.userprofile in actual_shift.attendees.all %}
+        {% if actual_shift.is_before_start %}
+            {% if is_shift_two_part %}
+                <p><a id="shift-signup{{actual_shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{actual_shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up_paired' event.id shift.id %}',function(){$('#shift-signup{{actual_shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
+            {% else %}
+                <p><a id="shift-signup{{actual_shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{actual_shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up' event.id actual_shift.id %}',function(){$('#shift-signup{{actual_shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
+            {% endif %}
+        {% else %}
+            <p>You cannot unsign-up after the event has started</p>
+        {% endif %}
+    {% elif actual_shift.ugrads_only and not user.userprofile.is_ugrad %}
+        {% if user.userprofile.is_member %}
+        <p>Shift is for {{actual_shift.get_restrictions}} only</p>
+        {% else %}
+        <p>Shift is members-only</p>
+        {% endif %}
+    {% elif actual_shift.grads_only and not user.userprofile.is_grad %}
+        {% if user.userprofile.is_member %}
+        <p>Shift is for {{actual_shift.get_restrictions}} only</p>
+        {% else %}
+        <p>Shift is members-only</p>
+        {% endif %}
+    {% elif actual_shift.electees_only and not user.userprofile.is_electee %}
+        {% if user.userprofile.is_member %}
+        <p>Shift is for {{actual_shift.get_restrictions}} only</p>
+        {% else %}
+        <p>Shift is members-only</p>
+        {% endif %}
+    {% elif actual_shift.actives_only and not user.userprofile.is_active %}
+        {% if user.userprofile.is_member %}
+        <p>Shift is for {{actual_shift.get_restrictions}} only</p>
+        {% else %}
+        <p>Shift is members-only</p>
+        {% endif %}
+    {% else %}
+        {% if actual_shift.can_sign_up %}
+            {% if is_shift_two_part %}
+            <p><a id="shift-signup{{actual_shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{actual_shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up_paired' event.id shift.id %}',function(){$('#shift-signup{{actual_shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+            {% else %}
+            <p><a id="shift-signup{{actual_shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{actual_shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up' event.id actual_shift.id %}',function(){$('#shift-signup{{actual_shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+            {% endif %}
+        {% else %}
+            {% if not actual_shift.is_before_start %}
+                <p>Sign up not allowed after the event starts.</p>
+            {% elif actual_shift.is_full %}
+                <p>Slot is full.</p>
+            {% else %}
+                <p>See, this is awkward. You can't sign in/up, but for the life of me I can't figure out why. You should tell the website chair...</p>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+{% endif %}
+{% endif %}
