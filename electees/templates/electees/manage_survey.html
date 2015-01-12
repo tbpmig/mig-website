@@ -5,15 +5,15 @@
     <div class="col-md-12">
     <h3>Manage Electee Interview Process</h3>
     <hr>
-    <a href="{%url 'electees:edit_survey' %}" class="btn {% if survey_exists %}btn-success{% else %}btn-danger{%endif%}">Add/Edit Survey</a>
-    <a href="{%url 'electees:edit_survey_parts' %}" class="btn {% if parts_exist %}btn-success{% else %}btn-danger{%endif%}">Add/Edit Survey Parts</a>
-    <a href="{%url 'electees:edit_survey_questions' %}" class="btn {% if questions_exist %}btn-success{% else %}btn-danger{%endif%}">Add/Edit Survey Questions</a>
+    <a href="{%url 'electees:edit_survey' %}" class="btn {% if survey_exists %}btn-success{% else %}btn-danger{%endif%}">Add/Edit Questionnaire</a>
+    <a href="{%url 'electees:edit_survey_parts' %}" class="btn {% if parts_exist %}btn-success{% else %}btn-danger{%endif%}">Add/Edit Questionnaire Parts</a>
+    <a href="{%url 'electees:edit_survey_questions' %}" class="btn {% if questions_exist %}btn-success{% else %}btn-danger{%endif%}">Add/Edit Questionnaire Questions</a>
     {% if survey_exists %}
-        <a href="{%url 'electees:add_survey_questions' %}" class="btn {% if survey_has_questions %}btn-success{% else %}btn-danger{%endif%}">Add Questions to Survey</a>
-        <a href="{%url 'electees:preview_survey' %}" class="btn {% if survey_has_questions %}btn-success{% else %}btn-danger{%endif%}">Preview Survey</a>
+        <a href="{%url 'electees:add_survey_questions' %}" class="btn {% if survey_has_questions %}btn-success{% else %}btn-danger{%endif%}">Add Questions to Questionnaire</a>
+        <a href="{%url 'electees:preview_survey' %}" class="btn {% if survey_has_questions %}btn-success{% else %}btn-danger{%endif%}">Preview Questionnaire</a>
     {% else %}
-        <a  class="btn btn-danger" disabled="disabled">Add Questions to Survey</a>
-        <a  class="btn btn-danger" disabled="disabled">Preview Survey</a>
+        <a  class="btn btn-danger" disabled="disabled">Add Questions to Questionnaire</a>
+        <a  class="btn btn-danger" disabled="disabled">Preview Questionnaire</a>
     {% endif %}
     </div>
     <div class="col-md-12">

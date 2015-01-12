@@ -22,7 +22,7 @@
         <div class="btn-group">
         {% endif %}
         {% if can_complete_surveys %}
-            <a href="{% url 'electees:complete_survey' %}" class="btn btn-primary">Electee Interview Survey</a>
+            <a href="{% url 'electees:complete_survey' %}" class="btn btn-primary">Electee Questionnaire</a>
         {% endif %}
         {% if can_submit_background_form %}
         <a href="{% url 'electees:submit_background_form' %}" class="btn btn-primary">Educational Background Form</a>
@@ -33,13 +33,10 @@
         {% if can_complete_surveys or can_submit_background_form or can_submit_interview_followups%}
         </div>
         {% endif %}
-        {% if can_view_interview_pairings %}
+        {% if can_view_followups %}
         <div class="btn-group">
-            <a href="{% url 'electees:view_interview_pairings' %}" class="btn btn-primary">View Interview Slate</a>
-        </div>
-            {% if can_view_followups %}
                 <a href="{% url 'electees:view_interview_follow_up_table' %}" class="btn btn-primary">View Interview Followups</a>
-            {% endif %}
+        </div>
         {% endif %}
         
         <h3>Electee Resources</h3>
