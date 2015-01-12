@@ -567,6 +567,7 @@ def get_event_ajax(request,event_id):
         'can_edit_event':can_edit,
         'has_profile':has_profile,
         'user':request.user,
+        'show_shifts': not (event.event_type.name=='Attended Interviews' or event.event_type.name=='Conducted Interviews'), 
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
