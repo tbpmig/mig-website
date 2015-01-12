@@ -5,16 +5,17 @@
     <div class="col-md-12">
     <a class="btn btn-default" href="{% url 'electees:view_electee_groups' %}"><i class="glyphicon glyphicon-chevron-left"></i> To Electee Resources</a>
     <h3>Electee Questionnaire</h3>
-    <p>Please Complete the following Survey. You may save your answers and resume at a later time.</p>
-    <p><strong>The survey is due by {{survey.due_date}}</strong></p>
+    <p>Please Complete the following Questionnaire. You may save your answers and resume at a later time.</p>
+    <p><strong>Due by {{survey.due_date}}</strong></p>
     {% if survey.instructions %}
         {{survey.instructions|my_markdown}}
     {% endif %}
     <hr>
     <form action="{{request.path}}" method="post">{% csrf_token %}
         {{form.render|safe}}
-        <input type="submit" value="Save Electee Survey"/>
-        <p><strong>Remember to also submit your resume through your profile; your survey will not be considered complete without it.</strong></p>
+        <input type="submit" value="Save Responses"/>
+        <p><strong>By saving your responses, you can come back and edit them in the future. They will auto-submit on the due-date.</strong></p>
+        <p><strong>Remember to also submit your resume through your profile; your questionnaire will not be considered complete without it.</strong></p>
     </form>  
 
 </div>
