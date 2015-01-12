@@ -854,6 +854,7 @@ def edit_event(request, event_id):
     EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
     needed_flyer = e.needs_flyer
     needed_facebook =e.needs_facebook_event
+    previous_cal = e.google_cal
     if request.method == 'POST':
         form = EventForm(request.POST,prefix='event',instance=e)
         formset = EventShiftEditFormset(request.POST,prefix='shift',instance=e)
@@ -865,7 +866,7 @@ def edit_event(request, event_id):
                 event.save()
                 form.save_m2m()
                 shifts=formset.save()
-                event.add_event_to_gcal()
+                event.add_event_to_gcal(previous_cal=previous_cal)
                 tweet_option = form.cleaned_data.pop('tweet_option','N')
                 if tweet_option=='T':
                     event.tweet_event(False)

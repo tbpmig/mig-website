@@ -353,7 +353,7 @@ class CalendarEvent(models.Model):
                         service.events().delete(calendarId=self.google_cal.calendar_id,eventId=shift.google_event_id).execute()
                     except:
                         pass
-    def add_event_to_gcal(self):
+    def add_event_to_gcal(self,previous_cal=None):
         if DEBUG:
             return
         c = get_credentials()
@@ -364,6 +364,8 @@ class CalendarEvent(models.Model):
                 new_event = True
                 if shift.google_event_id:
                     try:
+                        if previous_cal and not (previous_cal == self.google_cal):
+                            service.events().move(calendarId=previous_cal.calendar_id, eventId=shift.google_event_id, destination=self.google_cal.calendar_id)
                         gcal_event = service.events().get(calendarId=self.google_cal.calendar_id,eventId=shift.google_event_id).execute()
                         if gcal_event['status']=='cancelled':
                             gcal_event={}
@@ -387,6 +389,7 @@ class CalendarEvent(models.Model):
                     submitted_event=service.events().insert(calendarId=self.google_cal.calendar_id,body=gcal_event).execute()
                     shift.google_event_id=submitted_event['id']
                     shift.save()
+            
     def can_complete_event(self):
         s = self.eventshift_set
         now = timezone.now()
