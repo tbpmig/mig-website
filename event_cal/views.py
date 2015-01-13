@@ -333,6 +333,8 @@ def sign_up(request, event_id, shift_id):
     shift = get_object_or_404(EventShift,id=shift_id)
     if shift.start_time < timezone.now():
         request.session['error_message']='You cannot sign up for an event in the past'
+    elif shift.start_time-timedelta(hours=event.min_sign_up_notice)<timezone.now():
+        request.session['error_message']='This event blocks sign-up %s hours before start'%(event.min_sign_up_notice)
     elif shift.max_attendance and (shift.attendees.count() >= shift.max_attendance):
         request.session['error_message']='Shift is full'
     else:
@@ -381,6 +383,8 @@ def unsign_up(request, event_id, shift_id):
     shift = get_object_or_404(EventShift,id=shift_id)
     if shift.start_time < timezone.now():
         request.session['error_message']='You cannot unsign-up for an event that has started'
+    elif shift.start_time-timedelta(hours=event.min_unsign_up_notice)<timezone.now():
+        request.session['error_message']='This event blocks unsign-up %s hours before start'%(event.min_unsign_up_notice)
     else:
         if hasattr(request.user,'userprofile'):
             remove_user_from_shift(request.user.userprofile,shift)
@@ -908,6 +912,7 @@ def edit_event(request, event_id):
         'subnav':'list',
         'submit_name':'Submit Changes',
         'shift_title':'Edit Shifts',
+        'shift_help_text':'',
         'event_photos':EventPhoto.objects.all(),
         }
     context_dict.update(get_permissions(request.user))
@@ -1737,6 +1742,8 @@ def sign_up_paired(request, event_id, shift_id):
     shift = get_object_or_404(InterviewPairing,id=shift_id)
     if shift.first_shift.start_time < timezone.now():
         request.session['error_message']='You cannot sign up for an event in the past'
+    elif shift.start_time-timedelta(hours=event.min_sign_up_notice)<timezone.now():
+        request.session['error_message']='This event blocks sign-up %s hours before start'%(event.min_sign_up_notice)
     elif shift.first_shift.max_attendance and (shift.first_shift.attendees.count() >= shift.first_shift.max_attendance):
         request.session['error_message']='Shift is full'
     else:
@@ -1785,6 +1792,8 @@ def unsign_up_paired(request, event_id, shift_id):
     shift = get_object_or_404(InterviewPairing,id=shift_id)
     if shift.first_shift.start_time < timezone.now():
         request.session['error_message']='You cannot unsign-up for an event that has started'
+    elif shift.start_time-timedelta(hours=event.min_unsign_up_notice)<timezone.now():
+        request.session['error_message']='This event blocks sign-up %s hours before start'%(event.min_unsign_up_notice)
     else:
         if hasattr(request.user,'userprofile'):
             remove_user_from_shift(request.user.userprofile,shift.first_shift)

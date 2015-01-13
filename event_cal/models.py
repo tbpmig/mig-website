@@ -57,6 +57,8 @@ class CalendarEvent(models.Model):
     requires_AAPS_background_check = models.BooleanField(default=False)
     mutually_exclusive_shifts = models.BooleanField(default=False)
     allow_overlapping_sign_ups     = models.BooleanField(default=False)
+    min_unsign_up_notice = models.PositiveSmallIntegerField('Block unsign-up how many hours before event starts?',default=12)
+    min_sign_up_notice = models.PositiveSmallIntegerField('Block sign-up how many hours before event starts?',default=0)
     before_grace = timedelta(minutes=-30)
     after_grace = timedelta(hours = 1)
     @classmethod
