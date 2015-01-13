@@ -1588,15 +1588,12 @@ def add_to_list(request,type_of_list):
     if type_of_list == 'Actives':
         current_list = current_actives
         is_active_list = True
-        link = reverse('member_resources:add_to_active_list')
     elif type_of_list =='Undergrad Electees':
         current_list = current_electees_ugrad
         is_active_list = False
-        link = reverse('member_resources:add_to_ugrad_electee_list')
     else:
         current_list = current_electees_grad
         is_active_list = False
-        link = reverse('member_resources:add_to_grad_electee_list')
     template = loader.get_template('member_resources/add_to_member_list.html')
     context_dict = {
         'mass_form':form,
@@ -1604,7 +1601,6 @@ def add_to_list(request,type_of_list):
         'current_list':current_list,
         'is_active_list':is_active_list,
         'list_name':type_of_list,
-        'link':link,
         'subnav':'misc_reqs',
         }
     context_dict.update(get_common_context(request))
@@ -1627,6 +1623,60 @@ def add_to_grad_electee_list(request):
         request.session['error_message']='You are not authorized to manage electees.'
         return redirect('member_resources:index')
     return add_to_list(request,'Grad Electees')
+    
+def clear_electee_lists(request):
+    if not Permissions.can_add_electee_members(request.user):
+        request.session['error_message']='You are not authorized to manage electees.'
+        return redirect('member_resources:index')
+    UndergradElecteeList.objects.all().delete()
+    GradElecteeList.objects.all().delete()
+    request.session['success_message']='Electees lists successfully cleared.'
+    return redirect('member_resources:edit_list')
+    
+def edit_list(request):
+    if not Permissions.can_add_electee_members(request.user):
+        request.session['error_message']='You are not authorized to manage electees.'
+        return redirect('member_resources:index')
+    error_lists={'bad_uniqnames':[],'missing_uniqnames':[]}
+    current_electees_ugrad = UndergradElecteeList.objects.all()
+    current_electees_grad = GradElecteeList.objects.all()
+    if request.method == 'POST':
+        form = MassAddProjectLeadersForm(request.POST,prefix='mass-add')
+        if form.is_valid():
+            uniqnames=form.cleaned_data['uniqnames'].split('\n')
+            expr=re.compile('^[a-z]{3,8}$')
+            for uniqname in uniqnames:
+                uniqname_stripped = uniqname.strip()
+                if not expr.match(uniqname_stripped):
+                    error_lists['bad_uniqnames'].append(uniqname_stripped)
+                    continue
+                to_delete1=current_electees_ugrad.filter(uniqname=uniqname_stripped)
+                to_delete2= current_electees_grad.filter(uniqname=uniqname_stripped)
+                if not to_delete1.exists() and not to_delete2.exists():
+                    error_lists['missing_uniqnames'].append(uniqname_stripped)
+                else:
+                    to_delete1.delete()
+                    to_delete2.delete()
+            if not error_lists['bad_uniqnames'] and not error_lists['missing_uniqnames']:
+                request.session['success_message']='All uniqnames removed successfully'
+                return redirect('member_resources:view_misc_reqs')
+            else:
+                request.session['warning_message']='Some uniqnames were not added'
+                form=MassAddProjectLeadersForm(initial={'uniqnames':'\n'.join(error_lists['bad_uniqnames']+error_lists['missing_uniqnames'])},prefix='mass-add')
+    else:
+        form = MassAddProjectLeadersForm(prefix='mass-add')
+
+    link = reverse('member_resources:edit_list')
+    template = loader.get_template('member_resources/edit_member_lists.html')
+    context_dict = {
+        'mass_form':form,
+        'error_lists':error_lists,
+        'subnav':'misc_reqs',
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
 def add_leadership_credit(request):
     if not Permissions.can_add_leadership_credit(request.user):
         request.session['error_message']='You are not authorized to manage leadership credit.'

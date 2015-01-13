@@ -1,0 +1,43 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <a class="btn btn-default" href="{% url 'member_resources:view_misc_reqs' %}"><i class="glyphicon glyphicon-chevron-left"></i> Back to Membership Admin</a>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <form method="post" action="{{request.path}}">
+            {% csrf_token %}
+            <h4>Remove from electee lists</h4>
+            <p> Specify the uniqnames of the electees to be removed. This cannot remove actives.</p>
+            {% if error_lists.bad_uniqnames  or error_lists.missing_uniqnames %}
+                <p class="text-danger">There were errors in processing the list of uniqnames</p>
+            {% if error_lists.bad_uniqnames  %}
+                <p class="text-danger">The following uniqnames are invalid:</p>
+                <ul class="text-danger">
+                {% for error in error_lists.bad_uniqnames %}
+                    <li>{{error}}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+            {% if error_lists.missing_uniqnames  %}
+                <p class="text-danger">The following uniqnames are were not electees:</p>
+                <ul class="text-danger">
+                {% for error in error_lists.missing_uniqnames %}
+                    <li>{{error}}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+            {% endif %}
+            {{mass_form.as_p}}
+            <input type="submit" value="Remove from all lists" name = "mass-add"/>
+        </form>
+    </div>
+    <div class="col-md-6">
+        <a href="{% url 'member_resources:clear_electee_lists'  %}" class="confirmation btn btn-large btn-danger"><i class="glyphicon glyphicon-remove"></i> Remove all electees from profile-creation list.</a>
+    </div>
+</div>
+{% endblock content %}

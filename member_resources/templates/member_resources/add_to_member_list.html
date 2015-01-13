@@ -13,7 +13,7 @@
         {% endfor %}
     </div>
     <div class="col-md-6">
-        <form method="post" action="{{link}}">
+        <form method="post" action="{{request.path}}">
             {% csrf_token %}
             <h4>Add New {{list_name}}</h4>
         {% if error_lists.bad_uniqnames or error_lists.current_actives or error_lists.current_electees %}

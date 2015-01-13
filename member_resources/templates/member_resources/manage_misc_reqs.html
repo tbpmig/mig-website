@@ -65,6 +65,7 @@
         {% if can_add_electee_members %}
         <li><a href="{% url 'member_resources:add_to_ugrad_electee_list' %}">Add New Undergrad Electees</a></li>
         <li><a href="{% url 'member_resources:add_to_grad_electee_list' %}">Add New Grad Electees</a></li>
+        <li><a href="{% url 'member_resources:edit_list' %}">Edit List of Potential Electees</a></li>
         {% endif %}
         {% if can_manage_electees %}
             <li><a href="{% url 'member_resources:move_electees_to_active' %}">Move Electees To Actives</a></li>
