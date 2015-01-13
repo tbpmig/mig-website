@@ -244,6 +244,7 @@ def event_detail(request,event_id):
         'can_add_sign_in':(Permissions.can_create_events(request.user) and not MeetingSignIn.objects.filter(event=event).exists() and event.use_sign_in),
         'can_complete':(event.can_complete_event() and Permissions.can_edit_event(event,request.user)),
         'subnav':'list',
+        'show_shifts':True,
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
