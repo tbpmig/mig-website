@@ -5,11 +5,7 @@
 {% block cal_content %}
 
 {% url 'event_cal:event_detail' event.id as event_page %}
-<div class="row">
-    <div class="col-md-6">
-        <a class="btn btn-default" href="{% url 'event_cal:event_detail' event.id %}"><i class="glyphicon glyphicon-chevron-left"></i> Back to main view</a>
-    </div>
-</div>
+
 <div style="position:relative;">
 <h3>{{event.name}}</h3>
 {% if can_edit_event %}
