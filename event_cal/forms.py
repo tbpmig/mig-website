@@ -148,13 +148,15 @@ class MultiShiftForm(Form):
         actives_only = cleaned_data.get('actives_only')
         start_time = cleaned_data.get('start_time')
         end_time = cleaned_data.get('end_time')
+        
         error_list = []
         if ugrads_only and grads_only:
             error_list.append(ValidationError(_('An event cannot be both \'only undergraduates\' and \'only graduates\'.')))
         if electees_only and actives_only:
             error_list.append(ValidationError(_('An event cannot be both \'only electees\' and \'only actives\'.')))
-        if start_time> end_time:
-            error_list.append(ValidationError(_('The event shift must start before it can end; use am/pm to specify.')))
+        if start_time and end_time:
+            if start_time> end_time:
+                error_list.append(ValidationError(_('The event shift must start before it can end; use am/pm to specify.')))
         if error_list:
             raise ValidationError(error_list)
         return cleaned_data
