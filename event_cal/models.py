@@ -408,6 +408,27 @@ class CalendarEvent(models.Model):
         overlapping_shifts = attendee_shifts.exclude(overlapping_query)
         return overlapping_shifts.exists()
         
+    def get_fullness(self):
+        shifts = self.eventshift_set.all()
+        if shifts.count()>1:
+            return ''
+        shift = shifts[0]
+        num_attendees = 1.0*shift.attendees.count()
+        if shift.max_attendance is None:
+            if num_attendees<5:
+                return '(Almost empty)'
+            else:
+                return '(Not full)'
+        elif shift.max_attendance:
+            if (num_attendees)/shift.max_attendance >.8 or shift.max_attendance-num_attendees<=1:
+                return '(Nearly full)'
+            elif (num_attendees)/shift.max_attendance <.2:
+                return '(Almost empty)'
+            else:
+                return '(Not full)'
+        else:
+            return ''
+        
 class EventShift(models.Model):
     event = models.ForeignKey(CalendarEvent)
     start_time      = models.DateTimeField()

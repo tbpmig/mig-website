@@ -49,7 +49,7 @@
     <strong>{{category_name|slice:":-9"}}</strong>
     {% endwith %}
     {% for event in grouped_event.list %}
-<h5><a href="{% url 'event_cal:event_detail' event.id %}">{{event.name}}</a></h5>
+<h5><a href="{% url 'event_cal:event_detail' event.id %}">{{event.name}}</a> {{event.get_fullness}}</h5>
 <p><b>When: </b> {% if event.eventshift_set.all|length > 1 %}Shifts between {{event.get_start_and_end.start|date:"P M d, Y"}} and {{event.get_start_and_end.end|date:"P M d, Y"}}{%else%}{{event.get_start_and_end.start|date:"P"}} to {{event.get_start_and_end.end|date:"P, M d, Y"}}{% endif%}</p>
 <p><b>Where: </b>{% for location in event.get_locations %}{{location}}{% if event.get_locations|length > 2 and not forloop.last %}, {% endif %}{% if event.get_locations|length > 1 and forloop.revcounter == 2 %} and {% endif %}{% endfor %}</p>
 <p><b>What/Why: </b>{{event.announce_text|my_markdown}}</p>

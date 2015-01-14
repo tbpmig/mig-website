@@ -22,6 +22,11 @@
 							{{shift.end_time|date:"f a"}}
 							</p>
 							<p id="event-where"><b>Where:</b> {{shift.location}}</p>
+                            {% if shift.max_attendance == None %}
+                            <p>No attendance limit. {{shift.attendees.count}} attendees so far.</p>
+                            {% elif shift.max_attendance %}
+                            <p>{% if event.eventshift_set.all|length > 1 %}Shift{% else %}Event{%endif%} is {{shift.attendees.count}}/{{shift.max_attendance}} full.</p>
+                            {% endif %}
                             {% if event.eventshift_set.all|length > 1%}
                                 <hr/>
 								</div>
