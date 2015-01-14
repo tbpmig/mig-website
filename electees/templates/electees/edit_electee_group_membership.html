@@ -72,17 +72,18 @@ window.onload = function(){
             var datas = {};
             var group_array = [];
             var group_container;
-            var electees;
+            var electee;
             {% for group in electee_groups %}
             group_array = [];
             group_container = document.getElementById('DragContainer{{group.id}}');
-            electees = group_container.childNodes;
             electee = group_container.firstChild;
+            if (electee){
             do{
                 if (electee.nodeType == 1){
                     group_array.push(electee.getAttribute('id'));
                 }
             }while(electee = electee.nextSibling)
+            }
             datas[{{group.id}}]=group_array;
             {% endfor %}
             addHidden(theForm,'electee_groups',JSON.stringify(datas));
