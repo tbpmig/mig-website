@@ -30,7 +30,7 @@
         <p>{{event_category}} are added as scheduling permits throughout the semester, so be sure to check back later.</p>
         <ul id="event-list">
         {% for event in events %}
-        {% with can_edit_event=False %}
+        {% with can_edit_event=False show_shifts=True %}
             <li>
             {% include 'event_cal/event.html' %}
             </li>

@@ -39,7 +39,7 @@
         {% endif %}
         <ul id="event-list">
             {% for event in events %}
-                {% with can_edit_event=False %}
+                {% with can_edit_event=False show_shifts=True%}
                 <li>
                     {% include 'event_cal/event.html' %}
                 </li>
