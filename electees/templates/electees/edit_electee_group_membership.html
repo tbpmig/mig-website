@@ -17,6 +17,12 @@
         {% for team in electee_groups %}
         <div>
             <h5>{{team.group_name}}</h5>
+            <p><strong>Leaders</strong></p>
+            <ul>
+            {% for leader in team.leaders.all %}
+            <li>{{leader.get_firstlast_name}}</li>
+            {% endfor %}
+            </ul>
             <div class="DragContainer" id="DragContainer{{team.id}}" overclass="OverDragContainer">
                 {% for member in team.members.all %}
                 <div class="DragBox" id="{{member.uniqname}}" overclass="OverDragBox" dragclass="DragDragBox">{{member}},  {% for major in member.major.all %}{{major.acronym}} {%endfor %}, {{member.standing}}</div>
