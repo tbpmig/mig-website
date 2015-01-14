@@ -684,7 +684,7 @@ def view_interview_follow_up_table(request):
     electee_data = []
     num_followups=0
     for electee in electees:
-        follow_ups = ElecteeInterviewFollowup.objects.filter(interview__interviewee_shift__attendees=electee)
+        follow_ups = ElecteeInterviewFollowup.objects.filter(interview__interviewee_shift__attendees=electee).exclude(recommendation='X')
         num_followups=follow_ups.count() if follow_ups.count()>num_followups else num_followups
         electee_data.append({'electee':electee,'followups':follow_ups})
     template = loader.get_template('electees/interview_followup_table.html')

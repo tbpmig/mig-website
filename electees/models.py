@@ -226,6 +226,7 @@ class ElecteeInterviewFollowup(models.Model):
         ('Y','Recommend'),
         ('M','Not Sure'),
         ('N','Do not recommend'),
+        ('X','Missed Interview'),
     )
     
     language_barrier = models.BooleanField(default=False)
