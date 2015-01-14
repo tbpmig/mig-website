@@ -50,12 +50,12 @@
         {% endif %}
     {% elif user.userprofile in shift.attendees.all %}
         {% if shift.can_sign_in %}
-            <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
+            <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in'  shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
             {% if shift.is_before_start %}
-                <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up' event.id shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
+                <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up'  shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% endif %}
         {% elif shift.is_before_start %}
-            <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up' event.id shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
+            <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up'  shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% if event.use_sign_in %}
                 <p>Event sign-in is not open until event starts.</p>
             {% endif %}
@@ -92,12 +92,12 @@
         {% endif %}
     {% else %}
         {% if shift.can_sign_in %}
-            <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
+            <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in'  shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
             {% if shift.can_sign_up %} 
-                <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up' event.id shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+                <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up'  shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
             {% endif %}
         {% elif shift.can_sign_up %}
-            <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up' event.id shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+            <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up'  shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
             {% if event.use_sign_in %}
                 <p>Event sign-in is not open until event starts.</p>
             {% endif %}
@@ -113,10 +113,10 @@
             {% elif shift.is_full and shift.max_attendance %}
                 <p>Shift is full.</p>
                 {% if user.userprofile in shift.get_users_on_waitlist %}
-                <p><a id="shift-waitlist{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:remove_from_waitlist' event.id shift.id %}',function(){$('#shift-waitlist{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Leave waitlist (there
+                <p><a id="shift-waitlist{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:remove_from_waitlist'  shift.id %}',function(){$('#shift-waitlist{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Leave waitlist (there
                 are currently {% for w in shift.get_ordered_waitlist %}{% if w.user == user.userprofile %}{{forloop.counter0}}{%endif%}{%endfor%} users ahead of you).</a></p>
                 {% else %}
-                <p><a id="shift-waitlist{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:add_to_waitlist' event.id shift.id %}',function(){$('#shift-waitlist{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Add self to waitlist (there
+                <p><a id="shift-waitlist{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:add_to_waitlist'  shift.id %}',function(){$('#shift-waitlist{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Add self to waitlist (there
                 are currently {{shift.get_waitlist_length}} users ahead of you).</a></p>
                 {% endif %}
             {% elif shift.is_full %}
@@ -137,11 +137,11 @@
     <ul>
         {% for attendee in shift.attendees.all %}
             {% url 'member_resources:profile' attendee.uniqname as profile_url %}
-            <li>
+            <li id="shift-{{shift.id}}-attendee-{{attendee.uniqname}}">
             {% if attendee.is_member %}
-                <a href="{{profile_url}}">{{attendee}}</a>
+                <p><a href="{{profile_url}}">{{attendee}}</a> {% if can_edit_event %}<a id="shift-{{shift.id}}-user-{{attendee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{shift.id}}-user-{{attendee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% url 'event_cal:manual_remove_user_from_shift' shift.id attendee.uniqname %}')">Remove attendee</a>{% endif %}</p>
             {% else %}
-                {{attendee}}
+                <p>{{attendee}} {% if can_edit_event %}<a id="shift-{{shift.id}}-user-{{attendee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{shift.id}}-user-{{attendee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% url 'event_cal:manual_remove_user_from_shift' shift.id attendee.uniqname %}')">Remove attendee</a>{% endif %}</p>
             {% endif %}
             </li>
         {% endfor %}
@@ -196,11 +196,11 @@
                                 <ul>
                                 {% for attendee in shift.attendees.all %}
                                     {% url 'member_resources:profile' attendee.uniqname as profile_url %}
-                                    <li>
+                                    <li id="shift-{{shift.id}}-attendee-{{attendee.uniqname}}">
                                     {% if attendee.is_member %}
-                                        <a href="{{profile_url}}">{{attendee}}</a>
+                                        <p><a href="{{profile_url}}">{{attendee}}</a> {% if can_edit_event %}<a id="shift-{{shift.id}}-user-{{attendee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{shift.id}}-user-{{attendee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% url 'event_cal:manual_remove_user_from_shift' shift.id attendee.uniqname %}')">Remove attendee</a>{% endif %}</p>
                                     {% else %}
-                                        {{attendee}}
+                                        <p>{{attendee}} {% if can_edit_event %}<a id="shift-{{shift.id}}-user-{{attendee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{shift.id}}-user-{{attendee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% url 'event_cal:manual_remove_user_from_shift'  shift.id attendee.uniqname %}')">Remove attendee</a>{% endif %}</p>
                                     {% endif %}
                                     </li>
                                 {% endfor %}
@@ -221,13 +221,13 @@
         {% endif %}
     {% elif user.userprofile in shift.attendees.all %}
         {% if shift.can_sign_in %}
-            <td><p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
+            <td><p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in'  shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
             {% if shift.is_before_start %}
-                <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up' event.id shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
+                <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up'  shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% endif %}
             </td>
         {% elif shift.is_before_start %}
-            <td><p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up' event.id shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
+            <td><p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up'  shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% if event.use_sign_in %}
                 <p>Event sign-in is not open until event starts.</p>
             {% endif %}
@@ -265,13 +265,13 @@
         {% endif %}
     {% else %}
         {% if shift.can_sign_in %}
-            <td><p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in' event.id shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
+            <td><p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in'  shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
             {% if shift.can_sign_up %} 
-                <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up' event.id shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+                <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up'  shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
             {% endif %}
             </td>
         {% elif shift.can_sign_up %}
-            <td><p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up' event.id shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+            <td><p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up'  shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
             {% if event.use_sign_in %}
                 <p>Event sign-in is not open until event starts.</p>
             {% endif %}
@@ -284,10 +284,10 @@
             {% elif shift.is_full and shift.max_attendance %}
                 <td><p>Shift is full.</p>
                 {% if user.userprofile in shift.get_users_on_waitlist %}
-                <p><a id="shift-waitlist{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:remove_from_waitlist' event.id shift.id %}',function(){$('#shift-waitlist{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Leave waitlist (there
+                <p><a id="shift-waitlist{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:remove_from_waitlist'  shift.id %}',function(){$('#shift-waitlist{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Leave waitlist (there
                 are currently {% for w in shift.get_ordered_waitlist %}{% if w.user == user.userprofile %}{{forloop.counter0}}{%endif%}{%endfor%} users ahead of you).</a></p>
                 {% else %}
-                <p><a id="shift-waitlist{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:add_to_waitlist' event.id shift.id %}',function(){$('#shift-waitlist{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Add self to waitlist (there
+                <p><a id="shift-waitlist{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:add_to_waitlist'  shift.id %}',function(){$('#shift-waitlist{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Add self to waitlist (there
                 are currently {{shift.get_waitlist_length}} users ahead of you).</a></p>
                 {% endif %}
                 </td>
@@ -304,7 +304,7 @@
                                 <td>You must login to sign-up
                             {% endif %}
                             {% if can_edit_event %}
-                                <td><a id="deleteshift{{shift.id}}" class="btn btn-primary btn-sm confirmation" onclick="$('#deleteshift{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:delete_shift' event.id shift.id %}',function(){})"><i class="glyphicon glyphicon-remove"></i> Delete shift</a></td>
+                                <td><a id="deleteshift{{shift.id}}" class="btn btn-primary btn-sm confirmation" onclick="$('#deleteshift{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:delete_shift'  shift.id %}',function(){})"><i class="glyphicon glyphicon-remove"></i> Delete shift</a></td>
                             {% endif %}
                         </tr>
                     {% endwith %}

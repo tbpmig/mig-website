@@ -1,11 +1,11 @@
 <ul>
 {% for interviewee in actual_shift.attendees.all %}
     {% url 'member_resources:profile' interviewee.uniqname as profile_url %}
-    <li>
+    <li id="shift-{{actual_shift.id}}-attendee-{{interviewee.uniqname}}">
     {% if interviewee.is_member %}
-        <a href="{{profile_url}}">{{interviewee}}</a>
+        <p><a href="{{profile_url}}">{{interviewee}}</a> {% if can_edit_event %}<a id="shift-{{actual_shift.id}}-user-{{interviewee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{actual_shift.id}}-user-{{interviewee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% if is_shift_two_part %}{% url 'event_cal:manual_remove_user_from_paired_shift' shift.id interviewee.uniqname %}{%else%}{% url 'event_cal:manual_remove_user_from_shift' actual_shift.id interviewee.uniqname %}{%endif%}')">Remove interviewe{% if is_interviewer %}r{%else%}e{%endif%}</a>{% endif %}</p>
     {% else %}
-        {{interviewee}}
+        <p>{{interviewee}}  {% if can_edit_event %}<a id="shift-{{actual_shift.id}}-user-{{interviewee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{actual_shift.id}}-user-{{interviewee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% if is_shift_two_part %}{% url 'event_cal:manual_remove_user_from_paired_shift'  shift.id interviewee.uniqname %}{%else%}{% url 'event_cal:manual_remove_user_from_paired_shift'  actual_shift.id interviewee.uniqname %}{%endif%}')">Remove interviewe{% if is_interviewer %}r{%else%}e{%endif%}</a>{% endif %}</p>
     {% endif %}
     </li>
 {% empty %}
@@ -27,9 +27,9 @@
     {% elif user.userprofile in actual_shift.attendees.all %}
         {% if actual_shift.is_before_start %}
             {% if is_shift_two_part %}
-                <p><a id="shift-signup{{actual_shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{actual_shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up_paired' event.id shift.id %}',function(){$('#shift-signup{{actual_shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
+                <p><a id="shift-signup{{actual_shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{actual_shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up_paired' shift.id %}',function(){$('#shift-signup{{actual_shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% else %}
-                <p><a id="shift-signup{{actual_shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{actual_shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up' event.id actual_shift.id %}',function(){$('#shift-signup{{actual_shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
+                <p><a id="shift-signup{{actual_shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{actual_shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up' actual_shift.id %}',function(){$('#shift-signup{{actual_shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% endif %}
         {% else %}
             <p>You cannot unsign-up after the event has started</p>
@@ -61,9 +61,9 @@
     {% else %}
         {% if actual_shift.can_sign_up %}
             {% if is_shift_two_part %}
-            <p><a id="shift-signup{{actual_shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{actual_shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up_paired' event.id shift.id %}',function(){$('#shift-signup{{actual_shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+            <p><a id="shift-signup{{actual_shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{actual_shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up_paired' shift.id %}',function(){$('#shift-signup{{actual_shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
             {% else %}
-            <p><a id="shift-signup{{actual_shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{actual_shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up' event.id actual_shift.id %}',function(){$('#shift-signup{{actual_shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+            <p><a id="shift-signup{{actual_shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{actual_shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up' actual_shift.id %}',function(){$('#shift-signup{{actual_shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
             {% endif %}
         {% else %}
             {% if not actual_shift.is_before_start %}

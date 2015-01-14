@@ -117,8 +117,9 @@ def index(request):
     return HttpResponse(template.render(context))
 
 @login_required
-def meeting_sign_in(request,event_id,shift_id):
-    event = get_object_or_404(CalendarEvent,id=event_id)
+def meeting_sign_in(request,shift_id):
+    shift = get_object_or_404(EventShift,id=shift_id)
+    event = shift.event
     sign_in_sheets = MeetingSignIn.objects.filter(event=event)
     current_tz = timezone.get_current_timezone()
     now = timezone.localtime(timezone.now())
@@ -126,7 +127,7 @@ def meeting_sign_in(request,event_id,shift_id):
         sign_in_sheet = sign_in_sheets[0]
     else:
         sign_in_sheet = None
-    shift = get_object_or_404(EventShift,id=shift_id)
+    
     if not shift.can_sign_in():
         if not event.use_sign_in:
             request.session['error_message']='Sign-in not available for this event'
@@ -253,9 +254,9 @@ def event_detail(request,event_id):
 
 @ajax
 @login_required
-def add_to_waitlist(request,event_id,shift_id):
-    event = get_object_or_404(CalendarEvent,id=event_id)
+def add_to_waitlist(request,shift_id):
     shift = get_object_or_404(EventShift,id=shift_id)
+    event = shift.event
     if shift.start_time < timezone.now():
         request.session['error_message']='You cannot sign up for an event in the past'
     elif not (shift.max_attendance and (shift.attendees.count() >= shift.max_attendance)):
@@ -297,16 +298,16 @@ def add_to_waitlist(request,event_id,shift_id):
         return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
-    return {'fragments':{'#shift-waitlist'+shift_id:r'''<a id="shift-waitlist%s" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-waitlist%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Leave waitlist (there are currently %s users ahead of you).</a>'''%(shift_id,shift_id,reverse('event_cal:remove_from_waitlist', args=[event_id, shift_id] ),shift_id,shift.get_users_waitlist_spot(profile)),
+    return {'fragments':{'#shift-waitlist'+shift_id:r'''<a id="shift-waitlist%s" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-waitlist%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Leave waitlist (there are currently %s users ahead of you).</a>'''%(shift_id,shift_id,reverse('event_cal:remove_from_waitlist', args=[ shift_id] ),shift_id,shift.get_users_waitlist_spot(profile)),
                         '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
 
 @ajax
 @login_required
-def remove_from_waitlist(request, event_id, shift_id):
-    event = get_object_or_404(CalendarEvent,id=event_id)
+def remove_from_waitlist(request,  shift_id):
     shift = get_object_or_404(EventShift,id=shift_id)
+    event = shift.event
     if shift.start_time < timezone.now():
         request.session['error_message']='You cannot unsign-up for an event that has started'
     else:
@@ -321,16 +322,16 @@ def remove_from_waitlist(request, event_id, shift_id):
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
     return {'fragments':{'#shift-waitlist'+shift_id:r'''<a id="shift-waitlist%s" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-waitlist%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Add self to waitlist (there
-                are currently %s users ahead of you)</a>'''%(shift_id,shift_id,reverse('event_cal:add_to_waitlist', args=[event_id, shift_id] ),shift_id,shift.get_waitlist_length()),
+                are currently %s users ahead of you)</a>'''%(shift_id,shift_id,reverse('event_cal:add_to_waitlist', args=[ shift_id] ),shift_id,shift.get_waitlist_length()),
                         '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}} 
 
 @ajax
 @login_required
-def sign_up(request, event_id, shift_id):
-    event = get_object_or_404(CalendarEvent,id=event_id)
+def sign_up(request,  shift_id):
     shift = get_object_or_404(EventShift,id=shift_id)
+    event = shift.event
     if shift.start_time < timezone.now():
         request.session['error_message']='You cannot sign up for an event in the past'
     elif shift.start_time-timedelta(hours=event.min_sign_up_notice)<timezone.now():
@@ -371,30 +372,57 @@ def sign_up(request, event_id, shift_id):
         return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
-    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,shift_id,reverse('event_cal:unsign_up', args=[event_id, shift_id] ),shift_id),
+    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,shift_id,reverse('event_cal:unsign_up', args=[ shift_id] ),shift_id),
                         '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
 
+def unsign_up_user(shift,profile):
+    remove_user_from_shift(profile,shift)
+    waitlist=shift.get_ordered_waitlist()
+    if waitlist.exists():
+        w=waitlist[0]
+        add_user_to_shift(w.user,shift)
+        notify_waitlist_move(shift.event,shift,w.user)
+        w.delete()
+    CarpoolPerson.objects.filter(event=shift.event,person=profile).delete()
+
 @ajax
 @login_required
-def unsign_up(request, event_id, shift_id):
-    event = get_object_or_404(CalendarEvent,id=event_id)
+def manual_remove_user_from_shift(request,shift_id,username):
     shift = get_object_or_404(EventShift,id=shift_id)
+    e= shift.event
+    if not Permissions.can_edit_event(e,request.user):
+        request.session['error_message']='You are not authorized to remove attendees'
+    else:
+        shift = get_object_or_404(EventShift,id=shift_id)
+        profile = get_object_or_404(UserProfile,uniqname=username)
+        unsign_up_user(shift,profile)
+        request.session['success_message']='You have successfully unsigned up %s from the event.'%(username)
+    if 'error_message' in request.session:
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+    return_dict= {'fragments':{'#shift-'+shift_id+'-attendee-'+username:'',
+                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
+    if username == request.user.username:
+        return_dict['fragments']['#shift-signup'+shift_id]=r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up', args=[ shift_id] ),shift_id)
+    return return_dict                   
+    
+@ajax
+@login_required
+def unsign_up(request, shift_id):
+    shift = get_object_or_404(EventShift,id=shift_id)
+    event = shift.event
     if shift.start_time < timezone.now():
         request.session['error_message']='You cannot unsign-up for an event that has started'
     elif shift.start_time-timedelta(hours=event.min_unsign_up_notice)<timezone.now():
         request.session['error_message']='This event blocks unsign-up %s hours before start'%(event.min_unsign_up_notice)
     else:
         if hasattr(request.user,'userprofile'):
-            remove_user_from_shift(request.user.userprofile,shift)
-            waitlist=shift.get_ordered_waitlist()
-            if waitlist.exists():
-                w=waitlist[0]
-                add_user_to_shift(w.user,shift)
-                notify_waitlist_move(event,shift,w.user)
-                w.delete()
-            CarpoolPerson.objects.filter(event=event,person=request.user.userprofile).delete()
+            unsign_up_user(shift,request.user.userprofile)
 
             request.session['success_message']='You have successfully unsigned up from the event.'
         else:
@@ -403,7 +431,9 @@ def unsign_up(request, event_id, shift_id):
         return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
-    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up', args=[event_id, shift_id] ),shift_id),
+
+    return {'fragments':{'#shift-'+shift_id+'-attendee-'+request.user.username:'',
+                        '#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up', args=[ shift_id] ),shift_id),
                         '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
@@ -795,9 +825,9 @@ def delete_event(request, event_id):
         request.session['error_message']='You do not have sufficient permissions to delete this event, or it has already been completed.'
         return redirect('event_cal:index')
 @ajax
-def delete_shift(request,event_id, shift_id):
-    e= get_object_or_404(CalendarEvent,id=event_id)
-    s= get_object_or_404(EventShift,id=shift_id)
+def delete_shift(request, shift_id):
+    s = get_object_or_404(EventShift,id=shift_id)
+    e = s.event
     if Permissions.can_edit_event(e,request.user):
         if not e.completed  and e.eventshift_set.all().count() > 1:
             s.delete_gcal_event_shift()
@@ -1737,12 +1767,12 @@ def interview_view_actives(request,event_id):
 # These are for the interview slots   
 @ajax
 @login_required
-def sign_up_paired(request, event_id, shift_id):
-    event = get_object_or_404(CalendarEvent,id=event_id)
+def sign_up_paired(request,  shift_id):
     shift = get_object_or_404(InterviewPairing,id=shift_id)
+    event = shift.first_shift.event
     if shift.first_shift.start_time < timezone.now():
         request.session['error_message']='You cannot sign up for an event in the past'
-    elif shift.start_time-timedelta(hours=event.min_sign_up_notice)<timezone.now():
+    elif shift.first_shift.start_time-timedelta(hours=event.min_sign_up_notice)<timezone.now():
         request.session['error_message']='This event blocks sign-up %s hours before start'%(event.min_sign_up_notice)
     elif shift.first_shift.max_attendance and (shift.first_shift.attendees.count() >= shift.first_shift.max_attendance):
         request.session['error_message']='Shift is full'
@@ -1780,19 +1810,44 @@ def sign_up_paired(request, event_id, shift_id):
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
     shift_id = unicode(shift.first_shift.id)
-    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,shift_id,reverse('event_cal:unsign_up_paired', args=[event_id, shift.id] ),shift_id),
+    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,shift_id,reverse('event_cal:unsign_up_paired', args=[ shift.id] ),shift_id),
                         '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
-
 @ajax
 @login_required
-def unsign_up_paired(request, event_id, shift_id):
-    event = get_object_or_404(CalendarEvent,id=event_id)
+def manual_remove_user_from_paired_shift(request,shift_id,username):
     shift = get_object_or_404(InterviewPairing,id=shift_id)
+    e = shift.first_shift.event
+    if not Permissions.can_edit_event(e,request.user):
+        request.session['error_message']='You are not authorized to remove attendees'
+    else:
+        profile = get_object_or_404(UserProfile,uniqname=username)
+        remove_user_from_shift(profile,shift.first_shift)
+        remove_user_from_shift(profile,shift.second_shift)
+        #waitlist not yet supported here
+        CarpoolPerson.objects.filter(event=e,person=profile).delete()
+        request.session['success_message']='You have successfully unsigned up %s from the event.'%(username)
+    if 'error_message' in request.session:
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+    shift_id = unicode(shift.first_shift.id)
+    return_dict= {'fragments':{'#shift-'+shift_id+'-attendee-'+username:'',
+                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
+    if username == request.user.username:
+        return_dict['fragments']['#shift-signup'+shift_id]=r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up_paired', args=[ shift.id] ),shift_id)
+    return return_dict   
+@ajax
+@login_required
+def unsign_up_paired(request,  shift_id):
+    shift = get_object_or_404(InterviewPairing,id=shift_id)
+    event = shift.first_shift.event
     if shift.first_shift.start_time < timezone.now():
         request.session['error_message']='You cannot unsign-up for an event that has started'
-    elif shift.start_time-timedelta(hours=event.min_unsign_up_notice)<timezone.now():
+    elif shift.first_shift.start_time-timedelta(hours=event.min_unsign_up_notice)<timezone.now():
         request.session['error_message']='This event blocks sign-up %s hours before start'%(event.min_unsign_up_notice)
     else:
         if hasattr(request.user,'userprofile'):
@@ -1809,7 +1864,8 @@ def unsign_up_paired(request, event_id, shift_id):
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
     shift_id = unicode(shift.first_shift.id)
-    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up_paired', args=[event_id, shift.id] ),shift_id),
+    return {'fragments':{'#shift-'+shift_id+'-attendee-'+request.user.username:'',
+                        '#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up_paired', args=[ shift.id] ),shift_id),
                         '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
