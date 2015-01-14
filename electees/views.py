@@ -178,8 +178,9 @@ def edit_electee_group_points(request):
     if not Permissions.can_manage_electee_progress(request.user):
         request.session['error_message']='You are not authorized to edit electee team points.'
         return redirect('electees:view_electee_groups')
-    GroupPointsFormSet = modelformset_factory(ElecteeGroupEvent,exclude=('related_event_id',),can_delete=True)
     term =AcademicTerm.get_current_term()
+    GroupPointsFormSet = modelformset_factory(ElecteeGroupEvent,exclude=('related_event_id',),can_delete=True)
+    GroupPointsFormSet.form.base_fields['electee_group'].queryset=ElecteeGroup.objects.filter(term=term)
     if request.method =='POST':
         formset = GroupPointsFormSet(request.POST,prefix='group_points',queryset=ElecteeGroupEvent.objects.filter(related_event_id=None,electee_group__term=term))
         if formset.is_valid():

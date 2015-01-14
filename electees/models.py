@@ -100,8 +100,9 @@ class ElecteeGroup(models.Model):
         self.points = temp_pts
         self.save()
     def get_points(self):
-        self.add_threshold_attendance_points()
-        self.sum_group_points()
+        if self.members.count()>0:
+            self.add_threshold_attendance_points()
+            self.sum_group_points()
         return self.points
     def get_ranking(self):
         return ElecteeGroup.objects.filter(term=self.term,points__gt=self.points).count()+1
