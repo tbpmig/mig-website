@@ -8,6 +8,15 @@
         <div class="btn-group">
             <a class="btn btn-info" href="{% url 'outreach:update_mindset_modules' %}">Update MindSET Module Materials</a>
             <a class="btn btn-info" href="{% url 'outreach:update_mindset_photos' %}">Update MindSET Photos</a>
+        {% if not can_edit_profiles %}
+        </div>
+        {% endif %}
+        {% endif %}
+        {% if can_edit_profiles %}
+        {% if not can_edit_mindset %}
+        <div class="btn-group">
+        {% endif %}
+        <a class="btn btn-warning" href="{% url 'outreach:update_mindset_profile_additions' %}">Update MindSET Profile Additions</a>
         </div>
         {% endif %}
     </div>

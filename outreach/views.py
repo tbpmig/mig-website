@@ -8,14 +8,15 @@ from django.utils import timezone
 
 from event_cal.models import CalendarEvent
 from history.models import Officer
-from mig_main.models import OfficerPosition, AcademicTerm
+from mig_main.models import OfficerPosition, AcademicTerm,MemberProfile
 from mig_main.utility import get_message_dict,get_previous_page, Permissions
-from outreach.models import OutreachPhoto,MindSETModule,VolunteerFile,TutoringPageSection,OutreachEventType
+from outreach.models import OutreachPhoto,MindSETModule,VolunteerFile,TutoringPageSection,OutreachEventType,MindSETProfileAdditions
 
 def get_permissions(user):
     permission_dict={
         'can_edit_mindset':Permissions.can_update_mindset_materials(user),
         'can_edit_outreach':user.is_superuser,
+        'can_edit_profiles':Permissions.can_manage_officers(user),
     }
     return permission_dict
 def get_common_context(request):
@@ -123,6 +124,39 @@ def update_mindset_modules(request):
         'back_button':{'link':reverse('outreach:mindset'),'text':'To MindSET Page'},
         'form_title':'Edit MindSET Module Resources',
         'help_text':'Keep track of the resources associated with MindSET modules here.',
+        'can_add_row':True,
+        'base':'outreach/base_outreach.html',
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    template = loader.get_template('generic_formset.html')
+    return HttpResponse(template.render(context))
+    
+def update_mindset_profile_additions(request):
+    if not Permissions.can_manage_officers(request.user):
+        request.session['error_message']='You are not authorized to update MindSET Profile additions'
+        return redirect('outreach:mindset')
+    MindSETProfileForm = modelformset_factory(MindSETProfileAdditions,can_delete=True)
+    MindSETProfileForm.form.base_fields['user'].queryset=MemberProfile.objects.filter(officer__in=Officer.objects.filter(position__name='K-12 Outreach Officer')).distinct()
+    prefix = 'mindset_profile'
+    formset = MindSETProfileForm(request.POST or None,prefix=prefix)
+    if request.method=='POST':
+        if formset.is_valid():
+            formset.save()
+            request.session['success_message']='Profile additions successfully updated.'
+            return redirect('outreach:mindset')
+        else:
+            request.session['error_message']='Your submission contained errors, please correct and resubmit.'
+    context_dict = {
+        'formset':formset,
+        'prefix':prefix,
+        'subnav':'mindset',
+        'has_files':False,
+        'submit_name':'Update MindSET Profile Additions',
+        'back_button':{'link':reverse('outreach:mindset'),'text':'To MindSET Page'},
+        'form_title':'Edit MindSET Profile Additions',
+        'help_text':'Add fun facts and the like for K-12 Outreach Officers.',
         'can_add_row':True,
         'base':'outreach/base_outreach.html',
         }
