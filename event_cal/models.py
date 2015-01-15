@@ -29,6 +29,8 @@ class GoogleCalendar(models.Model):
     display_order = models.PositiveSmallIntegerField(default=0)
     def __unicode__(self):
         return self.name
+
+    
 class CalendarEvent(models.Model):
     """
     An event on the TBP calendar. This class captures the essential bits of the event (without tackling the details of time and place). It details what types of requirements the event can fill, who the leaders are, whether it has been completed, how to publicize it, what term it is during, whether to restrict to members only, and more as detailed by the fairly clearly named fields.
@@ -47,6 +49,7 @@ class CalendarEvent(models.Model):
     project_report  = models.ForeignKey('history.ProjectReport',null=True,blank=True,
                                         on_delete = models.SET_NULL)
     term            = models.ForeignKey('mig_main.AcademicTerm', default=default_term)    
+    preferred_items     = models.TextField('List any (nonobvious) items that attendees should bring, they will be prompted to see if they can.',null=True,blank=True)
     members_only    = models.BooleanField(default=True)
     needs_carpool   = models.BooleanField(default=False)
     use_sign_in     = models.BooleanField(default=False)
@@ -218,7 +221,11 @@ class CalendarEvent(models.Model):
         duration+=end_time-start_time
         return duration
     def get_event_attendees(self):
-        return UserProfile.objects.filter(event_attendee__event=self)
+        return UserProfile.objects.filter(event_attendee__event=self).distinct()
+    def get_users_who_can_bring_items(self):
+        return UserProfile.objects.filter(usercanbringpreferreditem__in=self.usercanbringpreferreditem_set.filter(can_bring_item=True)).distinct()
+    def get_users_who_cannot_bring_items(self):
+        return UserProfile.objects.filter(usercanbringpreferreditem__in=self.usercanbringpreferreditem_set.filter(can_bring_item=False)).distinct()
     def get_attendee_hours_at_event(self,profile):
         """
         Determines how many hours the attendee spent at the event by summing the time of all shifts accounting for shifts taht are overlapped.
@@ -631,3 +638,8 @@ class WaitlistSlot(models.Model):
 class InterviewPairing(models.Model):
     first_shift = models.ForeignKey(EventShift,related_name='pairing_first')
     second_shift = models.ForeignKey(EventShift,related_name='pairing_second')
+
+class UserCanBringPreferredItem(models.Model):
+    event = models.ForeignKey(CalendarEvent)
+    user = models.ForeignKey('mig_main.UserProfile')
+    can_bring_item = models.BooleanField('Yes, I can bring the item. ',default=False)

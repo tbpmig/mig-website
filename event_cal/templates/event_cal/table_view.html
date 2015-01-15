@@ -69,9 +69,9 @@
                     {% url 'member_resources:profile' attendee.uniqname as profile_url %}
                     <li>
                     {% if attendee.is_member %}
-                        <a href="{{profile_url}}">{{attendee}}</a>
+                        <p><a href="{{profile_url}}">{{attendee}}</a>{% if attendee in event.get_users_who_can_bring_items %} <span class="text-success">(can bring item)</span>{% elif attendee in event.get_users_who_cannot_bring_items %} <span class="text-danger">(cannot bring item)</span>{%endif%}</p>
                     {% else %}
-                        {{attendee}}
+                        <p>{{attendee}}{% if attendee in event.get_users_who_can_bring_items %} <span class="text-success">(can bring item)</span>{% elif attendee in event.get_users_who_cannot_bring_items %} <span class="text-danger">(cannot bring item)</span>{%endif%}</p>
                     {% endif %}
                     </li>
                 {% endfor %}

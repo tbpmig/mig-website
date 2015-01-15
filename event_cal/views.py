@@ -17,7 +17,7 @@ from django.db.models import Min,Q
 from django_ajax.decorators import ajax
 
 from event_cal.forms import BaseEventPhotoForm,BaseEventPhotoFormAlt, BaseAnnouncementForm,BaseEventForm,EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset,MultiShiftFormset,EventEmailForm
-from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift,WaitlistSlot,InterviewPairing
+from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift,WaitlistSlot,InterviewPairing,UserCanBringPreferredItem
 from history.models import ProjectReport, Officer,NonEventProject,BackgroundCheck
 from mig_main.models import OfficerPosition,PREFERENCES,UserPreference,MemberProfile,UserProfile,AcademicTerm
 from mig_main.utility import get_previous_page, Permissions, get_message_dict
@@ -361,9 +361,12 @@ def sign_up(request,  shift_id):
                 else:
                     add_user_to_shift(request.user.userprofile,shift)
                     request.session['success_message']='You have successfully signed up for the event'
-                    if event.needs_carpool:
+                    if event.preferred_items.lstrip() and not event.usercanbringpreferreditem_set.filter(user=profile).exists():
+                        request.session['info_message']='Please indicate if you can bring items to the event.'
+                        return redirect('event_cal:preferred_items_request',shift.event.id)
+                    elif event.needs_carpool and not event.carpoolperson_set.filter(person=profile).exists():
                         request.session['info_message']='If you need or can give a ride, please also sign up for the carpool'
-                        return redirect('event_cal:carpool_sign_up',event_id)
+                        return redirect('event_cal:carpool_sign_up',shift.event.id)
             else:
                 request.session['error_message']='This event is members-only'
         else:
@@ -385,7 +388,9 @@ def unsign_up_user(shift,profile):
         add_user_to_shift(w.user,shift)
         notify_waitlist_move(shift.event,shift,w.user)
         w.delete()
-    CarpoolPerson.objects.filter(event=shift.event,person=profile).delete()
+    if not profile in shift.event.get_event_attendees():
+        CarpoolPerson.objects.filter(event=shift.event,person=profile).delete()
+        UserCanBringPreferredItem.objects.filter(event=shift.event,user=profile).delete()
 
 @ajax
 @login_required
@@ -480,7 +485,48 @@ def carpool_sign_up(request,event_id):
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
 
-
+@login_required
+def preferred_items_request(request,event_id):
+    event = get_object_or_404(CalendarEvent,id=event_id)
+    if not hasattr(request.user,'userprofile'):
+        request.session['error_message']='You must create  profile before indicating you can bring an item'
+        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+    profile = request.user.userprofile
+    if not event.preferred_items.lstrip():
+        request.session['error_message']='This event doesn\'t need any items.'
+        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+    if event.usercanbringpreferreditem_set.filter(user=profile).exists():
+        request.session['warning_message']='You already indicated if you can bring the needed items.'
+        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+    ItemForm = modelform_factory(UserCanBringPreferredItem,exclude=('user','event'))
+    form = ItemForm(request.POST or None)
+    if request.method =='POST':
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.user=profile
+            instance.event=event
+            instance.save()
+            request.session['success_message']='You have indicated if you can bring the item(s) needed.'
+            if event.needs_carpool:
+                request.session['info_message']='If you need or can give a ride, please also sign up for the carpool'
+                return redirect('event_cal:carpool_sign_up',event_id)
+            return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+        else:
+            request.session['error_message']='There were errors in your submission'
+    template = loader.get_template('generic_form.html')
+    context_dict = {
+        'form':form,
+        'subnav':'list',
+        'has_files':False,
+        'submit_name':'Submit',
+        'form_title':'Can you bring the needed/preferred items?',
+        'help_text':'This event needs the following items:\n'+event.preferred_items+'\nWhile it is not required that you bring them, it is helpful. Please indicate if you can bring them.',
+        'base':'event_cal/base_event_cal.html',
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))
 @login_required
 def add_event_photo(request):
     if not hasattr(request.user,'userprofile') and request.user.userprofile.is_member():
@@ -1798,6 +1844,9 @@ def sign_up_paired(request,  shift_id):
                     add_user_to_shift(request.user.userprofile,shift.first_shift)
                     add_user_to_shift(request.user.userprofile,shift.second_shift)
                     request.session['success_message']='You have successfully signed up for the event'
+                    if event.preferred_items.lstrip() and not event.usercanbringpreferreditem_set.filter(user=profile).exists():
+                        request.session['info_message']='Please indicate if you can bring items to the event.'
+                        return redirect('event_cal:preferred_items_request',shift.event.id)
                     if event.needs_carpool:
                         request.session['info_message']='If you need or can give a ride, please also sign up for the carpool'
                         return redirect('event_cal:carpool_sign_up',event_id)
@@ -1823,10 +1872,9 @@ def manual_remove_user_from_paired_shift(request,shift_id,username):
         request.session['error_message']='You are not authorized to remove attendees'
     else:
         profile = get_object_or_404(UserProfile,uniqname=username)
-        remove_user_from_shift(profile,shift.first_shift)
-        remove_user_from_shift(profile,shift.second_shift)
-        #waitlist not yet supported here
-        CarpoolPerson.objects.filter(event=e,person=profile).delete()
+        unsign_up_user(shift.first_shift,profile)
+        unsign_up_user(shift.second_shift,profile)
+
         request.session['success_message']='You have successfully unsigned up %s from the event.'%(username)
     if 'error_message' in request.session:
         return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
@@ -1851,10 +1899,8 @@ def unsign_up_paired(request,  shift_id):
         request.session['error_message']='This event blocks sign-up %s hours before start'%(event.min_unsign_up_notice)
     else:
         if hasattr(request.user,'userprofile'):
-            remove_user_from_shift(request.user.userprofile,shift.first_shift)
-            remove_user_from_shift(request.user.userprofile,shift.second_shift)
-            #waitlist not yet supported here
-            CarpoolPerson.objects.filter(event=event,person=request.user.userprofile).delete()
+            unsign_up_user(shift.first_shift,request.user.userprofile)
+            unsign_up_user(shift.second_shift,request.user.userprofile)
 
             request.session['success_message']='You have successfully unsigned up from the event.'
         else:
