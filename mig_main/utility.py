@@ -8,11 +8,13 @@ from django.core.urlresolvers import reverse
 
 
 from electees.models import ElecteeGroup,ElecteeProcessVisibility
+from elections.models import Election
 from event_cal.models import CalendarEvent
 from mig_main.models import AcademicTerm, OfficerPosition, MemberProfile
 from requirements.models import SemesterType
 from history.models import Officer,ProjectReport,OfficerPositionRelationship
 from member_resources.models import ProjectLeaderList
+from outreach.models import OutreachEventType
 
 def zipdir(path,zipf):
     for root,dirs,files in os.walk(path):
@@ -154,6 +156,80 @@ def get_previous_page(request,alternate='home',args=tuple()):
         else:
             return redirect(alternate)
 
+def get_dropdowns(user):
+    #NOTE: subsub navs will not show in dropdowns but will 
+    #show in the secondary bar (currently just for member resources). Three levels deep is max supported
+    dropdowns = {'about':[],'event_cal':[],'outreach':[],'member_resources':[],'corporate':[],'publications':[]}
+    #about: currently no permissions dependence
+    dropdowns['about'].append({'subnav':'about','link_name':'About','link':reverse('about:index')})
+    dropdowns['about'].append({'subnav':'joining','link_name':'Joining','link':reverse('about:eligibility')})
+    dropdowns['about'].append({'subnav':'leadership','link_name':'Leadership','link':reverse('about:leadership')})
+    dropdowns['about'].append({'subnav':'bylaws','link_name':'Chapter Bylaws','link':reverse('about:bylaws')})
+    
+    #event_cal
+    dropdowns['event_cal'].append({'subnav':'gcal','link_name':'Google Calendar','link':reverse('event_cal:index')})
+    dropdowns['event_cal'].append({'subnav':'list','link_name':'Event List','link':reverse('event_cal:list')})
+    dropdowns['event_cal'].append({'subnav':'my_events','link_name':'My Events','link':reverse('event_cal:my_events')})
+    if hasattr(user,'userprofile') and user.userprofile.is_member():
+        dropdowns['event_cal'].append({'subnav':'tutoring_form','link_name':'Submit Tutoring Form','link':reverse('event_cal:submit_tutoring_form')})
+    if Permissions.can_view_calendar_admin(user):
+        dropdowns['event_cal'].append({'subnav':'admin','link_name':'Calendar Admin','link':reverse('event_cal:calendar_admin')})
+    
+    #outreach: currently no permissions dependence
+    dropdowns['outreach'].append({'subnav':'index','link_name':'Outreach','link':reverse('outreach:index')})
+    dropdowns['outreach'].append({'subnav':'mindset','link_name':'MindSET','link':reverse('outreach:mindset')})
+    dropdowns['outreach'].append({'subnav':'tutoring','link_name':'Tutoring','link':reverse('outreach:tutoring')})
+    for event_type in OutreachEventType.get_active():
+        dropdowns['outreach'].append({'subnav':event_type.url_stem,'link_name':event_type.get_tab_name(),'link':reverse('outreach:outreach_event', args=[event_type.url_stem])})
+    
+    
+    #electees: subnav of member_resources
+    electee_dropdowns=[]
+    if Permissions.can_manage_electee_progress(user):
+        electee_dropdowns.append({'subnav':'groups','link_name':'Manage Electee Teams','link':reverse('electees:edit_electee_groups')})
+        electee_dropdowns.append({'subnav':'members','link_name':'Edit Electee Teams\' Members','link':reverse('electees:edit_electee_group_membership')})
+        electee_dropdowns.append({'subnav':'points','link_name':'Edit Electee Team Points','link':reverse('electees:edit_electee_group_points')})
+    
+    #elections: subnav of member_resources, depends on existing elections
+    elections = Election.get_current_elections()
+    elections_dropdowns=[]
+    for election in elections:
+        if elections.count()>1:
+            elections_dropdowns.append({'subnav':'list'+unicode(election.id),'link_name':'Nomination List (%s)'%(election.term.get_abbreviation()),'link':reverse('elections:list',args=[election.id])})
+        elections_dropdowns.append({'subnav':'my_nominations'+unicode(election.id),'link_name':'My Nominations (%s)'%(election.term.get_abbreviation()),'link':reverse('elections:my_nominations',args=[election.id])})
+        
+    #member_resources
+    if hasattr(user,'userprofile') and user.userprofile.is_member():
+        dropdowns['member_resources'].append({'subnav':'member_profiles','link_name':'Member Profiles','link':reverse('member_resources:member_profiles')})
+    else:
+        dropdowns['member_resources'].append({'subnav':'member_profiles','link_name':'Members Resources','link':reverse('member_resources:index')})
+    if hasattr(user,'userprofile') and user.userprofile.is_member():
+        dropdowns['member_resources'].append({'subnav':'view_own_progress','link_name':'Track My Progress','link':reverse('member_resources:view_progress', args=[user.username])})
+    if Permissions.can_view_more_than_own_progress(user):
+        dropdowns['member_resources'].append({'subnav':'view_others_progress','link_name':'View Others\' Progress','link':reverse('member_resources:view_progress_list')})
+    if (Permissions.can_manage_misc_reqs(user) or Permissions.can_change_requirements(user)):
+        dropdowns['member_resources'].append({'subnav':'misc_reqs','link_name':'Membership Admin','link':reverse('member_resources:view_misc_reqs')})
+    if hasattr(user,'userprofile'):
+        dropdowns['member_resources'].append({'subnav':'playground','link_name':'TBPlayground','link':reverse('fora:index')})
+    dropdowns['member_resources'].append({'subnav':'history','link_name':'Access History','link':reverse('member_resources:access_history')})
+    dropdowns['member_resources'].append({'subnav':'electees','link_name':'Electee Resources','link':reverse('electees:view_electee_groups'),'subsubnav':electee_dropdowns})
+    dropdowns['member_resources'].append({'subnav':'elections','link_name':'Elections','link':reverse('elections:index'),'subsubnav':elections_dropdowns})
+    if Permissions.can_manage_website(user):
+        dropdowns['member_resources'].append({'subnav':'website','link_name':'Manage Website','link':reverse('member_resources:manage_website')})
+    
+    #corporate
+    dropdowns['corporate'].append({'subnav':'index','link_name':'For Companies','link':reverse('corporate:index')})
+    dropdowns['corporate'].append({'subnav':'resumes','link_name':u'Member R\u00e9sum\u00e9s','link':reverse('corporate:resumes')})
+    
+    #publications
+    dropdowns['publications'].append({'subnav':'news','link_name':'Blog','link':reverse('history:index')})
+    dropdowns['publications'].append({'subnav':'cornerstone','link_name':'The Cornerstone','link':reverse('history:cornerstone_view')})
+    dropdowns['publications'].append({'subnav':'alumni_news','link_name':'Alumni Newsletters','link':reverse('history:alumninews_view')})
+    if hasattr(user,'userprofile') and user.userprofile.is_member():
+        dropdowns['publications'].append({'subnav':'project_reports','link_name':'Chapter Project Reports','link':reverse('history:get_project_reports')})
+    
+    return dropdowns
+            
 def get_quick_links(user):
     quick_links = []
     if not hasattr(user,'userprofile'):
@@ -301,10 +377,6 @@ class Permissions:
         if current_positions.exists():
             return True
         return False
-
-    @classmethod
-    def can_access_history(cls, user):
-        return True
 
     @classmethod
     def can_access_project_reports(cls,user):

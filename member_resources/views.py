@@ -153,11 +153,7 @@ def get_electees_who_completed_reqs():
             electees_with_status.append(profile)
     return electees_with_status
 def get_permissions(user):
-    return {'extra_progress_tab':Permissions.can_view_more_than_own_progress(user),
-    'misc_tab':(Permissions.can_manage_misc_reqs(user) or Permissions.can_change_requirements(user)),
-    'can_manage_website':Permissions.can_manage_website(user),
-    'can_access_history':Permissions.can_access_history(user),
-    'can_access_playground':hasattr(user,'userprofile'),
+    return {
     }
 def get_common_context(request):
     context_dict=get_message_dict(request)
@@ -1162,10 +1158,6 @@ def project_reports_list(request):
 
 
 def access_history(request):    
-    if not (Permissions.can_access_history(request.user)):
-        request.session['error_message']='You are not authorized to access reports/history.'
-        return redirect('member_resources:index')
-
     template = loader.get_template('member_resources/access_history.html')
     context_dict = {
         'can_view_feedback':Permissions.can_view_meeting_feedback(request.user),

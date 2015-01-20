@@ -1,5 +1,6 @@
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList
 from mig_main.models import UserProfile, MemberProfile
+from mig_main.utility import get_dropdowns
 from migweb.settings import DEBUG
 def profile_setup(request):
     profile = MemberProfile.objects.filter(uniqname=request.user.username)
@@ -32,3 +33,6 @@ def profile_setup(request):
 
 def debug_features(request):
     return {'debug_features':DEBUG}
+
+def dropdowns(request):
+    return {'mig_dropdowns':get_dropdowns(request.user)}

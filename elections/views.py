@@ -29,18 +29,15 @@ def get_common_context(request):
     context_dict.update({
         'request':request,
         'main_nav':'members',
-        'elections':get_current_elections(),
+        'elections':Election.get_current_elections(),
         'subnav':'elections',
         })
     return context_dict
-def get_current_elections():
-    e = Election.objects.filter(open_date__lte=datetime.date.today(),close_date__gte=datetime.date.today())
-    return e
 
 def index(request):
     request.session['current_page']=request.path
     template = loader.get_template('elections/index.html')
-    current_elections=get_current_elections()
+    current_elections=Election.get_current_elections()
     context_dict = {
         'current_elections':current_elections,
     }
@@ -58,7 +55,7 @@ def list(request,election_id):
     context_dict = {
             'nominees':nominees,
             'election':e,
-            'subsubnav':'list',
+            'subsubnav':'list'+election_id,
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -70,7 +67,7 @@ def positions(request,election_id):
     request.session['current_page']=request.path
     positions=OfficerPosition.get_current()
     context_dict = {
-            'subsubnav':'positions',
+            'subsubnav':'positions'+election_id,
             'positions':positions,
     }
     context_dict.update(get_common_context(request))
@@ -88,7 +85,7 @@ def my_nominations(request,election_id):
     context_dict = {
             'my_nominations':noms,
             'election':e,
-            'subsubnav':'my_nominations',
+            'subsubnav':'my_nominations'+election_id,
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))

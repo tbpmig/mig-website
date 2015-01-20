@@ -36,7 +36,6 @@ def get_common_context(request):
         'event_signed_up':event_signed_up,
         'now':timezone.now(),
         'main_nav':'outreach',
-        'sub_nav_extras':OutreachEventType.get_active(),
         })
     return context_dict
 

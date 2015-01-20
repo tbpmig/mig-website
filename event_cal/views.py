@@ -81,8 +81,6 @@ def remove_user_from_shift(profile,shift):
 
 def get_permissions(user):
     return {
-        'can_submit_tutoring_form':(hasattr(user,'userprofile') and user.userprofile.is_member()),
-        'can_view_calendar_admin':Permissions.can_view_calendar_admin(user),
     }
 def get_common_context(request):
     upcoming_html = cache.get('upcoming_events_html',None)

@@ -14,7 +14,9 @@ class Election(models.Model):
     
     def __unicode__(self):
         return str(self.term)+" Election"
-        
+    @classmethod
+    def get_current_elections(cls):
+        return cls.objects.filter(open_date__lte=date.today(),close_date__gte=date.today())
 
 class Nomination(models.Model): 
     election    = models.ForeignKey(Election)

@@ -1,30 +1,12 @@
 {% extends "base.html" %}
 {% block subnav %}
-<li {% if subnav and subnav == 'member_profiles' %}class="active"{% endif %}><a href="{% url 'member_resources:member_profiles' %}">Member Profiles</a></li>
-{% if user.is_authenticated and not needs_profile and user.userprofile.is_member %}
-    <li {% if subnav and subnav == 'view_own_progress' %}class="active"{% endif %}><a href="{% url 'member_resources:view_progress' user.username %}">Track My Progress</a></li>
-{% endif %}
-{% if extra_progress_tab %}
-<li {% if subnav and subnav == 'view_others_progress' %}class="active"{% endif %}><a href="{% url 'member_resources:view_progress_list' %}">View Others' Progress</a></li>
-{% endif %}
-{% if misc_tab %}
-<li {% if subnav and subnav == 'misc_reqs' %}class="active"{% endif %}><a href="{% url 'member_resources:view_misc_reqs' %}">Membership Admin</a></li>
-{% endif %}
-{% if can_access_playground %}
-<li {% if subnav and subnav == 'playground' %}class="active"{% endif %}><a href="{% url 'fora:index' %}">TBPlayground</a></li>
-{% endif %}
-{% if can_access_history %}
-    <li  {% if subnav and subnav == 'history' %}class="active"{% endif %}><a href ="{% url 'member_resources:access_history' %}">Access History</a></li>
-{% endif %}
-<li {% if subnav and subnav == 'electees' %}class="active"{% endif %}><a href="{% url 'electees:view_electee_groups' %}">Electee Resources</a></li>
-{% block subnavElectees %}
+{% for link in mig_dropdowns.member_resources %}
+    <li {%if subnav and subnav == link.subnav %}class="active"{% endif %}><a href="{{link.link}}">{{link.link_name}}</a></li>
+    {% if link.subsubnav  and subnav and subnav == link.subnav%}
+        {% for link2 in link.subsubnav %}
+            <li class="subtab {%if subsubnav and subsubnav == link2.subnav %}active{% endif %}"><a href="{{link2.link}}">{{link2.link_name}}</a></li>
+        {% endfor %}
+    {% endif %}
+{% endfor %}
 
-{% endblock %}
-<li {% if subnav and subnav == 'elections' %}class="active"{% endif %}><a href="{% url 'elections:index' %}">Elections</a></li>
-{% block subnavElections %}
-
-{% endblock %}
-{% if can_manage_website %}
-<li  {% if subnav and subnav == 'website' %}class="active"{% endif %}><a href="{% url 'member_resources:manage_website' %}">Manage Website</a></li>
-{% endif %}
 {% endblock %}

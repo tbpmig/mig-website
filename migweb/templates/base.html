@@ -112,45 +112,45 @@ ga('send', 'pageview');
             <li class="dropdown {% if main_nav and main_nav == 'about' %}active{% endif%}">
                 <a id="Nav:AboutTBP" href="{% url 'about:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">About <b class="caret"></b></a>
                 <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                    <li><a href="{% url 'about:index' %}">About</a></li>
-                    <li><a href="{% url 'about:eligibility' %}">Joining</a></li>
-                    <li><a href="{% url 'about:leadership' %}">Leadership</a></li>
-                    <li><a href="{% url 'about:bylaws' %}">Chapter Bylaws</a></li>
+                {% for link in mig_dropdowns.about %}
+                    <li><a href="{{link.link}}">{{link.link_name}}</a></li>
+                {% endfor %}
                 </ul>
             </li>
             <li class="dropdown {% if main_nav and main_nav == 'cal' %}active{% endif %}"><a id="Nav:Calendar" href="{% url 'event_cal:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">Calendar <b class="caret"></b></a>
                 <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                    <li><a href="{% url 'event_cal:index' %}">Google Calendar</a></li>
-                    <li><a href="{% url 'event_cal:list' %}">Event List</a></li>
-                    <li><a href="{% url 'event_cal:my_events' %}">My Events</a></li>
+                {% for link in mig_dropdowns.event_cal %}
+                    <li><a href="{{link.link}}">{{link.link_name}}</a></li>
+                {% endfor %}
                 </ul>
             </li>
             <li class="dropdown  {% if main_nav and main_nav == 'outreach' %}active{% endif %}"><a id="Nav:Outreach" href="{% url 'outreach:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">Outreach <b class="caret"></b></a>
                 <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                    <li><a href="{% url 'outreach:index' %}">Outreach</a></li>
-                    <li><a href="{% url 'outreach:mindset' %}">MindSET</a></li>
-                    <li><a href="{% url 'outreach:tutoring' %}">Tutoring</a></li>
+                {% for link in mig_dropdowns.outreach %}
+                    <li><a href="{{link.link}}">{{link.link_name}}</a></li>
+                {% endfor %}
                 </ul>
             </li>
             <li class="dropdown  {% if main_nav and main_nav == 'members' %}active{% endif %}"><a id="Nav:MemberResources" href="{% url 'member_resources:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">For Members <b class="caret"></b></a>           
                 <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                    <li><a href="{% url 'member_resources:member_profiles' %}">Members</a></li>
-                    <li><a href="{% url 'member_resources:main_meeting_minutes' %}">Meeting Minutes</a></li>
-                    <li><a href="{% url 'electees:view_electee_groups' %}">Electee Resources</a></li>
+                {% for link in mig_dropdowns.member_resources %}
+                    <li><a href="{{link.link}}">{{link.link_name}}</a></li>
+                {% endfor %}
                 </ul>
             </li>
             <li class="dropdown  {% if main_nav and main_nav == 'corporate' %}active{% endif %}"><a id="Nav:Corporate" href="{% url 'corporate:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">Corporate Resources <b class="caret"></b></a>
                 <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                    <li><a href="{% url 'corporate:index' %}">For Companies</a></li>
-                    <li><a href="{% url 'corporate:resumes' %}">Member R&eacute;sum&eacute;s</a></li>
+                {% for link in mig_dropdowns.corporate %}
+                    <li><a href="{{link.link}}">{{link.link_name}}</a></li>
+                {% endfor %}
                 </ul>
             
             </li>
             <li class="dropdown  {% if main_nav and main_nav == 'publications' %}active{% endif %}"><a id="Nav:Publications" href="{% url 'history:index' %}" class="dropdown-toggle" data-hover="dropdown" data-target="#">Publications<b class="caret"></b></a>
                 <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                    <li><a href="{% url 'history:index' %}">Website Posts</a></li>
-                    <li><a href="{% url 'history:cornerstone_view' %}">The Cornerstone</a></li>
-                    <li><a href="{% url 'history:alumninews_view' %}">Alumni Newsletters</a></li>
+                {% for link in mig_dropdowns.publications %}
+                    <li><a href="{{link.link}}">{{link.link_name}}</a></li>
+                {% endfor %}
                 </ul>
             
                 </li>

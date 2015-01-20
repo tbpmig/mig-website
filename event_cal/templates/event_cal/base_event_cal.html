@@ -1,15 +1,9 @@
 {% extends "base.html" %}
 {% load my_markdown %}
 {% block subnav %}
-<li {% if subnav and subnav == 'gcal' %}class="active"{% endif %}><a href="{% url 'event_cal:index' %}">Google Calendar</a></li>
-<li  {% if subnav and subnav == 'list' %}class="active"{% endif %}><a href="{% url 'event_cal:list' %}">Event List</a></li>
-<li  {% if subnav and subnav == 'my_events' %}class="active"{% endif %}><a href="{% url 'event_cal:my_events' %}">My Events</a></li>
-{% if can_submit_tutoring_form %}
-<li {% if subnav and subnav == 'tutoring_form' %}class="active"{% endif %}><a href="{% url 'event_cal:submit_tutoring_form' %}">Submit Tutoring Form</a></li>
-{% endif %}
-{% if can_view_calendar_admin %}
-<li  {% if subnav and subnav == 'admin' %}class="active"{% endif %}><a href="{% url 'event_cal:calendar_admin' %}">Calendar Admin</a></li>
-{% endif %}
+{% for link in mig_dropdowns.event_cal %}
+<li {%if subnav and subnav == link.subnav %}class="active"{% endif %}><a href="{{link.link}}">{{link.link_name}}</a></li>
+{% endfor %}
 {% endblock %}
 
 {% block content%}

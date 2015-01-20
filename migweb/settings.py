@@ -147,7 +147,8 @@ TEMPLATE_CONTEXT_PROCESSORS = ("django.contrib.auth.context_processors.auth",
                                "django.core.context_processors.tz",
                                "django.contrib.messages.context_processors.messages",
                                "migweb.context_processors.profile_setup",
-                               "migweb.context_processors.debug_features",)
+                               "migweb.context_processors.debug_features",
+                               "migweb.context_processors.dropdowns",)
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to

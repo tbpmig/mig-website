@@ -2,8 +2,9 @@
 {% block subnav_class %}subnav-small{%endblock%}
 {% load my_markdown %}
 {% block subnav %}
-<li {% if subnav and subnav == 'index' %}class="active"{%endif%}><a href="{% url 'corporate:index' %}">Overview</a></li>
-<li {% if subnav and subnav == 'resumes' %}class="active"{%endif%}><a href="{% url 'corporate:resumes' %}">Resume Book</a></li>
+{% for link in mig_dropdowns.corporate %}
+<li {%if subnav and subnav == link.subnav %}class="active"{% endif %}><a href="{{link.link}}">{{link.link_name}}</a></li>
+{% endfor %}
 {% endblock %}
 
 {% block content %}

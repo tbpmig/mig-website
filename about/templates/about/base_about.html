@@ -2,8 +2,7 @@
 {% block subnav_class %}subnav-small{%endblock%}
 
 {% block subnav %}
-<li {%if subnav and subnav == 'about' %}class="active"{% endif %}><a href="{% url 'about:index' %}">Overview</a></li>
-<li  {%if subnav and subnav == 'joining' %}class="active"{% endif %}><a href="{% url 'about:eligibility' %}">Joining</a></li>
-<li  {%if subnav and subnav == 'leadership' %}class="active"{% endif %}><a href="{% url 'about:leadership' %}">Leadership</a></li>
-<li  {%if subnav and subnav == 'bylaws' %}class="active"{% endif %}><a href="{% url 'about:bylaws' %}">Bylaws</a></li>
+{% for link in mig_dropdowns.about %}
+<li {%if subnav and subnav == link.subnav %}class="active"{% endif %}><a href="{{link.link}}">{{link.link_name}}</a></li>
+{% endfor %}
 {% endblock %}

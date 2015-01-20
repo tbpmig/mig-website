@@ -70,7 +70,6 @@ def user_is_member(user):
 def get_permissions(user):
     permission_dict = get_member_permissions(user)
     permission_dict.update({
-        'can_create_groups':Permissions.can_manage_electee_progress(user),
         'can_edit_resources':Permissions.can_manage_electee_progress(user),
         'can_edit_surveys':Permissions.can_manage_electee_progress(user),
         'can_complete_surveys':Permissions.can_complete_electee_survey(user),
@@ -83,6 +82,7 @@ def get_permissions(user):
 def get_common_context(request):
     context_dict=get_message_dict(request)
     context_dict.update({
+        'main_nav':'members',
         'request':request,
         'subnav':'electees',
         'new_bootstrap':True,

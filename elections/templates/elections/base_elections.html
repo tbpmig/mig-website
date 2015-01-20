@@ -1,12 +1,4 @@
 {% extends "member_resources/base_member_resources.html" %}
 
-{% load staticfiles %}
-
-{% block subnavElections %}
-{% for election in elections %}
-<li class="subtab {%if subsubnav and subsubnav == 'list' %}active{% endif %}"><a href="{% url 'elections:list' election.id %}">List</a></li>
-<li class="subtab  {%if subsubnav and subsubnav == 'my_nominations' %}active{% endif %}"><a href="{% url 'elections:my_nominations' election.id %}">My Nominations</a></li>
-{% endfor %}
-{% endblock %}
 
 
