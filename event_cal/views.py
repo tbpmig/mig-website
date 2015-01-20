@@ -129,35 +129,35 @@ def meeting_sign_in(request,shift_id):
     if not shift.can_sign_in():
         if not event.use_sign_in:
             request.session['error_message']='Sign-in not available for this event'
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+            return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
         elif shift.is_full():
             request.session['error_message']='You cannot sign-in; the event is full'
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+            return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
         else:
             request.session['error_message']='You can only sign-in during the event'
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+            return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
 
             
     if not hasattr(request.user,'userprofile'):
         request.session['error_message']='You must create a profile before signing in to a meeting'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+        return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
     elif not request.user.userprofile.is_member and event.members_only:
         request.session['error_message']='Sorry, this event is members-only'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+        return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
     else:
         profile = request.user.userprofile
         if shift.ugrads_only and not profile.is_ugrad():
             request.session['error_message']='Shift is for undergrads only'
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+            return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
         elif shift.grads_only and not profile.is_grad():
             request.session['error_message']='Shift is for grads only'
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+            return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
         elif shift.electees_only and not profile.is_electee():
             request.session['error_message']='Shift is for electees only'
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+            return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
         elif shift.actives_only and not profile.is_active():
             request.session['error_message']='Shift is for actives only'
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+            return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
         if request.method =='POST':
             if not sign_in_sheet:
                 form = MeetingSignInForm(request.POST)
@@ -188,7 +188,7 @@ def meeting_sign_in(request,shift_id):
                     elif profile.is_member():
                         request.session['warning_message']='You were already signed in'
                     shift.attendees.add(profile)
-                    return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+                    return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
                 else:
                     request.session['error_message']='The meeting\'s secret code was wrong. You were not signed in.'
             else:
