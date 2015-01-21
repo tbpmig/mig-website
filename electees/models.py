@@ -123,7 +123,7 @@ def get_default_standing():
     return Standing.objects.get(name='Undergraduate').id
 class ElecteeResource(models.Model):
     resource_type = models.ForeignKey(ElecteeResourceType)
-    standing = models.ForeignKey('mig_main.Standing',default=get_default_standing)
+    standing = models.ForeignKey('mig_main.Standing',default=get_default_standing,null=True,blank=True)
     term = models.ForeignKey('mig_main.AcademicTerm')
 
     resource_file          = ContentTypeRestrictedFileField(
@@ -134,7 +134,11 @@ class ElecteeResource(models.Model):
     )
 
     def __unicode__(self):
-        return str(self.resource_type)+' for '+str(self.term)
+        if self.standing:
+            standing_string = unicode(self.standing)+' '
+        else:
+            standing_string = ''
+        return standing_string+unicode(self.resource_type)+' for '+unicode(self.term)
 
 class EducationalBackgroundForm(models.Model):
     degree_type=models.CharField(max_length = 16)
