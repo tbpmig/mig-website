@@ -5,7 +5,7 @@ from django.core.validators import  RegexValidator
 from event_cal.models import CalendarEvent
 from mig_main.pdf_field import ContentTypeRestrictedFileField,pdf_types
 from requirements.models import EventCategory
-from mig_main.models import AcademicTerm,MemberProfile
+from mig_main.models import AcademicTerm,MemberProfile,Standing
 
 def electee_stopped_electing(profile):
     profile.still_electing=False
@@ -119,9 +119,11 @@ class ElecteeResourceType(models.Model):
 
     def __unicode__(self):
         return self.name
-
+def get_default_standing():
+    return Standing.objects.get(name='Undergraduate').id
 class ElecteeResource(models.Model):
     resource_type = models.ForeignKey(ElecteeResourceType)
+    standing = models.ForeignKey('mig_main.Standing',default=get_default_standing)
     term = models.ForeignKey('mig_main.AcademicTerm')
 
     resource_file          = ContentTypeRestrictedFileField(
