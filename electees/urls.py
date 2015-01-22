@@ -5,6 +5,7 @@ from electees import views
 
 urlpatterns = patterns('',
     url(r'^edit_electee_group_membership/$', views.edit_electee_group_membership, name='edit_electee_group_membership'),
+    url(r'^manually_edit_electee_group_membership/$', views.manually_edit_electee_group_membership, name='manually_edit_electee_group_membership'),
     url(r'^electee_groups/$', views.view_electee_groups,name='view_electee_groups'),
     url(r'^edit_electee_groups/$', views.edit_electee_groups,name='edit_electee_groups'),
     url(r'^edit_electee_group_points/$', views.edit_electee_group_points,name='edit_electee_group_points'),

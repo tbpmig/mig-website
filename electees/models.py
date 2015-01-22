@@ -120,7 +120,7 @@ class ElecteeResourceType(models.Model):
     def __unicode__(self):
         return self.name
 def get_default_standing():
-    return Standing.objects.get(name='Undergraduate').id
+    return None
 class ElecteeResource(models.Model):
     resource_type = models.ForeignKey(ElecteeResourceType)
     standing = models.ForeignKey('mig_main.Standing',default=get_default_standing,null=True,blank=True)

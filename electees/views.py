@@ -22,7 +22,7 @@ from mig_main.models import MemberProfile, AcademicTerm
 from mig_main.utility import Permissions, get_previous_page,  get_message_dict,zipdir
 from member_resources.views import get_permissions as get_member_permissions
 from history.models import Officer
-from electees.forms import get_unassigned_electees,InstituteFormset,BaseElecteeGroupForm,AddSurveyQuestionsForm,ElecteeSurveyForm,InterviewFollowupForm
+from electees.forms import get_unassigned_electees,InstituteFormset,BaseElecteeGroupForm,AddSurveyQuestionsForm,ElecteeSurveyForm,InterviewFollowupForm,ManualElecteeGroupMembersFormSet
 from requirements.models import EventCategory,ProgressItem
 from migweb.settings import PROJECT_PATH, MEDIA_ROOT
 
@@ -173,7 +173,39 @@ def edit_electee_group_membership(request):
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
-
+    
+    
+def manually_edit_electee_group_membership(request):
+    if not Permissions.can_manage_electee_progress(request.user):
+        request.session['error_message']='You are not authorized to edit electee teams'
+        return redirect('electees:view_electee_groups')
+    e_groups = ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term())
+    prefix = 'manual_groups'
+    term =AcademicTerm.get_current_term()
+    formset=ManualElecteeGroupMembersFormSet(request.POST or None,prefix=prefix,queryset=ElecteeGroup.objects.filter(term=term))
+    if request.method=='POST':
+        if formset.is_valid():
+            formset.save()
+            request.session['success_message']='Electee team membership updated successfully'
+            return redirect('electees:view_electee_groups')
+        else:
+            request.session['error_message']='Form is invalid. Please correct the noted errors.'
+    template = loader.get_template('generic_formset.html')
+    context_dict = {
+        'formset':formset,
+        'prefix':prefix,
+        'subsubnav':'members',
+        'has_files':False,
+        'submit_name':'Update Electee Team Membership',
+        'form_title':'Add Electee Team Members',
+        'help_text':'Add members to electee teams. This is for initial addition only, for edits use the drag-and-drop interface.',
+        'can_add_row':False,
+        'base':'electees/base_electees.html',
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
 def edit_electee_group_points(request):
     if not Permissions.can_manage_electee_progress(request.user):
         request.session['error_message']='You are not authorized to edit electee team points.'
