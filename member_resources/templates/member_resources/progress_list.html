@@ -10,11 +10,25 @@
 {% if can_manage_actives %}
     <p>Click <a href="{% url 'member_resources:view_progress_table' %}">here</a> for a table summarizing active's progress</p>
 {% endif %}
-<ul style="list-style-type:none;">
-    {% for profile in progress_profiles %}
-        <li><a href="{% url 'member_resources:view_progress' profile.uniqname %}">{{profile}}</a></li>
-    {% endfor %}
-</ul>
 </div>
+</div>
+<div class="row">
+    {% regroup progress_profiles by status as profiles_by_status %}
+    {% for status in profiles_by_status %}
+        <div class="col-md-6">
+        <h4>{{status.grouper}}s</h4>
+        <div class="row">
+        {% regroup status.list|dictsort:"standing.id" by standing as profiles_by_standing %}
+        {% for standing in profiles_by_standing %}
+            <div class="col-md-4">
+            <h5>{{standing.grouper}}</h5>
+            {% for profile in standing.list %}
+            <p><a href="{% url 'member_resources:view_progress' profile.uniqname %}">{{profile}}</a></p>
+            {% endfor %}
+            </div>
+        {% endfor %}
+        </div>
+        </div>
+    {% endfor %}
 </div>
 {% endblock content %}
