@@ -2,6 +2,7 @@
 from datetime import datetime,date,timedelta
 
 from django.core.cache import cache
+from django.core.management import call_command
 from django.utils import timezone
 from django.http import HttpResponse#, Http404, HttpResponseRedirect
 from django.shortcuts import redirect, get_object_or_404
@@ -863,6 +864,7 @@ def delete_event(request, event_id):
     if Permissions.can_edit_event(e,request.user) and not e.completed:
         e.delete_gcal_event()
         e.delete()
+        call_command('reset_upcoming_events')
         request.session['success_message']='Event deleted successfully'
         return redirect('event_cal:list')
     else:
@@ -876,6 +878,7 @@ def delete_shift(request, shift_id):
         if not e.completed  and e.eventshift_set.all().count() > 1:
             s.delete_gcal_event_shift()
             s.delete()
+            call_command('reset_upcoming_events')
             request.session['success_message']='Event shift deleted successfully'
         else:
             request.session['error_message']='Shifts can only be deleted for open events with more than one shift.'
@@ -1165,13 +1168,13 @@ def generate_announcements(request):
         request.session['error_message']='You are not authorized to generate the weekly announcements.'
         return get_previous_page(request,alternate='event_cal:index')
     request.session['current_page']=request.path
-    now = timezone.now()
+    now = timezone.localtime(timezone.now())
     announcement_parts = AnnouncementBlurb.objects.filter(start_date__lte=now.date).filter(end_date__gt=now.date)
     template = loader.get_template('event_cal/announcements.html')
     context_dict = {
         'announcement_parts':announcement_parts,
         'subnav':'admin',
-        'announcement_events':CalendarEvent.get_upcoming_events(),
+        'announcement_events':CalendarEvent.get_upcoming_events(True),
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -1481,7 +1484,7 @@ def edit_announcements(request):
         request.session['error_message']='You are not authorized to edit announcements.'
         return get_previous_page(request,alternate='event_cal:index')
     request.session['current_page']=request.path
-    now = timezone.now()
+    now = timezone.localtime(timezone.now())
     announcement_parts = AnnouncementBlurb.objects.filter(end_date__gt=now.date)
     AnnouncementFormSet = modelformset_factory(AnnouncementBlurb)
     if request.method == 'POST':
