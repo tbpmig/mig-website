@@ -360,7 +360,7 @@ def sign_up(request,  shift_id):
                 else:
                     add_user_to_shift(request.user.userprofile,shift)
                     request.session['success_message']='You have successfully signed up for the event'
-                    if event.preferred_items.lstrip() and not event.usercanbringpreferreditem_set.filter(user=profile).exists():
+                    if event.preferred_items and event.preferred_items.lstrip() and not event.usercanbringpreferreditem_set.filter(user=profile).exists():
                         request.session['info_message']='Please indicate if you can bring items to the event.'
                         return redirect('event_cal:preferred_items_request',shift.event.id)
                     elif event.needs_carpool and not event.carpoolperson_set.filter(person=profile).exists():
