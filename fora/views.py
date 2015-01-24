@@ -18,7 +18,7 @@ from mig_main.utility import get_previous_page, get_message_dict, Permissions
 def get_permissions(user):
     permission_dict=get_member_permissions(user)
     is_member=False
-    if hasattr(user,'userprofile') and user.userprofile.is_member:
+    if hasattr(user,'userprofile') and user.userprofile.is_member():
         is_member=True
     permission_dict.update({'can_create_thread':Permissions.can_create_thread(user),
                             'can_create_forum':Permissions.can_create_forum(user),
