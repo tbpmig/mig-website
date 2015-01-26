@@ -66,6 +66,9 @@
                 <p>You cannot unsign-up after the event has started</p>
             {% endif %}
         {% endif %}
+        {% if show_manual_add_gcal_button %}
+            <p><a id="shift-gcal{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-gcal{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:add_shift_to_gcal'  shift.id %}',function(){$('#shift-gcal{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-calendar"></i> Add to gcal</a></p>
+        {% endif %}
     {% elif shift.ugrads_only and not user.userprofile.is_ugrad %}
         {% if user.userprofile.is_member %}
         <p>Shift is for {{shift.get_restrictions}} only</p>
@@ -95,9 +98,15 @@
             <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in'  shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
             {% if shift.can_sign_up %} 
                 <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up'  shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+                {% if show_manual_add_gcal_button %}
+                    <p><a id="shift-gcal{{shift.id}}" class="hidden"></a></p>
+                {% endif %}
             {% endif %}
         {% elif shift.can_sign_up %}
             <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up'  shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+            {% if show_manual_add_gcal_button %}
+                <p><a id="shift-gcal{{shift.id}}" class="hidden"></a></p>
+            {% endif %}
             {% if event.use_sign_in %}
                 <p>Event sign-in is not open until event starts.</p>
             {% endif %}
@@ -220,25 +229,29 @@
             <td>You have already received credit for this event.</td>
         {% endif %}
     {% elif user.userprofile in shift.attendees.all %}
+        <td>
         {% if shift.can_sign_in %}
-            <td><p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in'  shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
+            <p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in'  shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
             {% if shift.is_before_start %}
                 <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up'  shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% endif %}
-            </td>
+            
         {% elif shift.is_before_start %}
-            <td><p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up'  shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
+            <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:unsign_up'  shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a></p>
             {% if event.use_sign_in %}
                 <p>Event sign-in is not open until event starts.</p>
             {% endif %}
-            </td>
         {% else %}
             {% if not event.use_sign_in and not event.allow_advance_sign_up %}
-                <td>Event does not support sign-in/up.</td>
+                <p>Event does not support sign-in/up.</p>
             {% else %}
-                <td>You cannot unsign-up after the shift has started</td>
+                <p>You cannot unsign-up after the shift has started</p>
             {% endif %}
         {% endif %}
+        {% if show_manual_add_gcal_button %}
+            <p><a id="shift-gcal{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-gcal{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:add_shift_to_gcal'  shift.id %}',function(){$('#shift-gcal{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-calendar"></i> Add to gcal</a></p>
+        {% endif %}
+        </td>
     {% elif shift.ugrads_only and not user.userprofile.is_ugrad %}
         {% if user.userprofile.is_member %}
         <td>Shift is for {{shift.get_restrictions}} only</td>
@@ -268,10 +281,16 @@
             <td><p><a class="btn btn-primary btn-sm" href="{% url 'event_cal:meeting_sign_in'  shift.id %}"><i class="glyphicon glyphicon-ok"></i> Sign-in to {{event.name}}</a></p>
             {% if shift.can_sign_up %} 
                 <p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up'  shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+                {% if show_manual_add_gcal_button %}
+                        <p><a id="shift-gcal{{shift.id}}" class="hidden"></a></p>
+                {% endif %}
             {% endif %}
             </td>
         {% elif shift.can_sign_up %}
             <td><p><a id="shift-signup{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up'  shift.id %}',function(){$('#shift-signup{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
+            {% if show_manual_add_gcal_button %}
+                    <p><a id="shift-gcal{{shift.id}}" class="hidden"></a></p>
+            {% endif %}
             {% if event.use_sign_in %}
                 <p>Event sign-in is not open until event starts.</p>
             {% endif %}

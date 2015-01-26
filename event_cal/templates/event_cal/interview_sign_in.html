@@ -34,6 +34,13 @@
         {% else %}
             <p>You cannot unsign-up after the event has started</p>
         {% endif %}
+        {% if show_manual_add_gcal_button %}
+            {% if is_shift_two_part %}
+            <p><a id="shift-gcal{{actual_shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-gcal{{actual_shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:add_shift_to_gcal_paired'  shift.id %}',function(){$('#shift-gcal{{actual_shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-calendar"></i> Add to gcal</a></p>
+            {% else %}
+            <p><a id="shift-gcal{{actual_shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-gcal{{actual_shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:add_shift_to_gcal'  actual_shift.id %}',function(){$('#shift-gcal{{actual_shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-calendar"></i> Add to gcal</a></p>
+            {% endif %}
+        {% endif %}
     {% elif actual_shift.ugrads_only and not user.userprofile.is_ugrad %}
         {% if user.userprofile.is_member %}
         <p>Shift is for {{actual_shift.get_restrictions}} only</p>
@@ -65,6 +72,7 @@
             {% else %}
             <p><a id="shift-signup{{actual_shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-signup{{actual_shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:sign_up' actual_shift.id %}',function(){$('#shift-signup{{actual_shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a></p>
             {% endif %}
+            <p><a id="shift-gcal{{actual_shift.id}}" class="hidden"></a></p>
         {% else %}
             {% if not actual_shift.is_before_start %}
                 <p>Sign up not allowed after the event starts.</p>

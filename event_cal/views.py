@@ -85,6 +85,16 @@ def get_permissions(user):
     }
 def get_common_context(request):
     upcoming_html = cache.get('upcoming_events_html',None)
+    if hasattr(request.user,'userprofile'):
+        profile = request.user.userprofile
+        gcal_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_add')
+        if gcal_pref.exists():
+            use_cal_pref = gcal_pref[0].preference_value
+        else:
+            use_cal_pref = GCAL_USE_PREF['default']
+        show_manual_add_gcal_button=(use_cal_pref!='always')
+    else:
+        show_manual_add_gcal_button=False
     if not upcoming_html:
         upcoming_html=loader.render_to_string('event_cal/upcoming_events.html',{'upcoming_events':CalendarEvent.get_upcoming_events(),'now':timezone.localtime(timezone.now())})
         cache.set('upcoming_events_html',upcoming_html)
@@ -95,6 +105,7 @@ def get_common_context(request):
         'upcoming_events':upcoming_html,
         'edit_page':False,
         'main_nav':'cal',
+        'show_manual_add_gcal_button':show_manual_add_gcal_button,
         })
     return context_dict
 
@@ -328,6 +339,69 @@ def remove_from_waitlist(request,  shift_id):
 
 @ajax
 @login_required
+def add_shift_to_gcal(request,  shift_id):
+    shift = get_object_or_404(EventShift,id=shift_id)
+    event = shift.event
+    if hasattr(request.user,'userprofile'):
+        profile = request.user.userprofile
+        if profile not in shift.attendees.all():
+            request.session['error_message']='You can only add events you have signed up for to your google calendar'
+        else:  
+            email_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_account')
+            if email_pref.exists():
+                cal_email_pref = email_pref[0].preference_value
+            else:
+                cal_email_pref = GCAL_ACCT_PREF['default']
+            if cal_email_pref =='umich' or not profile.is_member() or not profile.memberprofile.alt_email:
+                email_to_use = profile.uniqname+'@umich.edu'
+            else:
+                email_to_use = profile.memberprofile.alt_email
+            shift.add_attendee_to_gcal(profile.get_firstlast_name(),email_to_use)
+            request.session['success_message']='You have successfully added the event to your gcal'
+    else:
+        request.session['error_message']='You must create a profile before adding the event to your google calendar' 
+    if 'error_message' in request.session:
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+    return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}    
+
+@ajax
+@login_required
+def add_shift_to_gcal_paired(request,  shift_id):
+    shift = get_object_or_404(InterviewPairing,id=shift_id)
+    event = shift.first_shift.event
+    if hasattr(request.user,'userprofile'):
+        profile = request.user.userprofile
+        if profile not in shift.first_shift.attendees.all():
+            request.session['error_message']='You can only add events you have signed up for to your google calendar'
+        else:  
+            email_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_account')
+            if email_pref.exists():
+                cal_email_pref = email_pref[0].preference_value
+            else:
+                cal_email_pref = GCAL_ACCT_PREF['default']
+            if cal_email_pref =='umich' or not profile.is_member() or not profile.memberprofile.alt_email:
+                email_to_use = profile.uniqname+'@umich.edu'
+            else:
+                email_to_use = profile.memberprofile.alt_email
+            shift.first_shift.add_attendee_to_gcal(profile.get_firstlast_name(),email_to_use)
+            shift.second_shift.add_attendee_to_gcal(profile.get_firstlast_name(),email_to_use)
+            request.session['success_message']='You have successfully added the event to your gcal'
+    else:
+        request.session['error_message']='You must create a profile before adding the event to your google calendar' 
+    if 'error_message' in request.session:
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+    return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}} 
+    
+@ajax
+@login_required
 def sign_up(request,  shift_id):
     shift = get_object_or_404(EventShift,id=shift_id)
     event = shift.event
@@ -374,10 +448,23 @@ def sign_up(request,  shift_id):
         return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
-    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,shift_id,reverse('event_cal:unsign_up', args=[ shift_id] ),shift_id),
+    return_dict =  {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,shift_id,reverse('event_cal:unsign_up', args=[ shift_id] ),shift_id),
                         '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
+    if hasattr(request.user,'userprofile'):
+        profile = request.user.userprofile
+        gcal_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_add')
+        if gcal_pref.exists():
+            use_cal_pref = gcal_pref[0].preference_value
+        else:
+            use_cal_pref = GCAL_USE_PREF['default']
+        show_manual_add_gcal_button=(use_cal_pref!='always')
+    else:
+        show_manual_add_gcal_button=False
+    if show_manual_add_gcal_button:
+        return_dict['fragments']['#shift-gcal'+shift_id]=r'''<a id="shift-gcal%s" class="btn btn-primary btn-sm" onclick="$('#shift-gcal%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-gcal%s').attr('disabled',false);})"><i class="glyphicon glyphicon-calendar"></i> Add event to gcal</a>'''%(shift_id,shift_id,reverse('event_cal:add_shift_to_gcal', args=[ shift_id] ),shift_id)
+    return return_dict    
 
 def unsign_up_user(shift,profile):
     remove_user_from_shift(profile,shift)
@@ -438,6 +525,7 @@ def unsign_up(request, shift_id):
 
     return {'fragments':{'#shift-'+shift_id+'-attendee-'+request.user.username:'',
                         '#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up', args=[ shift_id] ),shift_id),
+                        '#shift-gcal'+shift_id:r'''<a id="shift-gcal%s" class="hidden"></a>'''%(shift_id),
                         '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
@@ -1860,10 +1948,23 @@ def sign_up_paired(request,  shift_id):
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
     shift_id = unicode(shift.first_shift.id)
-    return {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,shift_id,reverse('event_cal:unsign_up_paired', args=[ shift.id] ),shift_id),
+    return_dict= {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,shift_id,reverse('event_cal:unsign_up_paired', args=[ shift.id] ),shift_id),
                         '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
+    if hasattr(request.user,'userprofile'):
+        profile = request.user.userprofile
+        gcal_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_add')
+        if gcal_pref.exists():
+            use_cal_pref = gcal_pref[0].preference_value
+        else:
+            use_cal_pref = GCAL_USE_PREF['default']
+        show_manual_add_gcal_button=(use_cal_pref!='always')
+    else:
+        show_manual_add_gcal_button=False
+    if show_manual_add_gcal_button:
+        return_dict['fragments']['#shift-gcal'+shift_id]=r'''<a id="shift-gcal%s" class="btn btn-primary btn-sm" onclick="$('#shift-gcal%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-gcal%s').attr('disabled',false);})"><i class="glyphicon glyphicon-calendar"></i> Add event to gcal</a>'''%(shift_id,shift_id,reverse('event_cal:add_shift_to_gcal_paired', args=[ shift.id] ),shift_id)
+    return return_dict  
 @ajax
 @login_required
 def manual_remove_user_from_paired_shift(request,shift_id,username):
@@ -1912,6 +2013,7 @@ def unsign_up_paired(request,  shift_id):
     <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
     shift_id = unicode(shift.first_shift.id)
     return {'fragments':{'#shift-'+shift_id+'-attendee-'+request.user.username:'',
+                        '#shift-gcal'+shift_id:r'''<a id="shift-gcal%s" class="hidden"></a>'''%(shift_id),
                         '#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up_paired', args=[ shift.id] ),shift_id),
                         '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
