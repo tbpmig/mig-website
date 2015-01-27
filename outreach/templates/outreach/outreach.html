@@ -5,6 +5,11 @@
 {% block content %}
 <div class="row">
 			<div class="col-md-8 col-md-offset-2">
+            {% if can_edit_outreach %}
+                <div class="btn-group">
+                <a class="btn btn-warning" href="{% url 'outreach:manage_outreach_event_types' %}">Edit Outreach Event Pages</a>
+                </div>
+            {% endif%}
 				<h2> TBP Outreach Activities</h2>
 				<p> TBP is committed to giving back to the college and community. We have a number of outreach activities both on and off campus.</p>  
 				<h3>Tutoring</h3>

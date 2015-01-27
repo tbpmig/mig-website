@@ -9,8 +9,14 @@
     <div class="col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
     {% endif %}
         <h2> {{title}}</h2>
+        {% if can_edit_outreach_event %}
+        <div class="btn-group">
         {% if can_edit_outreach %}
+        <a class="btn btn-info" href="{% url 'outreach:manage_outreach_event_types' %}">Edit Outreach Event Types/Pages</a>
         <a class="btn btn-warning confirmation" href="{% url 'outreach:hide_outreach_event' subnav %}">Hide Page</a>
+        {% endif %}
+        <a class="btn btn-info" href="{% url 'outreach:manage_outreach_events' subnav %}">Edit {{title}} Events</a>
+        </div>
         {% endif%}
         {{text|my_markdown}}
         {% for event in event_timeline %}

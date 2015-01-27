@@ -10,7 +10,7 @@ from event_cal.models import CalendarEvent
 from history.models import Officer
 from mig_main.models import OfficerPosition, AcademicTerm,MemberProfile
 from mig_main.utility import get_message_dict,get_previous_page, Permissions
-from outreach.models import OutreachPhoto,MindSETModule,VolunteerFile,TutoringPageSection,OutreachEventType,MindSETProfileAdditions
+from outreach.models import OutreachPhoto,MindSETModule,VolunteerFile,TutoringPageSection,OutreachEventType,MindSETProfileAdditions,OutreachEvent
 
 def get_permissions(user):
     permission_dict={
@@ -219,6 +219,7 @@ def tutoring(request):
 def outreach_event(request,url_stem):
     request.session['current_page']=request.path
     outreach_event = get_object_or_404(OutreachEventType,url_stem=url_stem)
+    relevant_officers = Officer.objects.filter(user__uniqname=request.user.username,term=AcademicTerm.get_current_term(),position__in=outreach_event.officers_can_edit.all())
     events = CalendarEvent.objects.filter(term=AcademicTerm.get_current_term(),event_type=outreach_event.event_category,eventshift__end_time__gte=timezone.now()).annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
     template = loader.get_template('outreach/outreach_template.html')
     context_dict = {
@@ -228,6 +229,7 @@ def outreach_event(request,url_stem):
         'text':outreach_event.text,
         'has_cal_events':outreach_event.has_calendar_events,
         'event_category':outreach_event.event_category.name,
+        'can_edit_outreach_event':(request.user.is_superuser or relevant_officers.exists()),
         'event_timeline':outreach_event.outreachevent_set.all().order_by('-pin_to_top','-id'),
         }
     context_dict.update(get_common_context(request))
@@ -243,3 +245,72 @@ def hide_outreach_event(request,url_stem):
     outreach_event.visible=False
     outreach_event.save()
     return redirect('outreach:index')
+
+def manage_outreach_event_types(request):
+    if not request.user.is_superuser:
+        request.session['error_message']='You are not authorized to edit outreach events types'
+        return get_previous_page(request,alternate='outreach:index')
+    OutreachFormSet = modelformset_factory(OutreachEventType)
+    prefix = 'outreach'
+    formset = OutreachFormSet(request.POST or None,prefix=prefix)
+    if request.method=='POST':
+        if formset.is_valid():
+            formset.save()
+            request.session['success_message']='Outraech event types successfully updated.'
+            return redirect('outreach:mindset')
+        else:
+            request.session['error_message']='Your submission contained errors, please correct and resubmit.'
+    context_dict = {
+        'formset':formset,
+        'prefix':prefix,
+        'subnav':'index',
+        'has_files':False,
+        'submit_name':'Update Outreach Event Types',
+        'back_button':{'link':reverse('outreach:index'),'text':'To Outreach Page'},
+        'form_title':'Edit Outreach Events and Types',
+        'help_text':'Update or add new outreach event categories to display in the outreach section. Make sure to add the corresponding event category from the membership section first if needed.',
+        'can_add_row':True,
+        'base':'outreach/base_outreach.html',
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    template = loader.get_template('generic_formset.html')
+    return HttpResponse(template.render(context))
+
+def manage_outreach_events(request,url_stem):
+    outreach_event = get_object_or_404(OutreachEventType,url_stem=url_stem)
+    relevant_officers = Officer.objects.filter(user__uniqname=request.user.username,term=AcademicTerm.get_current_term(),position__in=outreach_event.officers_can_edit.all())
+    if not (request.user.is_superuser or relevant_officers.exists()):
+        request.session['error_message']='You are not authorized to edit outreach events'
+        return get_previous_page(request,alternate='outreach:index')
+    OutreachFormSet = modelformset_factory(OutreachEvent,exclude=['outreach_event'])
+    prefix = 'outreach'
+    formset = OutreachFormSet(request.POST or None,prefix=prefix,queryset=OutreachEvent.objects.filter(outreach_event=outreach_event))
+    if request.method=='POST':
+        if formset.is_valid():
+            instances=formset.save(commit=False)
+            for instance in instances:
+                instance.outreach_event=outreach_event
+                instance.save()
+            request.session['success_message']='Outraech Events successfully updated.'
+            return redirect('outreach:mindset')
+        else:
+            request.session['error_message']='Your submission contained errors, please correct and resubmit.'
+    context_dict = {
+        'formset':formset,
+        'prefix':prefix,
+        'subnav':'index',
+        'has_files':True,
+        'submit_name':'Update Outreach Events',
+        'back_button':{'link':reverse('outreach:outreach_event', args=[url_stem]),'text':'To %s Page'%(outreach_event.title)},
+        'form_title':'Edit %s Events'%(outreach_event.title),
+        'help_text':'Update or add new outreach events to display in the %s section.'%(outreach_event.title),
+        'can_add_row':True,
+        'base':'outreach/base_outreach.html',
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    template = loader.get_template('generic_formset.html')
+    return HttpResponse(template.render(context))
