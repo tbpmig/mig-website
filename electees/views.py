@@ -713,17 +713,32 @@ def view_interview_follow_up_table(request):
         request.session['error_message']='You are not authorized to view followups'
         return get_previous_page(request,alternate='electees:view_electee_groups')
     electees = MemberProfile.get_electees()
-    electee_data = []
+    green_electees=[]
+    yellow_electees=[]
+    red_electees=[]
+    blank_electees=[]
     num_followups=0
     for electee in electees:
         follow_ups = ElecteeInterviewFollowup.objects.filter(interview__interviewee_shift__attendees=electee).exclude(recommendation='X')
         num_followups=follow_ups.count() if follow_ups.count()>num_followups else num_followups
-        electee_data.append({'electee':electee,'followups':follow_ups})
+        num_red = follow_ups.filter(recommendation='N').count()
+        num_yellow = follow_ups.filter(recommendation='M').count()
+        if num_red:
+            red_electees.append({'electee':electee,'followups':follow_ups})
+        elif num_yellow:
+            yellow_electees.append({'electee':electee,'followups':follow_ups})
+        elif follow_ups.count():
+            green_electees.append({'electee':electee,'followups':follow_ups})
+        else:
+            blank_electees.append({'electee':electee,'followups':follow_ups})
     template = loader.get_template('electees/interview_followup_table.html')
     interviewer_headers = ['Interviewer %d'%count for count in range(1,num_followups+1)]
     context_dict = {
         'interviewer_headers':interviewer_headers,
-        'electees':electee_data,
+        'green_electees':green_electees,
+        'yellow_electees':yellow_electees,
+        'red_electees':red_electees,
+        'blank_electees':blank_electees,
         'base':'electees/base_electees.html',
         }
     context_dict.update(get_common_context(request))

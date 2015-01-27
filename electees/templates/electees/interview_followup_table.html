@@ -13,7 +13,47 @@
             </tr>
         </thead>
         <tbody>
-        {% for electee in electees %}
+        <tr><td class="text-center" colspan="{{interviewer_headers|length|add:"1"}}"><strong>All Recommend</strong></td></tr>
+        {% for electee in green_electees %}
+            <tr>
+                <td>
+                {{electee.electee}}
+                </td>
+                {% for followup in electee.followups %}
+                <td {% if followup.recommendation == 'Y' %} class="success"{% elif followup.recommendation == 'N' %} class="danger" {% else %} class="warning" {%endif %}><a href="{% url 'electees:view_interview_follow_up' followup.id %}"> {{followup.member}}</a></td>
+                
+                {% endfor %}
+                
+            </tr>
+        {% endfor %}
+        <tr><td class="text-center" colspan="{{interviewer_headers|length|add:"1"}}"><strong>Some Concern</strong></td></tr>
+        {% for electee in yellow_electees %}
+            <tr>
+                <td>
+                {{electee.electee}}
+                </td>
+                {% for followup in electee.followups %}
+                <td {% if followup.recommendation == 'Y' %} class="success"{% elif followup.recommendation == 'N' %} class="danger" {% else %} class="warning" {%endif %}><a href="{% url 'electees:view_interview_follow_up' followup.id %}"> {{followup.member}}</a></td>
+                
+                {% endfor %}
+                
+            </tr>
+        {% endfor %}
+        <tr><td class="text-center" colspan="{{interviewer_headers|length|add:"1"}}"><strong>Strong Concern</strong></td></tr>
+        {% for electee in red_electees %}
+            <tr>
+                <td>
+                {{electee.electee}}
+                </td>
+                {% for followup in electee.followups %}
+                <td {% if followup.recommendation == 'Y' %} class="success"{% elif followup.recommendation == 'N' %} class="danger" {% else %} class="warning" {%endif %}><a href="{% url 'electees:view_interview_follow_up' followup.id %}"> {{followup.member}}</a></td>
+                
+                {% endfor %}
+                
+            </tr>
+        {% endfor %}
+        <tr><td class="text-center" colspan="{{interviewer_headers|length|add:"1"}}"><strong>No Data</strong></td></tr>
+        {% for electee in blank_electees %}
             <tr>
                 <td>
                 {{electee.electee}}
