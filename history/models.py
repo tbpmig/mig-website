@@ -770,7 +770,7 @@ class ProjectReportHeader(models.Model):
                 else:
                     ind_error = {'report':officer.name,'error_code':p.returncode}
                     ind_error['err']=p.stderr
-                    #ind_error['out']=out or ''
+                    ind_error['out']=p.stdout
                     errors.append(ind_error)
 
         f.write(output_string.encode('utf8'))
@@ -792,7 +792,7 @@ class ProjectReportHeader(models.Model):
         else:
             ind_error = {'report':'Full','error_code':p.returncode}
             ind_error['err']=p.stderr
-            #ind_error['out']=out or ''
+            ind_error['out']=p.stdout
             errors.append(ind_error)
         os.chdir(current_dir)
         return errors
