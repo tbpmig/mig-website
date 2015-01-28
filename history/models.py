@@ -542,10 +542,10 @@ class ProjectReport(models.Model):
                 '''%(self.contact_name)
             if self.contact_title:
                 contact_string+=r'''Title:    &   %s\\
-                '''%(self.contact_title)
+                '''%(self.clean_tex_string(self.contact_title))
             if self.contact_email:
                 contact_string+=r'''Email:    &   %s\\
-                '''%(self.contact_email)
+                '''%(self.clean_tex_string(self.contact_email))
             if self.contact_phone_number:
                 contact_string+=r'''Phone\#:    &   %s\\
                 '''%(self.contact_phone_number)
@@ -758,7 +758,7 @@ class ProjectReportHeader(models.Model):
                 p.communicate()
                 if p.returncode==0:
                     p = subprocess.Popen(new_cmd.split(' '),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-                    p.communicate()
+                    p_data=p.communicate()
                     print 'officer compilation successful'
                     if CompiledProjectReport.objects.filter(term=term,associated_officer=officer).exists():
                         c=CompiledProjectReport.objects.get(term=term,associated_officer=officer)
@@ -769,15 +769,15 @@ class ProjectReportHeader(models.Model):
                     c.pdf_file.save('compiled_report_%d.pdf'%c.id,File(new_f),True)
                 else:
                     ind_error = {'report':officer.name,'error_code':p.returncode}
-                    ind_error['err']=p.stderr.read()
-                    ind_error['out']=p.stdout.read()
+                    error_ind = p_data[0].find('!')
+                    ind_error['err']='...'+p_data[0][(error_ind-100):(error_ind+250)]+'...'
                     errors.append(ind_error)
 
         f.write(output_string.encode('utf8'))
         f.close()
         new_cmd = cmd%{'file_name':'/tmp/Project_Report_Final_%d.tex'%(self.id)}
         p = subprocess.Popen(new_cmd.split(' '),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        p.communicate()
+        p_data=p.communicate()
         if p.returncode==0:
             p = subprocess.Popen(new_cmd.split(' '),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             p.communicate()
@@ -791,8 +791,8 @@ class ProjectReportHeader(models.Model):
             c.pdf_file.save('compiled_report_%d.pdf'%c.id,File(new_f),True)
         else:
             ind_error = {'report':'Full','error_code':p.returncode}
-            ind_error['err']=p.stderr.read()
-            ind_error['out']=p.stdout.read()
+            error_ind = p_data[0].find('!')
+            ind_error['err']='...'+p_data[0][(error_ind-100):(error_ind+250)]+'...'
             errors.append(ind_error)
         os.chdir(current_dir)
         return errors
