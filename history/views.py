@@ -393,8 +393,9 @@ def compile_project_reports(request,prh_id):
     prh = get_object_or_404(ProjectReportHeader,id=prh_id)
     errors=prh.write_tex_files()
     if errors:
-        error_message='The following reports had the following error codes: '
+        error_message='The following reports had the following error codes:'
         for error in errors:
-            error_message=error_message+'\n'+error['report']+': %d'%(error['error_code'])+' error message: '+error['error_message']+' stdout: '+error['out_message']+';'
+            error_message=error_message+'\n'+error['report']+': %d'%(error['error_code'])
+            error_message=error_message+' stderr: '+error['error_message']+' stdout: '+error['out_message']+';'
         request.session['error_message']=error_message
     return redirect('history:process_project_report_compilation')
