@@ -13,9 +13,9 @@ from mig_main.models import AcademicTerm,OfficerPosition,Status,UserProfile,Memb
 from mig_main.utility import get_previous_full_term
 
 cal_dict = {v:k for k,v in enumerate(calendar.month_name)}
-def add_da_pa_status_manually(uniqname,distinction,terms):
+def add_da_pa_status_manually(uniqname,distinction,terms,start_term='Fall',start_year='2014'):
     user = MemberProfile.objects.get(uniqname=uniqname)
-    term = AcademicTerm.objects.get(year=2014,semester_type__name='Fall')
+    term = AcademicTerm.objects.get(year=start_year,semester_type__name=start_term)
     while terms>user.get_num_terms_distinction(distinction):
         if term < user.init_term:
             print uniqname+': ran out of terms'
@@ -214,4 +214,6 @@ def add_F13_from_csv(file_name):
             nepp.project=nep
             nepp.save()
         print 'Completed: %s'%(nep.name)
+
+
 
