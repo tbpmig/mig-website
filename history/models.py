@@ -769,8 +769,8 @@ class ProjectReportHeader(models.Model):
                     c.pdf_file.save('compiled_report_%d.pdf'%c.id,File(new_f),True)
                 else:
                     ind_error = {'report':officer.name,'error_code':p.returncode}
-                    ind_error['err']=err or None
-                    ind_error['out']=out or None
+                    ind_error['err']=err or ''
+                    ind_error['out']=out or ''
                     errors.append(ind_error)
 
         f.write(output_string.encode('utf8'))
@@ -791,8 +791,8 @@ class ProjectReportHeader(models.Model):
             c.pdf_file.save('compiled_report_%d.pdf'%c.id,File(new_f),True)
         else:
             ind_error = {'report':'Full','error_code':p.returncode}
-            ind_error['err']=err or None
-            ind_error['out']=out or None
+            ind_error['err']=err or ''
+            ind_error['out']=out or ''
             errors.append(ind_error)
         os.chdir(current_dir)
         return errors
