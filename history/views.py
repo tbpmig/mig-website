@@ -395,6 +395,6 @@ def compile_project_reports(request,prh_id):
     if errors:
         error_message='The following reports had the following error codes:'
         for error in errors:
-            error_message=error_message+'\n'+error['report']+': '+error['error_code']
+            error_message=error_message+'\n'+error['report']+': %d'%(error['error_code'])
         request.session['error_message']=error_message
     return redirect('history:process_project_report_compilation')
