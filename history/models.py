@@ -661,6 +661,7 @@ class ProjectReportHeader(models.Model):
 
     def write_tex_files(self):
         f = open('/tmp/Project_Report_Final_%d.tex'%(self.id),'w')
+        errors = []
         years = '--'.join([str(term.year) for term in self.terms.all().order_by('year').distinct()])
         print years
         print self.preparer_title
@@ -766,6 +767,8 @@ class ProjectReportHeader(models.Model):
                         c.save()
                     new_f = open('./officer_proj_report_%d_%d.pdf'%(officer.id,term.id),'r')
                     c.pdf_file.save('compiled_report_%d.pdf'%c.id,File(new_f),True)
+                else:
+                    errors.append({'report':officer.name,'error_code':p.returncode})
 
         f.write(output_string.encode('utf8'))
         f.close()
@@ -783,7 +786,10 @@ class ProjectReportHeader(models.Model):
                 c.save()
             new_f = open('./Project_Report_Final_%d.pdf'%(self.id),'r')
             c.pdf_file.save('compiled_report_%d.pdf'%c.id,File(new_f),True)
+        else:
+            errors.append({'report':officer.name,'error_code':p.returncode})
         os.chdir(current_dir)
+        return errors
 
 class OfficerPositionRelationship(models.Model):
     predecessor = models.ForeignKey('mig_main.OfficerPosition',related_name='officer_relationship_predecessor')

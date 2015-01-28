@@ -391,5 +391,10 @@ def compile_project_reports(request,prh_id):
     if not Permissions.can_process_project_reports(request.user):
         raise PermissionDenied()
     prh = get_object_or_404(ProjectReportHeader,id=prh_id)
-    prh.write_tex_files()
+    errors=prh.write_tex_files()
+    if errors:
+        error_message='The following reports had the following error codes:'
+        for error in errors:
+            error_message=error_message+'\n'+error['report']+': '+error['error_code']
+        request.session['error_message']=error_message
     return redirect('history:process_project_report_compilation')
