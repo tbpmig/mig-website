@@ -17,6 +17,9 @@ def add_da_pa_status_manually(uniqname,distinction,terms):
     user = MemberProfile.objects.get(uniqname=uniqname)
     term = AcademicTerm.objects.get(year=2014,semester_type__name='Fall')
     while terms>user.get_num_terms_distinction(distinction):
+        if term < user.init_term:
+            print uniqname+': ran out of terms'
+            break
         if not Distinction.objects.filter(member=user,term=term,distinction_type=distinction).exists():
             d = Distinction(member=user,term=term,distinction_type=distinction)
             if distinction.name=='Active':
@@ -25,9 +28,8 @@ def add_da_pa_status_manually(uniqname,distinction,terms):
                 d.gift='Unknown'
             d.save()
         term=get_previous_full_term(term)
-        if term < user.init_term:
-            print 'ran out of terms'
-            break
+    print 'finished %s %s'%(uniqname,unicode(distinction))
+        
         
 def add_tutoring_to_project_report(id_num):
     pr = NonEventProject.objects.get(id=id_num)
@@ -212,5 +214,4 @@ def add_F13_from_csv(file_name):
             nepp.project=nep
             nepp.save()
         print 'Completed: %s'%(nep.name)
-
 
