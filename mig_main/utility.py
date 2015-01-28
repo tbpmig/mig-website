@@ -46,16 +46,7 @@ def get_officer_positions_predecessors(officers,term=None):
         else:
             officer_trace[rel.predecessor]=rel.effective_term
     return officer_trace
-#    previous_relationships = officer.
-#    if officer in officer_set:
-#        return officer_set
-#    officer_set=officer_set|officer
-#    officer_predecessors = OfficerPosition
-#    return get_officer_position_predecessor_helper(
-#def get_officer_positions_predecessors(officers):
-#    officer_relationships = set()
-#    for officer in officers:
-#        if officer not in officer_set:
+
 
 def get_previous_full_term(term):
     new_type = None

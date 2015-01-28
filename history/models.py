@@ -664,7 +664,7 @@ class ProjectReportHeader(models.Model):
         years = '--'.join([str(term.year) for term in self.terms.all().order_by('year').distinct()])
         print years
         print self.preparer_title
-        output_string = r'''\documentclass{ProjectReport}
+        output_string = r'''\documentclass{/srv/www/migweb/static/tex/ProjectReport}
         \usepackage{placeins}
         \usepackage{fontspec}
         \setmainfont[Ligatures=TeX]{Linux Libertine O}
@@ -705,7 +705,7 @@ class ProjectReportHeader(models.Model):
 '''
         previous_category = 'None'
         officer_files = {}
-        officer_sheet_header=r'''\documentclass{ProjectReport}
+        officer_sheet_header=r'''\documentclass{/srv/www/migweb/static/tex/ProjectReport}
         \usepackage{placeins}
         \usepackage{fontspec}
         \setmainfont[Ligatures=TeX]{Linux Libertine O}

@@ -215,5 +215,3 @@ def add_F13_from_csv(file_name):
             nepp.save()
         print 'Completed: %s'%(nep.name)
 
-
-
