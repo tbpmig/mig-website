@@ -755,7 +755,6 @@ class ProjectReportHeader(models.Model):
                 new_cmd =cmd%{'file_name':'/tmp/officer_proj_report_%d_%d.tex'%(officer.id,term.id)}
                 print 'executing: '+new_cmd
                 p = subprocess.Popen(new_cmd.split(' '),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-                p.communicate()
                 p_data=p.communicate()
                 if p.returncode==0:
                     p = subprocess.Popen(new_cmd.split(' '),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -841,4 +840,4 @@ class BackgroundCheck(models.Model):
             if (date.today()-self.date_added).days>1*365:
                 return False
             return True 
-        return False        return False
+        return False
