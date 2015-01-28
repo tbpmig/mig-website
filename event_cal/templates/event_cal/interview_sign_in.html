@@ -16,7 +16,7 @@
     {% endif %}
 {% endfor %}
 </ul>
-{% if actual_shift.attendees.count < 1 or user.userprofile in actual_shift.attendees.all %}
+{% if not actual_shift.is_full or user.userprofile in actual_shift.attendees.all %}
 {% if user.is_authenticated and has_profile %}
     {% if user.userprofile.is_member and user.userprofile.memberprofile in event.get_attendees_with_progress %}
         {% if event.use_sign_in %}
