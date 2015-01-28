@@ -218,7 +218,7 @@ class CompiledProjectReport(models.Model):
     )
     def __unicode__(self):
         if self.is_full:
-            if self.term.name=='Winter':
+            if self.term.semester_type.name=='Winter':
                 return 'Full Project Report for '+unicode(self.term.year)
             else:
                 return 'Fall Semester Checkpoint Report for '+unicode(self.term.year)
