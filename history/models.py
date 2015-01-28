@@ -755,7 +755,7 @@ class ProjectReportHeader(models.Model):
                 new_cmd =cmd%{'file_name':'/tmp/officer_proj_report_%d_%d.tex'%(officer.id,term.id)}
                 print 'executing: '+new_cmd
                 p = subprocess.Popen(new_cmd.split(' '),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-                p.communicate()
+                out,err = p.communicate()
                 if p.returncode==0:
                     p = subprocess.Popen(new_cmd.split(' '),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
                     p.communicate()
@@ -768,13 +768,13 @@ class ProjectReportHeader(models.Model):
                     new_f = open('./officer_proj_report_%d_%d.pdf'%(officer.id,term.id),'r')
                     c.pdf_file.save('compiled_report_%d.pdf'%c.id,File(new_f),True)
                 else:
-                    errors.append({'report':officer.name,'error_code':p.returncode})
+                    errors.append({'report':officer.name,'error_code':p.returncode,'error_message':err,'out_message':out})
 
         f.write(output_string.encode('utf8'))
         f.close()
         new_cmd = cmd%{'file_name':'/tmp/Project_Report_Final_%d.tex'%(self.id)}
         p = subprocess.Popen(new_cmd.split(' '),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        p.communicate()
+        out,err = p.communicate()
         if p.returncode==0:
             p = subprocess.Popen(new_cmd.split(' '),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             p.communicate()
@@ -787,7 +787,7 @@ class ProjectReportHeader(models.Model):
             new_f = open('./Project_Report_Final_%d.pdf'%(self.id),'r')
             c.pdf_file.save('compiled_report_%d.pdf'%c.id,File(new_f),True)
         else:
-            errors.append({'report':officer.name,'error_code':p.returncode})
+            errors.append({'report':'Full','error_code':p.returncode,'error_message':err,'out_message':out})
         os.chdir(current_dir)
         return errors
 
