@@ -229,13 +229,13 @@ def meeting_sign_in(request,shift_id):
     return HttpResponse(template.render(context))
 
 def event_detail(request,event_id):
-    request.session['current_page']=request.path
     event = get_object_or_404(CalendarEvent,id=event_id)
     if event.event_type.name == 'Conducted Interviews':
         return redirect('event_cal:interview_view_actives',event_id)
     elif event.event_type.name == 'Attended Interviews':
         return redirect('event_cal:interview_view_electees',event_id)
 
+    request.session['current_page']=request.path
     has_profile =False
     user_is_member=False
     if hasattr(request.user,'userprofile'):  
@@ -1874,6 +1874,7 @@ def interview_view_actives(request,event_id):
     if not event.event_type.name == 'Conducted Interviews':
         request.session['error_message']='Cannot view interview format for event that isn\'t an interview.'
         return get_previous_page(request,alternate='event_cal:index')   
+    request.session['current_page']=request.path
     request.session['current_page']=request.path
     shifts = event.eventshift_set.order_by('start_time')
 
