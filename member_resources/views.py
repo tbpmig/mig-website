@@ -1284,6 +1284,8 @@ def manage_officers(request,term_id):
         return redirect('member_resources:index')
     ManageOfficersFormSet = modelformset_factory(Officer,form=OfficerForm)
     term =get_object_or_404(AcademicTerm,id=term_id)
+    if term < AcademicTerm.get_current_term():
+        ManageOfficersFormSet.form.base_fields['position'].queryset=OfficerPosition.objects.all()
     if request.method =='POST':
         formset = ManageOfficersFormSet(request.POST,request.FILES,prefix='officers',queryset=Officer.objects.filter(term=term))
         if formset.is_valid():
