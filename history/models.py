@@ -36,7 +36,7 @@ def pack_officers_for_term(term):
         query = Q(position__in=team.members.all())
         if team.name=='Electee and Membership Team':
             query=query&~Q(position=team.lead)
-        team_data={'order':disp_order,'name':team.name,'lead_name':team.lead.name,'officers':officer_set.filter(query).order_by('position__display_order').values('id')}
+        team_data={'order':disp_order,'name':team.name,'lead_name':team.lead.name,'officers':officer_set.filter(query).order_by('position__display_order','id').values('id')}
         term_officers.append(team_data)
     return {'officers':term_officers,'advisors':term_advisors}
 def get_next_meeting_minutes_display_order():
