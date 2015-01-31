@@ -4,8 +4,8 @@ from mig_main.models import UserProfile, OfficerPosition, Standing, Status, Majo
 class MemberProfileAdmin(admin.ModelAdmin):
     fieldsets = [
         (None, {'fields':['user']}),
-        ('Name', {'fields': ['title','first_name','middle_name','last_name','suffix','nickname']}),
-        ('Education/University', {'fields': ['uniqname','UMID','major','standing','expect_grad_date','edu_bckgrd_form']}),
+        ('Name', {'fields': ['title','first_name','middle_name','last_name','suffix','nickname','maiden_name']}),
+        ('Education/University', {'fields': ['uniqname','UMID','major','standing','expect_grad_date']}),
         ('Chapter', {'fields': ['status','init_chapter','init_term','still_electing']}),
         ('Contact Info', {'fields': ['alt_email','preferred_email','phone','jobs_email']}),
         ('About', {'fields': ['photo','resume','short_bio','gender','shirt_size']}),
