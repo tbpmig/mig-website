@@ -220,6 +220,7 @@ class UserProfile(models.Model):
     middle_name     = models.CharField(max_length=40,blank=True)
     last_name       = models.CharField(max_length=40)
     suffix          = models.CharField(max_length=15,blank=True)
+    maiden_name     = models.CharField(max_length=40,blank=True,null=True)
     title           = models.CharField(max_length=20,blank=True)
     uniqname        = models.CharField(max_length=8,primary_key=True,
                                        validators=[RegexValidator(regex=r'^[a-z]{3,8}$',
@@ -233,6 +234,7 @@ class UserProfile(models.Model):
         name = self.title+" " if self.title else ""
         name = name + self.first_name + " "
         name = name + self.middle_name+" " if self.middle_name else name
+        name = name + '('+self.maiden_name+") " if self.maiden_name else name
         name = name + self.last_name
         name = name + ", "+self.suffix if self.suffix else name
         return name
@@ -284,7 +286,8 @@ class UserProfile(models.Model):
         first_name = self.get_casual_name()
         if first_name == self.last_name:
             first_name = self.first_name
-        return first_name+' '+self.last_name
+        middle =  '('+self.maiden_name+") " if self.maiden_name else ''
+        return first_name+' '+middle+self.last_name
 
     def get_email(self):
         return self.uniqname+"@umich.edu"
@@ -363,13 +366,7 @@ class MemberProfile(UserProfile):
                                         default="UM")
     meeting_speak   = models.BooleanField("Are you interested in speaking at a meeting?",default=False)    #Willingness to speak at a meeting/event
 
-    edu_bckgrd_form = ContentTypeRestrictedFileField(
-        upload_to='grad_background_forms',
-        content_types=pdf_types,
-        max_upload_size=104857600,
-        blank=True,
-        verbose_name="Educational Background Form (Grad Electees only)",
-    )#File of this, grad electees only
+    
     shirt_size      = models.ForeignKey(ShirtSize,on_delete=models.PROTECT)
     short_bio       = models.TextField()
     init_term       = models.ForeignKey(AcademicTerm, on_delete=models.PROTECT,verbose_name="Initiation term")
