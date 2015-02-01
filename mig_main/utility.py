@@ -751,7 +751,7 @@ class Permissions:
         if user.is_superuser:
             return True
         current_positions = cls.get_current_officer_positions(user) 
-        query = Q(position__name='President')|Q(position__name='Secretary')
+        query = Q(position__name='President')|Q(position__name='Secretary')|Q(position__name='Service Coordinator')
         if current_positions.filter(query).exists():
             return True
         else:
