@@ -22,7 +22,7 @@ def zipdir(path,zipf):
             zipf.write(os.path.join(root,f))
             
 def get_officer_position_predecessor_helper(officer,term,officer_set):
-    links = officer.officer_relationship_successor.exclude(id__in=officer_set,effective_term__gt=term).order_by('-effective_term')
+    links = officer.officer_relationship_successor.exclude(id__in=officer_set).exclude(effective_term__gt=term).order_by('-effective_term')
     if links.exists():
         active_links = links.filter(effective_term=links[0].effective_term)
     else:
