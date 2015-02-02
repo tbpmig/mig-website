@@ -359,7 +359,7 @@ def member_profiles(request):
     active_html = cache.get('active_list_html',None)
     if not active_html:
         active_html=loader.render_to_string('member_resources/member_list.html',{'members':MemberProfile.get_actives(),'member_type':'Actives'})
-        cache.set('active_list_html',active_html)
+        cache.set('active_list_html',active_html,60*60*5)
     context_dict = {
         'active_html':active_html,
         'electees':MemberProfile.get_electees(),
@@ -872,34 +872,35 @@ def download_ugrad_el_progress(request):
         writer.writerow(row_to_write)
 
     return response
-def view_progress_table(request):
-    can_manage_actives = Permissions.can_manage_active_progress(request.user)
-    can_manage_electees= Permissions.can_manage_electee_progress(request.user)
-    if not (can_manage_actives or can_manage_electees):
-        request.session['error_message']='You are not authorized to view members\' progress.'
-        return redirect('member_resources:index')
-    if can_manage_actives:
-        distinctions_actives = DistinctionType.objects.filter(status_type__name="Active").distinct().order_by('name')
+    
+def assemble_table(user,keys,status_name,standing_names):
+    distinctions = cache.get(keys[0],None)
+    reqs = cache.get(keys[1],None)
+    progress_rows = cache.get(keys[2],None)
+    if not distinctions:
+        distinctions = DistinctionType.objects.filter(status_type__name=status_name).filter(standing_type__name__in=standing_names).distinct().order_by('name')
+        cache.set(keys[0],distinctions,60*60*5) # 5 hours time-out\
+    if not reqs or not progress_rows:
         query = Q()
-        for distinction in distinctions_actives:
+        for distinction in distinctions:
             query = query | Q(distinction_type=distinction)
         query = query & Q(term=AcademicTerm.get_current_term().semester_type)
         requirements = Requirement.objects.filter(query)
         unflattened_reqs = package_requirements(requirements)
-        active_reqs = flatten_reqs(unflattened_reqs)
+        reqs = flatten_reqs(unflattened_reqs)
         progress_rows = []
-        active_profiles = Permissions.profiles_you_can_view(request.user).filter(status__name="Active")
-        for profile in active_profiles:
+        profiles = Permissions.profiles_you_can_view(user).filter(status__name=status_name).filter(standing__name__in=standing_names)
+        for profile in profiles:
             packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
             category_hours = get_events_signed_up_hours(profile.uniqname)
             packaged_future_progress=package_future_progress(packaged_progress,category_hours)
-            row ={'member':profile,'progress':flatten_progress(packaged_progress,active_reqs),'future_progress':flatten_progress(packaged_future_progress,active_reqs)}
+            row ={'member':profile,'progress':flatten_progress(packaged_progress,reqs),'future_progress':flatten_progress(packaged_future_progress,reqs)}
             merged_progress = []
             for count in range(len(row['progress'])):
                 merged_progress.append({'has':row['progress'][count],'will_have':row['future_progress'][count]})
             row['merged']=merged_progress
             dist_progress = []
-            for distinction in distinctions_actives:
+            for distinction in distinctions.order_by('name'):
                 amount_req = 0;
                 amount_has = 0;
                 for event_category,data in unflattened_reqs.items():
@@ -909,7 +910,8 @@ def view_progress_table(request):
                     else:
                         amount_req_temp = 0
                     if event_category in packaged_progress:
-                        amount_has_temp = packaged_progress[event_category]['sat']
+                        dict_key='sat' if status_name=='Active' else 'full'  
+                        amount_has_temp = packaged_progress[event_category][dict_key]
                     else:
                         amount_has_temp = 0
                     if amount_has_temp >amount_req_temp:
@@ -921,106 +923,27 @@ def view_progress_table(request):
                 close_dist = (Decimal(1.0)*amount_has)/amount_req>.75
                 dist_progress.append(has_dist)
                 dist_progress.append(close_dist)
-
             row["distinctions"]=dist_progress
-            progress_rows.append(row)
+            progress_rows.append(row)     
+        cache.set(keys[1],reqs,60*60*5) # 5 hours time-out
+        cache.set(keys[2],progress_rows,60*60*5) 
+    return distinctions,reqs,progress_rows
+
+def view_progress_table(request):
+    can_manage_actives = Permissions.can_manage_active_progress(request.user)
+    can_manage_electees= Permissions.can_manage_electee_progress(request.user)
+    if not (can_manage_actives or can_manage_electees):
+        request.session['error_message']='You are not authorized to view members\' progress.'
+        return redirect('member_resources:index')
+    if can_manage_actives:
+        distinctions_actives,active_reqs,progress_rows=assemble_table(request.user,('PROGRESS_TABLE_ACTIVE_DIST','PROGRESS_TABLE_ACTIVE_REQS','PROGRESS_TABLE_ACTIVE_ROWS'),'Active',['Undergraduate','Graduate','Alumni'])
     else:
         active_reqs=None
         progress_rows=None
         distinctions_actives = None
     if can_manage_electees:
-        #ugrad
-        distinctions_ugrad_el = DistinctionType.objects.filter(status_type__name="Electee").filter(standing_type__name="Undergraduate").distinct().order_by('name')
-        query = Q()
-        for distinction in distinctions_ugrad_el:
-            query = query | Q(distinction_type=distinction)
-        query = query & Q(term=AcademicTerm.get_current_term().semester_type)
-        requirements = Requirement.objects.filter(query)
-        unflattened_reqs = package_requirements(requirements)
-        ugrad_electees_reqs = flatten_reqs(unflattened_reqs)
-        progress_rows_ugrad_el = []
-        ugrad_el_profiles = Permissions.profiles_you_can_view(request.user).filter(status__name="Electee").filter(standing__name="Undergraduate")
-        for profile in ugrad_el_profiles:
-            packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
-            category_hours = get_events_signed_up_hours(profile.uniqname)
-            packaged_future_progress=package_future_progress(packaged_progress,category_hours)
-            row ={'member':profile,'progress':flatten_progress(packaged_progress,ugrad_electees_reqs),'future_progress':flatten_progress(packaged_future_progress,ugrad_electees_reqs)}
-            merged_progress = []
-            for count in range(len(row['progress'])):
-                merged_progress.append({'has':row['progress'][count],'will_have':row['future_progress'][count]})
-            row['merged']=merged_progress
-            dist_progress = []
-            for distinction in distinctions_ugrad_el.order_by('name'):
-                amount_req = 0;
-                amount_has = 0;
-                for event_category,data in unflattened_reqs.items():
-                    req = data["requirements"].filter(distinction_type=distinction)
-                    if req:
-                        amount_req_temp=req[0].amount_required
-                    else:
-                        amount_req_temp = 0
-                    if event_category in packaged_progress:
-                        amount_has_temp = packaged_progress[event_category]['full']
-                    else:
-                        amount_has_temp = 0
-                    if amount_has_temp >amount_req_temp:
-                        amount_has = amount_has + amount_req_temp
-                    else:
-                        amount_has = amount_has + amount_has_temp
-                    amount_req=amount_req+amount_req_temp
-                has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
-                close_dist = (Decimal(1.0)*amount_has/amount_req)>.75
-                dist_progress.append(has_dist)
-                dist_progress.append(close_dist)
-
-            row["distinctions"]=dist_progress
-            progress_rows_ugrad_el.append(row)
-        #grad
-        distinctions_grad_el = DistinctionType.objects.filter(status_type__name="Electee").filter(standing_type__name="Graduate").distinct().order_by('name')
-        query = Q()
-        for distinction in distinctions_grad_el:
-            query = query | Q(distinction_type=distinction)
-        query = query & Q(term=AcademicTerm.get_current_term().semester_type)
-        requirements = Requirement.objects.filter(query)
-        unflattened_reqs = package_requirements(requirements)
-        grad_electees_reqs = flatten_reqs(unflattened_reqs)
-        progress_rows_grad_el = []
-        grad_el_profiles = Permissions.profiles_you_can_view(request.user).filter(status__name="Electee").filter(standing__name="Graduate")
-        for profile in grad_el_profiles:
-            packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
-            category_hours = get_events_signed_up_hours(profile.uniqname)
-            packaged_future_progress=package_future_progress(packaged_progress,category_hours)
-            row ={'member':profile,'progress':flatten_progress(packaged_progress,grad_electees_reqs),'future_progress':flatten_progress(packaged_future_progress,grad_electees_reqs)}
-            merged_progress = []
-            for count in range(len(row['progress'])):
-                merged_progress.append({'has':row['progress'][count],'will_have':row['future_progress'][count]})
-            row['merged']=merged_progress
-            dist_progress = []
-            for distinction in distinctions_grad_el.order_by('name'):
-                amount_req = 0;
-                amount_has = 0;
-                for event_category,data in unflattened_reqs.items():
-                    req = data["requirements"].filter(distinction_type=distinction)
-                    if req:
-                        amount_req_temp=req[0].amount_required
-                    else:
-                        amount_req_temp = 0
-                    if event_category in packaged_progress:
-                        amount_has_temp = packaged_progress[event_category]['full']
-                    else:
-                        amount_has_temp = 0
-                    if amount_has_temp >amount_req_temp:
-                        amount_has = amount_has + amount_req_temp
-                    else:
-                        amount_has = amount_has + amount_has_temp
-                    amount_req=amount_req+amount_req_temp
-                has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
-                close_dist = (Decimal(1.0)*amount_has)>(Decimal('0.75')*amount_req)
-                dist_progress.append(has_dist)
-                dist_progress.append(close_dist)
-
-            row["distinctions"]=dist_progress
-            progress_rows_grad_el.append(row)
+        distinctions_ugrad_el,ugrad_electees_reqs,progress_rows_ugrad_el=assemble_table(request.user,('PROGRESS_TABLE_UGRADEL_DIST','PROGRESS_TABLE_UGRADEL_REQS','PROGRESS_TABLE_UGRADEL_ROWS'),'Electee',['Undergraduate'])
+        distinctions_grad_el,grad_electees_reqs,progress_rows_grad_el=assemble_table(request.user,('PROGRESS_TABLE_GRADEL_DIST','PROGRESS_TABLE_GRADEL_REQS','PROGRESS_TABLE_GRADEL_ROWS'),'Electee',['Graduate'])
     else:
         ugrad_electees_reqs=None
         progress_rows_ugrad_el =None

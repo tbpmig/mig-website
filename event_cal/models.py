@@ -113,6 +113,12 @@ class CalendarEvent(models.Model):
         upcoming_events = cls.objects.filter((non_meeting_query|meeting_query)&not_officer_meeting).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
         cache.set('upcoming_events',upcoming_events)
         return upcoming_events
+    def save(self, *args, **kwargs):     
+        super(CalendarEvent, self).save(*args, **kwargs) # Call the "real" save() method.
+        cache.delete('EVENT_AJAX'+unicode(self.id))
+    def delete(self, *args, **kwargs):     
+        cache.delete('EVENT_AJAX'+unicode(self.id))
+        super(CalendarEvent, self).delete(*args, **kwargs) # Call the "real" delete() method.
     def __unicode__(self):
         """
         For use in the admin or in times the event is interpreted as a string.
@@ -457,7 +463,12 @@ class EventShift(models.Model):
 
     def __unicode__(self):
         return self.event.name +' shift from '+str(self.start_time)+'--'+str(self.end_time)
-
+    def save(self, *args, **kwargs):     
+        super(EventShift, self).save(*args, **kwargs) # Call the "real" save() method.
+        cache.delete('EVENT_AJAX'+unicode(self.event.id))
+    def delete(self, *args, **kwargs):     
+        cache.delete('EVENT_AJAX'+unicode(self.event.id))
+        super(EventShift, self).delete(*args, **kwargs) # Call the "real" delete() method.
     def is_full(self):
         if self.max_attendance is None:
             return False

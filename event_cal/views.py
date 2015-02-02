@@ -676,7 +676,7 @@ def list(request):
         if form.is_valid():
             after_date = form.cleaned_data['after_date']
             if after_date:
-                after_datetime = datetime.combine(after_date,datetime.min.time())
+                after_datetime = timezone.make_aware(datetime.combine(after_date,datetime.min.time()),timezone.get_default_timezone())
                 query_date=query_date & Q(eventshift__end_time__gte=after_datetime)
             before_date = form.cleaned_data['before_date']
             if before_date:
@@ -725,21 +725,29 @@ def list(request):
     return HttpResponse(template.render(context))
 @ajax
 def get_event_ajax(request,event_id):
-    event = get_object_or_404(CalendarEvent,id=event_id)
-    can_edit = Permissions.can_edit_event(event,request.user)
-    has_profile=False
-    if hasattr(request.user,'userprofile'):  
-        has_profile = True
-    context_dict = {
-        'event':event,
-        'can_edit_event':can_edit,
-        'has_profile':has_profile,
-        'user':request.user,
-        'show_shifts': not (event.event_type.name=='Attended Interviews' or event.event_type.name=='Conducted Interviews'), 
-        }
-    context_dict.update(get_permissions(request.user))
-    context_dict.update(get_common_context(request))
-    event_html = loader.render_to_string('event_cal/event.html',context_dict)
+    event_html = cache.get('EVENT_AJAX'+event_id,None)
+    if not event_html:
+        event = get_object_or_404(CalendarEvent,id=event_id)
+        can_edit = Permissions.can_edit_event(event,request.user)
+        has_profile=False
+        if hasattr(request.user,'userprofile'):  
+            has_profile = True
+        context_dict = {
+            'event':event,
+            'can_edit_event':can_edit,
+            'has_profile':has_profile,
+            'user':request.user,
+            'show_shifts': not (event.event_type.name=='Attended Interviews' or event.event_type.name=='Conducted Interviews'), 
+            }
+        context_dict.update(get_permissions(request.user))
+        context_dict.update(get_common_context(request))
+        event_html = loader.render_to_string('event_cal/event.html',context_dict)
+        if event.eventshift_set.exclude(max_attendance=None).exists():
+            cache.set('EVENT_AJAX'+event_id,event_html,60*10)
+        else:
+            cache.set('EVENT_AJAX'+event_id,event_html,60*60*2)
+
+                
     return {'fragments':{'#event'+event_id:event_html}}
 def my_events(request):
     request.session['current_page']=request.path

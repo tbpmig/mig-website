@@ -3,6 +3,7 @@ import os
 DEBUG = False
 DEBUG_user = ''
 TEMPLATE_DEBUG = False
+OTHER_APPS=()
 try:
     from local_settings import *
 except ImportError:
@@ -135,7 +136,7 @@ INSTALLED_APPS = (
 	'member_resources',
 	'corporate',
     'fora',
-)
+)+OTHER_APPS
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 
 TEMPLATE_CONTEXT_PROCESSORS = ("django.contrib.auth.context_processors.auth",

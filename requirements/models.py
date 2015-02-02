@@ -1,6 +1,7 @@
+from django.core.cache import cache
+from django.core.validators import  RegexValidator,MinValueValidator
 from django.db import models
 from django.db.models import Q
-from django.core.validators import  RegexValidator,MinValueValidator
 
 # Create your models here.
 
@@ -13,6 +14,13 @@ class DistinctionType(models.Model):
     display_order = models.PositiveSmallIntegerField(default=0)
     def __unicode__(self):
         return self.name
+    def save(self, *args, **kwargs): 
+        super(DistinctionType, self).save(*args, **kwargs) # Call the "real" save() method.
+        cache.delete_many(['PROGRESS_TABLE_ACTIVE_DIST','PROGRESS_TABLE_UGRADEL_DIST','PROGRESS_TABLE_GRADEL_DIST'])
+    def delete(self, *args, **kwargs): 
+        super(DistinctionType, self).delete(*args, **kwargs) # Call the "real" delete() method.
+        cache.delete_many(['PROGRESS_TABLE_ACTIVE_DIST','PROGRESS_TABLE_UGRADEL_DIST','PROGRESS_TABLE_GRADEL_DIST'])
+    
 class SemesterType(models.Model):
     #Summer, Fall, Winter
     name = models.CharField(max_length = 30)
@@ -93,7 +101,13 @@ class Requirement(models.Model):
     def __unicode__(self):
         terms = ', '.join([unicode(term) for term in self.term.all()])
         return  self.name +' for '+self.distinction_type.name+': '+terms
-
+    def save(self, *args, **kwargs):     
+        super(Requirement, self).save(*args, **kwargs) # Call the "real" save() method.
+        cache.delete_many(['PROGRESS_TABLE_ACTIVE_REQS','PROGRESS_TABLE_UGRADEL_REQS','PROGRESS_TABLE_GRADEL_REQS'])
+    def delete(self, *args, **kwargs):     
+        super(Requirement, self).delete(*args, **kwargs) # Call the "real" delete() method.
+        cache.delete_many(['PROGRESS_TABLE_ACTIVE_REQS','PROGRESS_TABLE_UGRADEL_REQS','PROGRESS_TABLE_GRADEL_REQS'])
+    
 
 class ProgressItem(models.Model):
     member              = models.ForeignKey('mig_main.MemberProfile')
@@ -105,3 +119,19 @@ class ProgressItem(models.Model):
     name                = models.CharField('Name/Desciption',max_length = 100) 
     def __unicode__(self):
         return self.member.get_full_name()+': '+unicode(self.amount_completed) +' credit(s) toward '+unicode(self.event_type)+' on '+unicode(self.date_completed) + ' for '+unicode(self.term)
+    def save(self, *args, **kwargs):
+        super(ProgressItem, self).save(*args, **kwargs) # Call the "real" save() method.
+        if self.member.status.name=='Active':
+            cache.delete('PROGRESS_TABLE_ACTIVE_ROWS')
+        elif self.member.standing.name=='Undergraduate':
+            cache.delete('PROGRESS_TABLE_UGRADEL_ROWS')
+        else:
+            cache.delete('PROGRESS_TABLE_GRADEL_ROWS')
+    def delete(self, *args, **kwargs):
+        if self.member.status.name=='Active':
+            cache.delete('PROGRESS_TABLE_ACTIVE_ROWS')
+        elif self.member.standing.name=='Undergraduate':
+            cache.delete('PROGRESS_TABLE_UGRADEL_ROWS')
+        else:
+            cache.delete('PROGRESS_TABLE_GRADEL_ROWS')
+        super(ProgressItem, self).delete(*args, **kwargs) # Call the "real" delete() method.
