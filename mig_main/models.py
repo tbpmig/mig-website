@@ -72,9 +72,9 @@ class AcademicTerm(models.Model):
     @classmethod
     def get_current_term(cls):
         current_terms = CurrentTerm.objects.all()
-        if current_terms.count()!=1:
-            raise IntegrityError('There must be exactly 1 current term object')
-        return current_terms[0].current_term
+        if current_terms.exists():
+            return current_terms[0].current_term
+        return None
     def get_abbreviation(self):
         return self.semester_type.name[0]+str(self.year)
     def __unicode__(self):
@@ -118,7 +118,16 @@ class CurrentTerm(models.Model):
     current_term = models.ForeignKey(AcademicTerm)
     def __unicode__(self):
         return unicode(self.current_term)
-
+    def save(self,*args, **kwargs):
+        if CurrentTerm.objects.count()>1:
+            return
+        if CurrentTerm.objects.count()==1 and not (CurrentTerm.objects.get().id==self.id):
+            return
+        super(CurrentTerm, self).save(*args, **kwargs) # Call the "real" save() method.
+    def delete(self, *args, **kwargs):     
+        if CurrentTerm.objects.count()<=1:
+            return
+        super(CurrentTerm, self).delete(*args, **kwargs) # Call the "real" delete() method.
 class TBPChapter(models.Model):
     class Meta:
         verbose_name = 'TBP Chapter'

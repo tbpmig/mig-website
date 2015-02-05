@@ -1012,6 +1012,7 @@ def upload_minutes(request):
     if not Permissions.can_upload_minutes(request.user):
         request.session['error_message']='You are not authorized to upload minutes.'
         return redirect('member_resources:index')
+    MeetingMinutesForm.base_fields['display_order'].initial=MeetingMinutes.get_next_meeting_minutes_display_order()
     if request.method == 'POST':
         form = MeetingMinutesForm(request.POST,request.FILES)
         if form.is_valid():
@@ -1060,7 +1061,7 @@ def project_reports_list(request):
         old_reports = CompiledProjectReport.objects.none()
         for officer in current_positions:
             limit_term = current_positions[officer]
-            if limit_term < AcademicTerm.objects.get(semester_type__name='Winter',year=2013):                      
+            if limit_term < AcademicTerm.objects.get(semester_type__name='Winter',year=2013):    #I think this is since they were only compiled yearly prior to that?                   
                 limit_term=get_next_full_term(limit_term)
             old_reports|=CompiledProjectReport.objects.filter(is_full=False,associated_officer=officer,term__lte=limit_term)
 

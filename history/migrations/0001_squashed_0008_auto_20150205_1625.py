@@ -5,16 +5,19 @@ from django.db import models, migrations
 import localflavor.us.models
 import stdimage.models
 import django.db.models.deletion
+import history.models
 import mig_main.pdf_field
 import django.core.validators
-import history.models
 
 
 class Migration(migrations.Migration):
 
+    replaces = [(b'history', '0001_initial'), (b'history', '0002_auto_20140918_0318'), (b'history', '0003_backgroundcheck'), (b'history', '0004_auto_20140920_0141'), (b'history', '0005_committeemember'), (b'history', '0006_committeemember_member'), (b'history', '0007_auto_20141026_2348'), (b'history', '0008_auto_20150205_1625')]
+
     dependencies = [
         ('mig_main', '0002_initial_split'),
         ('requirements', '0001_initial'),
+        ('mig_main', '0004_committee'),
     ]
 
     operations = [
@@ -90,7 +93,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('pdf_file', mig_main.pdf_field.ContentTypeRestrictedFileField(upload_to=b'minutes')),
-                ('meeting_type', models.CharField(default=b'MM', max_length=2, choices=[(b'NI', b'New Initiatives'), (b'MM', b'Main Meetings'), (b'OF', b'Officer Meetings'), (b'AD', b'Advisory Board Meetings')])),
+                ('meeting_type', models.CharField(default=b'MM', max_length=2, choices=[(b'NI', b'New Initiatives'), (b'MM', b'Main Meetings'), (b'OF', b'Officer Meetings'), (b'AD', b'Advisory Board Meetings'), (b'CM', b'Committee Meeting Minutes')])),
                 ('meeting_name', models.CharField(max_length=80)),
                 ('display_order', models.PositiveIntegerField()),
                 ('semester', models.ForeignKey(to='mig_main.AcademicTerm')),
@@ -121,7 +124,7 @@ class Migration(migrations.Migration):
                 ('end_date', models.DateField()),
                 ('location', models.CharField(max_length=100, null=True, blank=True)),
                 ('assoc_officer', models.ForeignKey(to='mig_main.OfficerPosition')),
-                ('leaders', models.ManyToManyField(related_name=b'non_event_project_leader', to='mig_main.MemberProfile')),
+                ('leaders', models.ManyToManyField(related_name=b'non_event_project_leader', to=b'mig_main.MemberProfile')),
             ],
             options={
             },
@@ -146,7 +149,7 @@ class Migration(migrations.Migration):
                 ('website_bio', models.TextField()),
                 ('website_photo', stdimage.models.StdImageField(upload_to=b'officer_photos')),
                 ('position', models.ForeignKey(to='mig_main.OfficerPosition', on_delete=django.db.models.deletion.PROTECT)),
-                ('term', models.ManyToManyField(to='mig_main.AcademicTerm')),
+                ('term', models.ManyToManyField(to=b'mig_main.AcademicTerm')),
                 ('user', models.ForeignKey(to='mig_main.MemberProfile', on_delete=django.db.models.deletion.PROTECT)),
             ],
             options={
@@ -209,7 +212,7 @@ class Migration(migrations.Migration):
                 ('last_processed', models.PositiveIntegerField(default=0)),
                 ('last_photo', models.PositiveIntegerField(default=0)),
                 ('preparer', models.ForeignKey(to='mig_main.MemberProfile')),
-                ('terms', models.ManyToManyField(to='mig_main.AcademicTerm')),
+                ('terms', models.ManyToManyField(to=b'mig_main.AcademicTerm')),
             ],
             options={
             },
@@ -239,7 +242,7 @@ class Migration(migrations.Migration):
                 ('date_posted', models.DateField()),
                 ('approved', models.BooleanField(default=False)),
                 ('created_by', models.ForeignKey(related_name=b'article_created_by', on_delete=django.db.models.deletion.SET_NULL, to='mig_main.MemberProfile', null=True)),
-                ('tagged_members', models.ManyToManyField(related_name=b'article_tagged_members', null=True, to='mig_main.MemberProfile', blank=True)),
+                ('tagged_members', models.ManyToManyField(related_name=b'article_tagged_members', null=True, to=b'mig_main.MemberProfile', blank=True)),
             ],
             options={
             },
@@ -254,7 +257,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='noneventproject',
             name='term',
-            field=models.ForeignKey(to='mig_main.AcademicTerm'),
+            field=models.ForeignKey(default=history.models.default_term, to='mig_main.AcademicTerm'),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -286,5 +289,30 @@ class Migration(migrations.Migration):
             name='term',
             field=models.ForeignKey(to='mig_main.AcademicTerm'),
             preserve_default=True,
+        ),
+        migrations.CreateModel(
+            name='BackgroundCheck',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('date_added', models.DateField(auto_now_add=True)),
+                ('check_type', models.CharField(max_length=1, choices=[(b'U', b'UofM Background Check'), (b'B', b'BSA Training'), (b'A', b'AAPS Background Check')])),
+                ('member', models.ForeignKey(to='mig_main.UserProfile')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='CommitteeMember',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('is_chair', models.BooleanField(default=False)),
+                ('committee', models.ForeignKey(to='mig_main.Committee')),
+                ('term', models.ForeignKey(to='mig_main.AcademicTerm')),
+                ('member', models.ForeignKey(default=None, to='mig_main.MemberProfile')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
         ),
     ]
