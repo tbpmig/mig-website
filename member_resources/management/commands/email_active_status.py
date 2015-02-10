@@ -1,3 +1,4 @@
+from time import sleep
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
 from member_resources.quorum import get_active_members,get_members_who_graduated,get_active_members_who_came_to_something,get_active_members_only_if_they_come
@@ -24,6 +25,8 @@ If you believe this to be in error, or especially if you are no longer on campus
 Thanks,
 The TBP Website'''
         for m in all_actives:
+            print 'emailing '+m.uniqname+'...'
+            sleep(1)
             if m in potential_actives:
                 status_text=' you will be considered active and eligible to vote upon attending the meeting tonight. While your absence will not count against quorum, please be advised that voting meetings are required to achieve DA/PA status.'
             elif m in actual_actives:
