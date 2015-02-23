@@ -15,6 +15,10 @@ class AboutSlideShowPhoto(models.Model):
     title   = models.TextField()
     text    = models.TextField()
     link    = models.CharField(max_length=256,blank=True)
+    
+    def __unicode__(self):
+        return 'Photo: \"'+self.title+'\"'+ (' (inactive)' if not self.active else '')
+        
 
 class JoiningTextField(models.Model):
     """
@@ -28,4 +32,7 @@ class JoiningTextField(models.Model):
     )
     section = models.CharField(max_length=2,choices=CHOICES,default='EL')
     text = models.TextField()
+    
+    def __unicode__(self):
+        return 'Joining Text for: '+self.get_section_display()
 

@@ -15,10 +15,9 @@ from django.db.models import Q,Count
 from django_ajax.decorators import ajax
 
 from about.models import AboutSlideShowPhoto,JoiningTextField
-from history.models import Officer,CommitteeMember
+from history.models import Officer,CommitteeMember,GoverningDocument, GoverningDocumentType,pack_officers_for_term
 from mig_main.models import OfficerPosition, OfficerTeam, AcademicTerm
 from mig_main.utility import get_message_dict,Permissions
-from history.models import GoverningDocument, GoverningDocumentType,pack_officers_for_term
 #from requirements.models import SemesterType
 
 
@@ -87,9 +86,10 @@ def update_about_photos(request):
     if not Permissions.can_manage_website(request.user):
         request.session['error_message']='You are not authorized to update about page photos'
         return redirect('about:index')
-    AboutPhotoForm = modelformset_factory(AboutSlideShowPhoto, can_delete=True)
+    prefix='about_photo'
+    AboutPhotoForm = modelformset_factory(AboutSlideShowPhoto, can_delete=True,exclude=[])
     if request.method=='POST':
-        formset = AboutPhotoForm(request.POST,request.FILES,prefix='about_photo')
+        formset = AboutPhotoForm(request.POST,request.FILES,prefix=prefix)
         if formset.is_valid():
             instances = formset.save()
             request.session['success_message']='About page photos successfully updated.'
@@ -97,10 +97,10 @@ def update_about_photos(request):
         else:
             request.session['error_message']='Your submision contained errors, please correct and resubmit.'
     else:
-       formset=AboutPhotoForm(prefix='about_photo')
+       formset=AboutPhotoForm(prefix=prefix)
     context_dict = {
         'formset':formset,
-        'prefix':'about_photo',
+        'prefix':prefix,
         'subnav':'about',
         'has_files':True,
         'submit_name':'Update About Page Photos',

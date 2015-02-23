@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.core.validators import validate_email, RegexValidator,MinValueValidator
 from django.core.exceptions import ObjectDoesNotExist
@@ -325,57 +326,36 @@ class UserProfile(models.Model):
             return False
         return self.memberprofile.standing.name=='Graduate'
 class MemberProfile(UserProfile):
-    
-    
-    #Alumni Mail Frequency Options
-    
+
     #Preferred Email address
     MAIL_PREF_CHOICES = (
         ("UM", "Umich email"),
         ("ALT", "Alternate email"),
     )
-    
-    
-    #Gender Choices
-    
-    #Actual Fields
-    #Name Stuff
-    
-    
+
     #Classifications
     major           = models.ManyToManyField(Major)
-                                        
     status          = models.ForeignKey(Status,on_delete=models.PROTECT)
-                                    
     UMID            = models.CharField(max_length=8,
                                        validators=[RegexValidator(regex=r'^[0-9]{8}$',
                                                                 message="Your UMID must be 8 numbers.")
                                         ])
     init_chapter    = models.ForeignKey(TBPChapter,on_delete=models.PROTECT,verbose_name="Initiating Chapter")
-    
-    
-    
     standing        = models.ForeignKey(Standing,on_delete=models.PROTECT)
-                                        
     alt_email       = models.EmailField("Alternate email",max_length=254,blank=True)
-
     jobs_email      = models.BooleanField("Receive corporate emails?",default=True)
-    
     alum_mail_freq  = models.CharField("How frequently would you like alumni emails?", 
                                         max_length=2,
                                         choices=ALUM_MAIL_FREQ_CHOICES,
                                         default="WK")
     job_field       = models.CharField("What is your job field?",max_length=50,
                                         blank=True)#Only for alums
-                                        
     employer        = models.CharField("Your employer",max_length=60,
                                         blank=True)#Only for alums
     preferred_email = models.CharField(max_length=3,
                                         choices=MAIL_PREF_CHOICES,
                                         default="UM")
     meeting_speak   = models.BooleanField("Are you interested in speaking at a meeting?",default=False)    #Willingness to speak at a meeting/event
-
-    
     shirt_size      = models.ForeignKey(ShirtSize,on_delete=models.PROTECT)
     short_bio       = models.TextField()
     init_term       = models.ForeignKey(AcademicTerm, on_delete=models.PROTECT,verbose_name="Initiation term")
