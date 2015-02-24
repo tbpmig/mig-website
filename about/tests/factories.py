@@ -5,6 +5,7 @@ import string
 from math import ceil,pow
 from django.contrib.auth.models import User
 from django.core.files import File
+from django.utils.text import slugify
 
 from about.models import *
 from history.models import Officer,GoverningDocument,GoverningDocumentType
@@ -69,7 +70,7 @@ class OfficerPositionFactory(factory.DjangoModelFactory):
         model = OfficerPosition
     name            = factory.Iterator(OFFICER_POSITION_NAMES)
     description     = 'words'
-    email           = 'john@doe.com'
+    email           = factory.LazyAttribute(lambda o: slugify(unicode(o.name.lower()))+u'@umich.edu')
     enabled         = True
     display_order   = factory.Sequence(lambda n:n)
     position_type   = factory.Iterator(OFFICER_POSITION_TYPES)

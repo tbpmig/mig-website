@@ -123,19 +123,19 @@ def update_joining_page(request):
     if not Permissions.can_manage_electee_progress(request.user):
         request.session['error_message']='You are not authorized to update joining page text.'
         return redirect('about:eligibility')
-    JoiningTextForm = modelformset_factory(JoiningTextField,extra=0)
+    prefix='joining'
+    JoiningTextForm = modelformset_factory(JoiningTextField,extra=0,exclude=[])
+    formset = JoiningTextForm(request.POST or None,prefix=prefix)
     if request.method=='POST':
-        formset = JoiningTextForm(request.POST)
         if formset.is_valid():
             instances = formset.save()
             request.session['success_message']='Joining page successfully updated.'
             return redirect('about:eligibility')
         else:
             request.session['error_message']='Your submision contained errors, please correct and resubmit.'
-    else:
-       formset=JoiningTextForm()
     context_dict = {
         'formset':formset,
+        'prefix':prefix,
         'subnav':'joining',
         'has_files':False,
         'submit_name':'Update Joining Page',
@@ -198,7 +198,6 @@ def officer(request,officer_id):
     context_dict.update(get_common_context(request))
     officer_html = loader.render_to_string('about/officer.html',context_dict)
     output = {'fragments':{'#officer'+officer_id:officer_html}}
-    print output
     return output
 def bylaws(request):
     """
