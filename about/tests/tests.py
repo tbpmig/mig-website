@@ -370,8 +370,8 @@ class AboutViewsTestCase(TestCase):
         self.assertTrue('base' in context)
         
         #test submissions, first one that succeeds
-        marble = open('about/tests/test_photos/about_marbles.jpg','rb')
-        pdf_file = open('about/tests/test_docs/test.pdf','rb')
+        marble = open('migweb/test_photos/about_marbles.jpg','rb')
+        pdf_file = open('migweb/test_docs/test.pdf','rb')
         post_data = {
           'about_photo-TOTAL_FORMS':u'1',
           'about_photo-MAX_NUM_FORMS':u'',
@@ -546,8 +546,8 @@ class AboutViewsTestCase(TestCase):
         self.assertTrue('base' in context)
         
         #test submissions, first one that succeeds
-        marble = open('about/tests/test_photos/about_marbles.jpg','rb')
-        pdf_file = open('about/tests/test_docs/test.pdf','rb')
+        marble = open('migweb/test_photos/about_marbles.jpg','rb')
+        pdf_file = open('migweb/test_docs/test.pdf','rb')
         post_data = {
           'joining-TOTAL_FORMS':u'4',
           'joining-MAX_NUM_FORMS':u'',

@@ -63,7 +63,7 @@ class AboutPhotoFactory(factory.DjangoModelFactory):
     text = factory.Iterator(['marbles','flower'])
     link = ''
     active = factory.Iterator([True,False])
-    photo = factory.django.ImageField(from_path='about/tests/test_photos/about_marbles.jpg')
+    photo = factory.django.ImageField(from_path='migweb/test_photos/about_marbles.jpg')
     
 class OfficerPositionFactory(factory.DjangoModelFactory):
     class Meta:
@@ -151,7 +151,7 @@ class MemberProfileFactory(UserProfileFactory):
     expect_grad_date= datetime.date(year=2016,month=1,day=5)
     
     #Uncomment this on actual server with Python Image Library installed
-    photo   = factory.django.ImageField(from_path='about/tests/test_photos/about_marbles.jpg')
+    photo   = factory.django.ImageField(from_path='migweb/test_photos/about_marbles.jpg')
     phone           = '555-555-5555'
     #probably not needed
     @factory.post_generation
@@ -170,7 +170,7 @@ class OfficerFactory(factory.DjangoModelFactory):
     user            = factory.SubFactory(MemberProfileFactory)   
     position        = factory.SubFactory(OfficerPositionFactory)
     website_bio     = 'I have a bio'
-    website_photo   = factory.django.ImageField(from_path='about/tests/test_photos/about_flower.jpg')
+    website_photo   = factory.django.ImageField(from_path='migweb/test_photos/about_flower.jpg')
     
     @factory.post_generation
     def term(self, create, extracted, **kwargs):
@@ -194,14 +194,14 @@ class OldDocumentFactory(factory.DjangoModelFactory):
     id = factory.Sequence(lambda n:n)
     document_type = factory.LazyAttribute(lambda o:GoverningDocumentType.objects.get(name='Constitution') if o.id %2 else GoverningDocumentType.objects.get(name='Bylaws'))
     active = False
-    pdf_file = factory.django.FileField(from_path='about/tests/test_docs/test.pdf')
+    pdf_file = factory.django.FileField(from_path='migweb/test_docs/test.pdf')
 class CurrentDocumentFactory(factory.DjangoModelFactory):
     class Meta:
         model = GoverningDocument
     id = factory.Sequence(lambda n:n)
     document_type = factory.LazyAttribute(lambda o:GoverningDocumentType.objects.get(name='Constitution') if o.id %2 else GoverningDocumentType.objects.get(name='Bylaws'))
     active = True
-    pdf_file = factory.django.FileField(from_path='about/tests/test_docs/test.pdf')
+    pdf_file = factory.django.FileField(from_path='migweb/test_docs/test.pdf')
 
 class JoiningTextFactory(factory.DjangoModelFactory):
     class Meta:
