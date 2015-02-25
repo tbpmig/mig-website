@@ -59,7 +59,7 @@ def tearDownModule():
     only those objects created in the setup method need to be deleted.
     I think
     """
-    print 'tearing down about module...'
+    print '\ntearing down about module...'
     OfficerTeam.objects.all().delete()
     JoiningTextField.objects.all().delete()
     Officer.objects.all().delete()
