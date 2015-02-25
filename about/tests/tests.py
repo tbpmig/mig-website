@@ -9,9 +9,18 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from about.models import AboutSlideShowPhoto, JoiningTextField
-from about.tests.factories import *
-from mig_main.models import AcademicTerm, OfficerPosition, UserProfile, Major
-from mig_main.models import ShirtSize, TBPChapter, Standing, Status
+from about.tests.factories import JOINING_TEXT, AboutPhotoFactory,\
+                                  JoiningTextFactory
+from history.tests.factories import OfficerFactory, DocumentTypeFactory,\
+                                  OldDocumentFactory, CurrentDocumentFactory
+from mig_main.tests.factories import AcademicTermFactory, TBPChapterFactory,\
+                            StandingFactory, StatusFactory, MajorFactory,\
+                            OfficerTeamFactory, CurrentTermFactory,\
+                            ShirtSizeFactory, UserProfileFactory,\
+                            MemberProfileFactory, NUM_OFFICERS
+from history.models import Officer
+from mig_main.models import AcademicTerm, OfficerPosition, MemberProfile,\
+                    Major, ShirtSize, TBPChapter, Status, Standing, OfficerTeam
 from migweb.test_tools import MyClient
 
 JOINING_HTML = r'''<h1>A First Level Header</h1>

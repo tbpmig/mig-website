@@ -1,6 +1,6 @@
 from django.core.urlresolvers import reverse
 from django.forms.models import modelformset_factory,modelform_factory
-from django.http import HttpResponse#, Http404, HttpResponseRedirect
+from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.template import RequestContext, loader
 
