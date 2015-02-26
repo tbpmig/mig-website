@@ -598,8 +598,6 @@ class AboutViewsTestCase(TestCase):
         self.assertTrue('base' in context)
 
         # test submissions, first one that succeeds
-        marble = open('migweb/test_photos/about_marbles.jpg', 'rb')
-        pdf_file = open('migweb/test_docs/test.pdf', 'rb')
         post_data = {
           'joining-TOTAL_FORMS': u'4',
           'joining-MAX_NUM_FORMS': u'',

@@ -8,6 +8,7 @@ from corporate.auxiliary_scripts import update_resume_zips
 from corporate.models import CorporateTextField, CorporateResourceGuide
 from mig_main.utility import get_message_dict, Permissions
 
+
 FORM_ERROR = 'Your submision contained errors, please correct and resubmit.'
 
 
@@ -59,8 +60,10 @@ def update_corporate_page(request):
     if not Permissions.can_edit_corporate_page(request.user):
         request.session['error_message'] = 'You are not authorized to edit the corporate page'
         return redirect('corporate:index')
-    CorporateTextForm = modelformset_factory(CorporateTextField, extra=1)
-    formset = CorporateTextForm(request.POST or None)
+    prefix = 'corporate_page'
+    CorporateTextForm = modelformset_factory(CorporateTextField,
+                                             extra=1, exclude=[])
+    formset = CorporateTextForm(request.POST or None,prefix=prefix)
     if request.method == 'POST':
         if formset.is_valid():
             instances = formset.save()
@@ -71,6 +74,7 @@ def update_corporate_page(request):
     context_dict = {
         'formset': formset,
         'subnav': 'index',
+        'prefix': prefix,
         'has_files': False,
         'submit_name': 'Update Corporate Page',
         'back_button': {'link': reverse('corporate:index'),

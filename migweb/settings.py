@@ -179,7 +179,7 @@ LOGGING = {
         },
     }
 }
-TEST_RUNNER='django.test.runner.DiscoverRunner'
+TEST_RUNNER='migweb.test_runner.MigTestRunner'
 ### email settings in local_settings ###
 
 

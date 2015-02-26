@@ -24,35 +24,36 @@ from member_resources.views import get_permissions as get_member_permissions
 from history.models import Officer
 from electees.forms import get_unassigned_electees,InstituteFormset,BaseElecteeGroupForm,AddSurveyQuestionsForm,ElecteeSurveyForm,InterviewFollowupForm,ManualElecteeGroupMembersFormSet
 from requirements.models import EventCategory,ProgressItem
-from migweb.settings import PROJECT_PATH, MEDIA_ROOT
+from django.conf import  settings
 
-ELECTEE_RESUME_LOCATION = os.path.sep.join([MEDIA_ROOT,'electee_resumes'])
+ELECTEE_RESUME_LOCATION = lambda: os.path.sep.join([settings.MEDIA_ROOT,'electee_resumes'])
 
 def compile_electee_resumes():
     try:
-        shutil.rmtree(ELECTEE_RESUME_LOCATION)
+        shutil.rmtree(ELECTEE_RESUME_LOCATION())
     except OSError:
         pass
-    os.makedirs(ELECTEE_RESUME_LOCATION)
+    media_parent = '/'.join(settings.MEDIA_ROOT.split('/')[:-2])+'/'
+    os.makedirs(ELECTEE_RESUME_LOCATION())
     electees = MemberProfile.get_electees()
     for electee in electees:
         if electee.resume:
-            standing_dir = os.path.sep.join([ELECTEE_RESUME_LOCATION,slugify(electee.standing.name)])
+            standing_dir = os.path.sep.join([ELECTEE_RESUME_LOCATION(),slugify(electee.standing.name)])
             if not os.path.exists(standing_dir):
                 os.makedirs(standing_dir)
             resume_name=slugify(electee.last_name+'_'+electee.first_name+'_'+electee.uniqname)+'.pdf'
-            shutil.copy(PROJECT_PATH+electee.resume.url,os.path.sep.join([standing_dir,resume_name]))
+            shutil.copy(media_parent+electee.resume.url,os.path.sep.join([standing_dir,resume_name]))
     
 def update_electee_resume_zips():
     compile_electee_resumes()
     current_path = os.getcwd()
-    zip_file_name = os.sep.join([MEDIA_ROOT,'TBP_electee_resumes.zip'])
+    zip_file_name = os.sep.join([settings.MEDIA_ROOT,'TBP_electee_resumes.zip'])
     try:
         os.remove(zip_file_name)
     except OSError:
         pass
     zip_f = zipfile.ZipFile(zip_file_name,'w')
-    os.chdir(ELECTEE_RESUME_LOCATION)
+    os.chdir(ELECTEE_RESUME_LOCATION())
     zipdir('.',zip_f)
     zip_f.close()
     os.chdir(current_path)   
