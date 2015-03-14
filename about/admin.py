@@ -1,5 +1,5 @@
 from django.contrib import admin
-from about.models import AboutSlideShowPhoto,JoiningTextField
+from about.models import AboutSlideShowPhoto, JoiningTextField
 
 # Register the about models
 admin.site.register(AboutSlideShowPhoto)

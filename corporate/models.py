@@ -11,6 +11,8 @@ class CorporateTextField(models.Model):
     )
     section = models.CharField(max_length=2,choices=CHOICES,default='OP')
     text = models.TextField()
+    def __unicode__(self):
+        return 'Corporate Text for '+self.get_section_display()
 
 class CorporateResourceGuide(models.Model):
     active          =models.BooleanField(default=False)
@@ -21,3 +23,5 @@ class CorporateResourceGuide(models.Model):
         max_upload_size=104857600,
         blank=False
     )
+    def __unicode__(self):
+        return self.name + ' (active)' if self.active else ''

@@ -39,12 +39,12 @@ def pack_officers_for_term(term):
         team_data={'order':disp_order,'name':team.name,'lead_name':team.lead.name,'officers':officer_set.filter(query).order_by('position__display_order','id').values('id')}
         term_officers.append(team_data)
     return {'officers':term_officers,'advisors':term_advisors}
-def get_next_meeting_minutes_display_order():
-    return MeetingMinutes.objects.filter(semester=AcademicTerm.get_current_term()).count()
+
 
 def default_term():
     #fixes the serialization issue
     return AcademicTerm.get_current_term()
+
 # Create your models here.
 class Officer(models.Model):
     user            = models.ForeignKey('mig_main.MemberProfile',
@@ -172,9 +172,12 @@ class MeetingMinutes(models.Model):
             default='MM')
     semester = models.ForeignKey('mig_main.AcademicTerm')
     meeting_name = models.CharField(max_length=80)
-    display_order = models.PositiveIntegerField(default=get_next_meeting_minutes_display_order)
+    display_order = models.PositiveIntegerField()
     def __unicode__(self):
         return self.meeting_name+' minutes'
+    @classmethod
+    def get_next_meeting_minutes_display_order(cls):
+        return cls.objects.filter(semester=AcademicTerm.get_current_term()).count()
 
     
 class GoverningDocumentType(models.Model):

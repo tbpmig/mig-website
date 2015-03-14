@@ -8,3 +8,5 @@ migweb/media/
 gcal/calendar.dat
 gcal/client_secrets.json
 deploy_update.sh
+htmlcov/
+.coverage
