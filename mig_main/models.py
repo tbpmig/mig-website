@@ -408,6 +408,12 @@ class MemberProfile(UserProfile):
             return self.uniqname+"@umich.edu"
         else:
             return self.alt_email
+    def save(self, *args, **kwargs):     
+        super(MemberProfile, self).save(*args, **kwargs) # Call the "real" save() method.
+        cache.delete('active_list_html')
+    def delete(self, *args, **kwargs):     
+        super(MemberProfile, self).delete(*args, **kwargs) # Call the "real" delete() method.
+        cache.delete('active_list_html')
 
 class TBPraise(models.Model):
     giver = models.ForeignKey(UserProfile,related_name='praise_giver')
