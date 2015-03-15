@@ -403,7 +403,10 @@ class MemberProfile(UserProfile):
     def delete(self, *args, **kwargs):     
         super(MemberProfile, self).delete(*args, **kwargs) # Call the "real" delete() method.
         cache.delete('active_list_html')
-
+    def get_resume_name(self):
+        if not self.resume:
+            return None
+        return slugify(self.last_name+'_'+self.first_name+'_'+self.uniqname)+'.pdf'
 class TBPraise(models.Model):
     giver = models.ForeignKey(UserProfile,related_name='praise_giver')
     recipient=models.ForeignKey(UserProfile,related_name='praise_recipient')

@@ -98,8 +98,9 @@ class MajorFactory(factory.DjangoModelFactory):
     class Meta:
         model = Major
     name = factory.Iterator(['Aerospace Engineering', 'Electrical Engineering',
-                             'Computer Science'])
-    acronym = factory.Iterator(['AERO', 'EE', 'CSE'])
+                             'Computer Science', 'Biomedical Engineering',
+                             'Mechanical Engineering', 'Chemical Engineering'])
+    acronym = factory.Iterator(['AERO', 'EE', 'CSE', 'BME', 'ME', 'ChE'])
 
     # probably not needed
     @factory.post_generation
@@ -117,7 +118,7 @@ class MajorFactory(factory.DjangoModelFactory):
 class StatusFactory (factory.DjangoModelFactory):
     class Meta:
         model = Status
-    name = factory.Iterator(['Active', 'Electee', 'Non-Member'])
+    name = factory.Iterator(['Active', 'Electee'])
 
 
 class StandingFactory (factory.DjangoModelFactory):

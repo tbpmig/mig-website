@@ -24,4 +24,4 @@ class CorporateResourceGuide(models.Model):
         blank=False
     )
     def __unicode__(self):
-        return self.name + ' (active)' if self.active else ''
+        return self.name + (' (active)' if self.active else '')

@@ -43,7 +43,7 @@ def setUpModule():
     AcademicTermFactory.create_batch(18)
     TBPChapterFactory.create_batch(3)
     StandingFactory.create_batch(3)
-    StatusFactory.create_batch(3)
+    StatusFactory.create_batch(2)
     MajorFactory.create_batch(3)
     ShirtSizeFactory.create_batch(3)
     CurrentTermFactory()
@@ -77,6 +77,7 @@ def tearDownModule():
 
 class AboutViewsTestCase(TestCase):
     def setUp(self):
+        super(AboutViewsTestCase,self).setUp()
         self.client = MyClient()
         self.user = User.objects.get(username='johndoe')
         self.admin = User.objects.get(username='jimharb')
@@ -86,6 +87,7 @@ class AboutViewsTestCase(TestCase):
 
     def tearDown(self):
         del(self.client)
+        super(AboutViewsTestCase,self).tearDown()
 
     def test_views_index(self):
         # base about

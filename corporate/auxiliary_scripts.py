@@ -29,14 +29,14 @@ def compile_resumes():
                 major_dir = os.path.sep.join([RESUMES_BY_MAJOR_LOCATION(),slugify(resume_major.name)])
                 if not os.path.exists(major_dir):
                     os.makedirs(major_dir)
-                resume_name=slugify(user.last_name+'_'+user.first_name+'_'+user.uniqname)+'.pdf'
+                resume_name=user.get_resume_name()
                 shutil.copy(media_parent+user.resume.url,os.path.sep.join([major_dir,resume_name]))
     if os.path.exists(RESUMES_BY_YEAR_LOCATION()):
         shutil.rmtree(RESUMES_BY_YEAR_LOCATION())
     os.makedirs(RESUMES_BY_YEAR_LOCATION())
     if resource_guides:
         shutil.copy(media_parent+resource_guides[0].resource_guide.url,os.path.sep.join([RESUMES_BY_YEAR_LOCATION(),slugify(resource_guides[0].name)+'.pdf']))
-    not_alum = ~Q(name='Alumni')
+
     for standing in Standing.objects.all():
         members = MemberProfile.get_members().filter(standing=standing)
         if standing.name == 'Alumni':

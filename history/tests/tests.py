@@ -19,11 +19,11 @@ from migweb.test_tools import MyClient
 
 
 def setUpModule():
-    print 'setting up about test data...'
+    print 'setting up history test data...'
     AcademicTermFactory.create_batch(18)
     TBPChapterFactory.create_batch(3)
     StandingFactory.create_batch(3)
-    StatusFactory.create_batch(3)
+    StatusFactory.create_batch(2)
     MajorFactory.create_batch(3)
     ShirtSizeFactory.create_batch(3)
     CurrentTermFactory()
@@ -36,7 +36,7 @@ def tearDownModule():
     """This should clear the database back to empty,
     only those objects created in the setup method need to be deleted. I think
     """
-    print 'tearing down about module...'
+    print 'tearing down history module...'
     Officer.objects.all().delete()
     OfficerPosition.objects.all().delete()
     MemberProfile.objects.all().delete()

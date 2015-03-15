@@ -4,9 +4,14 @@ This contains the tests (unit and integration) for the corporate module.
 It currently contains:
 
 """
-from os.path import isfile
+from os import listdir, remove, getcwd
+from os.path import isfile, exists, sep
+import shutil
+import zipfile
 
 from django.test import TestCase
+from django.conf import settings
+from django.core.management import call_command
 from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
@@ -52,7 +57,7 @@ def setUpModule():
     AcademicTermFactory.create_batch(18)
     TBPChapterFactory.create_batch(3)
     StandingFactory.create_batch(3)
-    StatusFactory.create_batch(3)
+    StatusFactory.create_batch(2)
     MajorFactory.create_batch(3)
     ShirtSizeFactory.create_batch(3)
     CurrentTermFactory()
@@ -84,12 +89,29 @@ def tearDownModule():
 class CorporateViewsTestCase(TestCase):
 
     def setUp(self):
+        super(CorporateViewsTestCase,self).setUp()
         self.client = MyClient()
         self.user = User.objects.get(username='johndoe')
         self.admin = User.objects.get(username='jimharb')
 
     def tearDown(self):
         del(self.client)
+        CorporateResourceGuide.objects.all().delete()
+        shutil.rmtree(RESUMES_BY_MAJOR_LOCATION(),ignore_errors=True)
+        shutil.rmtree(RESUMES_BY_YEAR_LOCATION(),ignore_errors=True)
+        try:
+            remove(sep.join([settings.MEDIA_ROOT, 'TBP_resumes_by_year.zip']))
+        except OSError:
+            pass
+        try:
+            remove(sep.join([settings.MEDIA_ROOT, 'TBP_resumes_by_major.zip']))
+        except OSError:
+            pass
+        try:
+            remove(sep.join([settings.MEDIA_ROOT, 'TBP_electee_resumes.zip']))
+        except OSError:
+            pass
+        super(CorporateViewsTestCase,self).tearDown()
 
     def test_views_index(self):
         corp_text = CorporateTextField.objects.all().order_by('-section')
@@ -466,20 +488,116 @@ class CorporateViewsTestCase(TestCase):
 
 
 class CorporateAuxiliaryTestCase(TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
+        CorporateResourceGuideFactory()
+        super(CorporateAuxiliaryTestCase,self).setUpClass()
         pdf_file = File(open('migweb/test_docs/test.pdf', 'rb'))
         profiles =MemberProfile.objects.all()
         majors = Major.objects.all().order_by('id')
+        standings = Standing.objects.all().order_by('id')
+        stati = Status.objects.all().order_by('id')
         for idx, profile in enumerate(profiles):
             resume_name=slugify(profile.last_name+'_'+profile.first_name+'_'+profile.uniqname)+'.pdf'
             profile.resume.save(resume_name, pdf_file)
             # now give them majors
             profile.major.add(majors[idx % majors.count()])
+            profile.standing = standings[idx % standings.count()]
+            profile.status = stati[idx % stati.count()]
             profile.save()
+        # make one no longer electing
+        electees = profiles.filter(status__name='Electee')
+        electee = electees[1]
+        electee.still_electing=False
+        electee.save()
+    def setUp(self):
+        super(CorporateAuxiliaryTestCase,self).setUp()
+        
+
     def tearDown(self):
-        pass
+        shutil.rmtree(RESUMES_BY_MAJOR_LOCATION(),ignore_errors=True)
+        shutil.rmtree(RESUMES_BY_YEAR_LOCATION(),ignore_errors=True)
+        try:
+            remove(sep.join([settings.MEDIA_ROOT, 'TBP_resumes_by_year.zip']))
+        except OSError:
+            pass
+        try:
+            remove(sep.join([settings.MEDIA_ROOT, 'TBP_resumes_by_major.zip']))
+        except OSError:
+            pass
+        try:
+            remove(sep.join([settings.MEDIA_ROOT, 'TBP_electee_resumes.zip']))
+        except OSError:
+            pass
+        super(CorporateAuxiliaryTestCase,self).tearDown()
+
+    @classmethod
+    def tearDownClass(self):
+        CorporateResourceGuide.objects.all().delete()
+        super(CorporateAuxiliaryTestCase,self).tearDownClass()
 
     def test_resume_compile(self):
         compile_resumes()
+        # check that the resumes are in the right place
+        self.assertTrue(exists(RESUMES_BY_MAJOR_LOCATION()))
+        self.assertTrue(exists(RESUMES_BY_YEAR_LOCATION()))
+        guide = CorporateResourceGuide.objects.get()
+        # first test the major directory
+        resource_guide_url = sep.join([RESUMES_BY_MAJOR_LOCATION(), guide.name+'.pdf'])
+        self.assertTrue(isfile(resource_guide_url))
+        major_dirs = set()
+        for major in Major.objects.all():
+            major_dir = sep.join([RESUMES_BY_MAJOR_LOCATION(), slugify(major.name)])
+            major_dirs.add(slugify(major.name))
+            self.assertTrue(exists(major_dir))
+            self.assertFalse(isfile(major_dir))
+            major_resumes = set()
+            for member in MemberProfile.get_members().filter(major=major):
+                if not member.resume:
+                    continue
+                resume_file = sep.join([major_dir, member.get_resume_name()])
+                major_resumes.add(member.get_resume_name())
+                self.assertTrue(isfile(resume_file))
+            self.assertEqual(major_resumes, set(listdir(major_dir)))
+        major_dirs.add(guide.name+'.pdf')
+        self.assertEqual(major_dirs,set(listdir(RESUMES_BY_MAJOR_LOCATION())))
+        # now check the by year, basically checking that what is there is all
+        # and only what is supposed to be
+        resource_guide_url = sep.join([RESUMES_BY_YEAR_LOCATION(), guide.name+'.pdf'])
+        self.assertTrue(isfile(resource_guide_url))
+        standing_dirs = set()
+        for standing in Standing.objects.all():
+            sub_dir = slugify(standing.name) +( '' if standing.name == 'Alumni' else '-student')
+            standing_dir = sep.join([RESUMES_BY_YEAR_LOCATION(), sub_dir])
+            standing_dirs.add(sub_dir) 
+            self.assertTrue(exists(standing_dir))
+            self.assertFalse(isfile(standing_dir))
+            year_dirs = {}
+            for member in MemberProfile.get_members().filter(standing=standing):
+                if not member.resume:
+                    continue
+                year_dir = 'Graduating'+slugify(member.expect_grad_date.year)
+                if year_dir not in year_dirs:
+                    year_dirs[year_dir]=set()
+                year_dirs[year_dir].add( member.get_resume_name())
+                resume_file = sep.join([standing_dir, year_dir, member.get_resume_name()])
+            for year_dir in year_dirs:
+                self.assertEqual(year_dirs[year_dir],set(listdir(sep.join([standing_dir, year_dir]))))
+            self.assertEqual(set(year_dirs.keys()),set(listdir(standing_dir)))
+        standing_dirs.add(guide.name+'.pdf')
+        self.assertEqual(standing_dirs,set(listdir(RESUMES_BY_YEAR_LOCATION())))
     def test_update_zips(self):
-        pass
+        current_dir =getcwd()
+        update_resume_zips()
+        self.assertEqual(getcwd(),current_dir)
+        self.assertTrue(isfile(sep.join([settings.MEDIA_ROOT, 'TBP_resumes_by_major.zip'])))
+        self.assertTrue(isfile(sep.join([settings.MEDIA_ROOT, 'TBP_resumes_by_year.zip'])))
+        self.assertTrue(zipfile.is_zipfile(sep.join([settings.MEDIA_ROOT, 'TBP_resumes_by_major.zip'])))
+        self.assertTrue(zipfile.is_zipfile(sep.join([settings.MEDIA_ROOT, 'TBP_resumes_by_year.zip'])))
+        self.assertTrue(exists(RESUMES_BY_MAJOR_LOCATION()))
+        self.assertTrue(exists(RESUMES_BY_YEAR_LOCATION()))
+    def test_commands(self):
+        call_command('run_resume_compilation')
+        self.assertTrue(isfile(sep.join([settings.MEDIA_ROOT, 'TBP_resumes_by_major.zip'])))
+        self.assertTrue(isfile(sep.join([settings.MEDIA_ROOT, 'TBP_resumes_by_year.zip'])))
+        self.assertTrue(isfile(sep.join([settings.MEDIA_ROOT, 'TBP_electee_resumes.zip'])))
