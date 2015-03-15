@@ -582,7 +582,11 @@ def edit_progress(request,uniqname):
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
-
+def track_my_progress(request):
+    if not (hasattr(request.user,'userprofile') and request.user.userprofile.is_member()):
+        request.session['error_message']='You must be logged in and a member to track your progress.'
+        return redirect('member_resources:index')
+    return redirect('member_resources:view_progress',request.user.username)
 def view_progress(request,uniqname):
     if not Permissions.can_view_others_progress(request.user,uniqname):
         request.session['error_message']='You are not authorized to view this member\'s progress.'
