@@ -15,7 +15,7 @@ class Command(BaseCommand):
         actual_actives = get_active_members_who_came_to_something(term)
         potential_actives = get_active_members_only_if_they_come(term)
         body_template = r'''Hi %(member)s,
-This is a friendly reminder that we have a critical voting meeting tonight at 6:30pm in 1013 Dow and we need to have a quorum of active members present.
+This is a friendly reminder that we have a critical voting meeting tomorrow (Tuesday) at 6:30pm in 1013 Dow and we need to have a quorum of active members present.
 Our records indicate that %(status)s
 
 %(alumni)s
@@ -28,9 +28,9 @@ The TBP Website'''
             print 'emailing '+m.uniqname+'...'
             sleep(1)
             if m in potential_actives:
-                status_text=' you will be considered active and eligible to vote upon attending the meeting tonight. While your absence will not count against quorum, please be advised that voting meetings are required to achieve DA/PA status.'
+                status_text=' you will be considered active and eligible to vote upon attending the meeting. While your absence will not count against quorum, please be advised that voting meetings are required to achieve DA/PA status.'
             elif m in actual_actives:
-                status_text=' you are an active member. You will be eligible to vote at the meeting tonight and will count against quorum if you cannot or do not attend tonight.'
+                status_text=' you are an active member. You will be eligible to vote at the meeting and will count against quorum if you cannot or do not attend tonight.'
             elif m.standing.name=='Alumni':
                 continue
             else:
