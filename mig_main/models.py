@@ -12,7 +12,7 @@ from localflavor.us.models import PhoneNumberField
 from stdimage import StdImageField
 
 from mig_main.pdf_field import ContentTypeRestrictedFileField,pdf_types
-
+from mig_main.location_field import LocationField
 def resume_file_name(instance,filename):
     return '/'.join([u"resumes",instance.uniqname+u'.pdf'])
 
@@ -375,6 +375,7 @@ class MemberProfile(UserProfile):
     )
     phone           = PhoneNumberField()
     
+    location = LocationField(blank=True)
     
     #Methods
     @classmethod

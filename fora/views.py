@@ -11,6 +11,8 @@ from django_ajax.decorators import ajax
 from fora.models import Forum,ForumThread,ForumMessage,MessagePoint,get_user_points
 from member_resources.views import get_permissions as get_member_permissions
 from mig_main.utility import get_previous_page, get_message_dict, Permissions
+from mig_main.models import MemberProfile
+from mig_main.location_field import GeoLocation
 
 # Create your views here.
 
@@ -22,14 +24,24 @@ def get_permissions(user):
         is_member=True
     permission_dict.update({'can_create_thread':Permissions.can_create_thread(user),
                             'can_create_forum':Permissions.can_create_forum(user),
-                            'can_comment':hasattr(user,'userprofile') and user.userprofile.is_member(),
+                            'can_comment':is_member,
                             'can_moderate':Permissions.can_create_forum(user),
                             'can_downvote':get_user_points(user.userprofile.memberprofile)>0 if is_member else False})
     
     return permission_dict
 def get_common_context(request):
-    links=[]
-    links.append({'name':'Submit Affirmation','link':reverse('member_resources:submit_praise')})
+    links=[
+        {
+            'name': 'Submit Affirmation',
+            'link': reverse('member_resources:submit_praise')
+        },
+    ]
+    if hasattr(request.user,'userprofile') and request.user.userprofile.is_member():
+        links.append({
+                'name': 'View Member Map',
+                'link': reverse('fora:view_map')
+            }
+        )
     context_dict=get_message_dict(request)
     context_dict.update({
         'subnav':'playground',
@@ -272,6 +284,22 @@ def add_comment(request,forum_id,reply_to_id):
         'help_text':'Post a comment to the forum.' if reply_to_id else 'Create a new thread with the original post.',
         'base':'fora/base_fora.html',
         'back_button':{'link':reverse('fora:index'),'text':'Back to fora'},
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request,context_dict )
+    return HttpResponse(template.render(context))
+    
+def view_map(request):
+    if not hasattr(request.user,'userprofile') or not request.user.userprofile.is_member():
+        request.session['error_message']='You must be logged in and a member to view this.'
+        return get_previous_page(request,alternate='member_resources:index')
+    members_with_location = MemberProfile.get_members().exclude(location='')
+    template = loader.get_template('fora/map.html')
+    member = request.user.userprofile.memberprofile
+    context_dict = {
+        'members':members_with_location,
+        'center': member.location if member.location else GeoLocation(42.26,-83.7483),
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))

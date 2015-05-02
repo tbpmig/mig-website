@@ -1,0 +1,109 @@
+{% extends "fora/base_fora.html" %}
+
+{% block js %}
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBcW7EQwfPZa3poz2Hr3MPllP4vjpilcLc"></script>
+
+
+<script>
+var map;
+var markers = [];
+{% for member in members %}
+markers.push(['{{member.get_firstlast_name}}',{lat:{{member.location.latitude}}, lng:{{member.location.longitude}}}]);
+{%endfor %}
+var infowindow;
+function initialize() {
+    var mapOptions = {
+        center: { lat:{{center.latitude}}, lng: {{center.longitude}} },
+        zoom: 10,
+        mapTypeId: google.maps.MapTypeId.HYBRID
+    };
+    map = new google.maps.Map(document.getElementById('map-canvas'),
+        mapOptions);
+    for(var count=0;count<markers.length;count++){
+        addMarker(markers[count]);
+        console.log(markers[count]);
+    }
+    var centerControlDiv = document.createElement('div');
+    var centerControlDivAA = document.createElement('div');
+    var centerControl = new CenterControl(centerControlDiv, map,{ lat:{{center.latitude}}, lng: {{center.longitude}} },'me');
+    var centerControlAA = new CenterControl(centerControlDiv, map,{ lat:42.26, lng: -83.7483 },'Ann Arbor');
+
+    centerControlDiv.index = 1;
+    centerControlDivAA.index = 2;
+    map.controls[google.maps.ControlPosition.BOTTOM_LEFT].push(centerControlDiv);
+    map.controls[google.maps.ControlPosition.BOTTOM_LEFT].push(centerControlDivAA);
+}
+google.maps.event.addDomListener(window, 'load', initialize);
+
+function CenterControl(controlDiv, map, center,name) {
+
+  // Set CSS for the control border
+  var controlUI = document.createElement('div');
+  controlUI.style.backgroundColor = '#fff';
+  controlUI.style.border = '2px solid #fff';
+  controlUI.style.borderRadius = '3px';
+  controlUI.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)';
+  controlUI.style.cursor = 'pointer';
+  controlUI.style.marginBottom = '22px';
+  controlUI.style.textAlign = 'center';
+  controlUI.title = 'Click to recenter the map';
+  controlDiv.appendChild(controlUI);
+
+  // Set CSS for the control interior
+  var controlText = document.createElement('div');
+  controlText.style.color = 'rgb(25,25,25)';
+  controlText.style.fontFamily = 'Roboto,Arial,sans-serif';
+  controlText.style.fontSize = '16px';
+  controlText.style.lineHeight = '38px';
+  controlText.style.paddingLeft = '5px';
+  controlText.style.paddingRight = '5px';
+  controlText.innerHTML = 'Center Map on '+name;
+  controlUI.appendChild(controlText);
+
+  // Setup the click event listeners: simply set the map to
+  // Chicago
+  google.maps.event.addDomListener(controlUI, 'click', function() {
+    map.setCenter(center)
+  });
+
+}
+// Add a marker to the map
+function addMarker(member) {
+
+    var marker = new google.maps.Marker({
+        position: member[1],
+        map: map,
+        title: member[0]
+    });
+
+    console.log(marker.title);
+    console.log(member);
+    attachMessage(marker,member[0])
+
+}
+$(window).resize(function () {
+    var h = $(window).height(),
+        offsetTop = 280; // Calculate the top offset
+
+    $('#map-canvas').css('height', (h - offsetTop));
+}).resize();
+
+function attachMessage(marker,message){
+    var infowindow = new google.maps.InfoWindow({
+        content: message
+    });
+    infowindow.open(marker.get('map'), marker);
+    google.maps.event.addListener(marker, 'click', function() {
+        infowindow.open(marker.get('map'), marker);
+
+    });
+}
+</script> 
+{%endblock%}
+{% block content  %}
+<div class="row">
+    <div class="col-md-12">
+        <div id="map-canvas" ></div>
+    </div>
+</div>
+{% endblock %}
