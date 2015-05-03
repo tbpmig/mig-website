@@ -300,6 +300,7 @@ def view_map(request):
     context_dict = {
         'members':members_with_location,
         'center': member.location if member.location else GeoLocation(42.26,-83.7483),
+        'can_center_on_me': bool(member.location),
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))

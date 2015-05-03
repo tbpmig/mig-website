@@ -21,17 +21,16 @@ function initialize() {
         mapOptions);
     for(var count=0;count<markers.length;count++){
         addMarker(markers[count]);
-        console.log(markers[count]);
     }
     var centerControlDiv = document.createElement('div');
-    var centerControlDivAA = document.createElement('div');
+    {% if can_center_on_me %}
     var centerControl = new CenterControl(centerControlDiv, map,{ lat:{{center.latitude}}, lng: {{center.longitude}} },'me');
+    centerControlDiv.index = 1;
+    {% endif%}
     var centerControlAA = new CenterControl(centerControlDiv, map,{ lat:42.26, lng: -83.7483 },'Ann Arbor');
 
-    centerControlDiv.index = 1;
-    centerControlDivAA.index = 2;
+    centerControlDiv.index = {% if can_center_on_me %}2{% else %}1{%endif%};
     map.controls[google.maps.ControlPosition.BOTTOM_LEFT].push(centerControlDiv);
-    map.controls[google.maps.ControlPosition.BOTTOM_LEFT].push(centerControlDivAA);
 }
 google.maps.event.addDomListener(window, 'load', initialize);
 
@@ -76,8 +75,6 @@ function addMarker(member) {
         title: member[0]
     });
 
-    console.log(marker.title);
-    console.log(member);
     attachMessage(marker,member[0])
 
 }

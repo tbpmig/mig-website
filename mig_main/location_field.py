@@ -48,7 +48,10 @@ class GeoLocation(object):
         bearing = atan2(sin(dlon)*cos(lat2),cos(lat1)*sin(lat2)-sin(lat1)*cos(lat2)*cos(dlon))
         return d, (degrees(bearing)+360) % 360
     def __len__(self):
-        return 1
+        if self.latitude is None or self.longitude is None:
+            return 0
+        else:
+            return 1
 class MapWidget(forms.TextInput):
     class Media:
         js = ('https://maps.googleapis.com/maps/api/js?key=AIzaSyBcW7EQwfPZa3poz2Hr3MPllP4vjpilcLc',)
@@ -62,7 +65,7 @@ class MapWidget(forms.TextInput):
                 value = None
                 loc = GeoLocation(None,None)
         latitude = loc.latitude or 42.260
-        longitude = loc.longitude or -83.7
+        longitude = loc.longitude or -83.7483
         input_html = super(MapWidget, self).render(name,value,attrs)
 
         return mark_safe(input_html+'\n'+unicode(self.media)+r'''
