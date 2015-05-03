@@ -31,7 +31,10 @@ class GeoLocation(object):
         self.longitude = long
         
     def __unicode__(self):
-        return ', '.join([str(self.latitude), str(self.longitude)])
+        if self:
+            return ', '.join([str(self.latitude), str(self.longitude)])
+        else: 
+            return ''
     
     def __sub__(self,loc2):
         """ Returns a 2-tuple of distance in miles and initial bearing in
