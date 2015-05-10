@@ -19,6 +19,61 @@ from mig_main.models import UserProfile
 from requirements.models import Requirement
 from migweb.settings import DEBUG, twitter_token, twitter_secret
 
+COE_EVENT_EMAIL_BODY = r'''%(salutation)s,
+
+%(intro_text)s
+
+**Contact Information**
+Uniqname: %(leader_uniq)s
+Full Name: %(leader_name)s
+Department: Student Organization
+Telephone
+Email Address: %(leader_email)s
+
+**Submit a new Request**
+Name Of Event: %(event_name)s
+
+**Event Information**
+Short Description:
+%(blurb)s
+Type of Event: %(event_type)s (may not be the same as for the COE calendar)
+If Type of Event is 'Other', specify here
+Event Date: %(date)s
+Start Time: %(start_time)s
+End Time: %(end_time)s
+
+Multi-Day Event? Enter Additional Dates + Times:
+%(mult_shift)s
+
+Location: %(location)s
+RSVP Link (optional):  https://tbp.engin.umich.edu%(event_link)s
+Contact Person: Use official contact person
+Department/Host: Student Organization
+
+Description of Event:
+%(description)s
+
+More information can be found at https://tbp.engin.umich.edu%(event_link)s
+
+Regards,
+The Website
+
+Note: This is an automated email. Please do not reply to it as responses are
+not checked.
+'''
+
+COE_EVENT_BODY_CANCEL = r'''%(salutation)s,
+
+The event %(event_name)s is no longer listed as needing a COE Calendar Event.
+The event information can be found at https://tbp.engin.umich.edu%(event_link)s
+
+Regards,
+The Website
+
+Note: This is an automated email. Please do not reply to it as responses are
+not checked.
+'''
+
 
 # Create your models here.
 def default_term():
@@ -85,7 +140,7 @@ class CalendarEvent(models.Model):
     mutually_exclusive_shifts = models.BooleanField(default=False)
     name = models.CharField('Event Name', max_length=50)
     needs_carpool = models.BooleanField(default=False)
-    # needs_COE_event = models.BooleanField(default=False)
+    needs_COE_event = models.BooleanField(default=False)
     needs_facebook_event = models.BooleanField(default=False)
     needs_flyer = models.BooleanField(default=False)
     preferred_items = models.TextField(
@@ -488,6 +543,7 @@ class CalendarEvent(models.Model):
     def notify_publicity(self,
                          needed_flyer=False,
                          needed_facebook=False,
+                         needed_coe_event=False,
                          edited=False):
         """ Alerts the publicity officer about the event if needed.
 
@@ -501,6 +557,7 @@ class CalendarEvent(models.Model):
         listed as needing something, the appropriate action can be taken.
         """
         pub_officer = OfficerPosition.objects.filter(name='Publicity Officer')
+        pres = OfficerPosition.objects.filter(name='President')
         if pub_officer.exists():
             publicity_email = pub_officer[0].email
             if self.needs_flyer:
@@ -611,6 +668,128 @@ not checked.
                           'tbp.mi.g@gmail.com',
                           [publicity_email],
                           fail_silently=False)
+            if self.needs_COE_event:
+                leaders = self.leaders.all()
+                leader1 = leaders[0]
+                shifts = self.eventshift_set.order_by('start_time')
+                shift = shifts[0]
+                recipients = [publicity_email]
+                salutation = 'Hello Publicity Officer,'
+                if pres.exists():
+                    recipients.append(pres[0].email)
+                    salutation = 'Hello President and Publicity Officer,'
+                ccs = [leader.get_email() for leader in leaders]
+                if not needed_coe_event or not edited:
+                    body = COE_EVENT_EMAIL_BODY % {
+                        'salutation': salutation,
+                        'intro_text': ('An event has been created that '
+                                       'requires a COE calendar event to be '
+                                       'created.\nThe required information is '
+                                       'below:'),
+                        'leader_uniq': leader1.uniqname,
+                        'leader_name': leader1.get_firstlast_name(),
+                        'leader_email': leader1.get_email(),
+                        'event_name': self.name,
+                        'blurb': self.announce_text[:200]+(
+                                '...' if len(self.announce_text) > 200 else ''
+                        ),
+                        'event_type': unicode(self.event_type),
+                        'date': shift.start_time.strftime('%d %b %Y'),
+                        'start_time': shift.start_time.strftime('%I:%M %p'),
+                        'end_time': shift.end_time.strftime('%I:%M %p'),
+                        'mult_shift': '\n'.join([
+                            shift.start_time.strftime('%d %b %Y %I:%M %p') +
+                            ' -- ' +
+                            shift.end_time.strftime('%d %b %Y %I:%M %p')
+                            for shift in shifts
+                        ]),
+                        'location': shift.location,
+                        'description': self.description,
+                        'event_link': reverse(
+                                        'event_cal:event_detail',
+                                        args=(self.id,)
+                        )
+                    }
+
+                    subject = '[TBP] Event Needs COE Calendar Event.'
+                    email = EmailMessage(
+                                subject,
+                                body,
+                                'tbp.mi.g@gmail.com',
+                                recipients,
+                                headers={'Reply-To': leader1.get_email()},
+                                cc=ccs
+                            )
+                    email.send()
+                elif edited:
+                    body = COE_EVENT_EMAIL_BODY % {
+                        'salutation': salutation,
+                        'intro_text': ('An event has been edited that '
+                                       'requires a COE calendar event to be '
+                                       'created.\nThe updated information is '
+                                       'below:'),
+                        'leader_uniq': leader.uniqname,
+                        'leader_name': leader.get_firstlast_name(),
+                        'leader_email': leader.get_email(),
+                        'event_name': self.name,
+                        'blurb': self.announce_text[:200]+(
+                                '...' if len(self.announce_text) > 200 else ''
+                        ),
+                        'event_type': unicode(self.event_type),
+                        'date': shift.start_time.strftime('%d %b %Y'),
+                        'start_time': shift.start_time.strftime('%I:%M %p'),
+                        'end_time': shift.end_time.strftime('%I:%M %p'),
+                        'mult_shift': '\n'.join([
+                            shift.start_time.strftime('%d %b %Y %I:%M %p') +
+                            ' -- ' +
+                            shift.end_time.strftime('%d %b %Y %I:%M %p')
+                            for shift in shifts
+                        ]),
+                        'location': shift.location,
+                        'description': self.description,
+                        'event_link': reverse(
+                                        'event_cal:event_detail',
+                                        args=(self.id,)
+                        )
+                    }
+
+                    subject = '[TBP] Event Needs COE Calendar Event (updated).'
+                    email = EmailMessage(
+                                subject,
+                                body,
+                                'tbp.mi.g@gmail.com',
+                                recipients,
+                                headers={'Reply-To': leader1.get_email()},
+                                cc=ccs
+                            )
+                    email.send()
+            elif needed_coe_event:
+                leaders = self.leaders.all()
+                leader1 = leaders[0]
+                recipients = [publicity_email]
+                salutation = 'Hello Publicity Officer,'
+                if pres.exists():
+                    recipients.append(pres[0].email)
+                    salutation = 'Hello President and Publicity Officer,'
+                ccs = [leader.get_email() for leader in leaders]
+                body = COE_EVENT_BODY_CANCEL % {
+                            'salutation': salutation,
+                            'event_name': self.name,
+                            'event_link': reverse(
+                                            'event_cal:event_detail',
+                                            args=(self.id,)
+                            )
+                }
+                subject = '[TBP] Event Needs COE Calendar Event (cancelled).'
+                email = EmailMessage(
+                            subject,
+                            body,
+                            'tbp.mi.g@gmail.com',
+                            recipients,
+                            headers={'Reply-To': leader1.get_email()},
+                            cc=ccs
+                        )
+                email.send()
 
     def email_participants(self, subject, body, sender):
         """ Emails the event participants with the included information.
@@ -1092,7 +1271,7 @@ class AnnouncementBlurb(models.Model):
 
     @classmethod
     def get_current_blurbs(cls):
-        """Return a queryset of blurbs to include in today’s announcements."""
+        """Return a queryset of blurbs to include in today's announcements."""
         return cls.objects.filter(
                     start_date__lte=now.date,
                     end_date__gt=now.date

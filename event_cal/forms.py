@@ -64,18 +64,18 @@ class BaseEventForm(ModelForm):
                   'requires_AAPS_background_check',
                   'mutually_exclusive_shifts',
                   'allow_overlapping_sign_ups',
+                  'needs_COE_event',
                  ]
 
     def clean(self):
         cleaned_data = super(BaseEventForm,self).clean()
         members_only = cleaned_data.get('members_only')
         tweet_option = cleaned_data.get('tweet_option')
-        # coe_option = cleaned_data.get('needs_COE_event')
+        coe_option = cleaned_data.get('needs_COE_event')
         if members_only and not tweet_option=='N':
             raise ValidationError(_('Tweeting is not currentlys supported for members-only events'))
-        # TODO: uncomment parts.
-        # if members_only and not coe_option:
-        #    raise ValidationError(_('Members-only events cannot be on the COE Calendar.'))
+        if members_only and coe_option:
+            raise ValidationError(_('Members-only events cannot be on the COE Calendar.'))
         return cleaned_data
 class EventShiftForm(ModelForm):
     """

@@ -1033,6 +1033,7 @@ def edit_event(request, event_id):
     EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
     needed_flyer = e.needs_flyer
     needed_facebook =e.needs_facebook_event
+    needed_COE_event = e.needs_COE_event
     previous_cal = e.google_cal
     if request.method == 'POST':
         form = EventForm(request.POST,prefix='event',instance=e)
@@ -1051,7 +1052,10 @@ def edit_event(request, event_id):
                     event.tweet_event(False)
                 elif tweet_option=='H':
                     event.tweet_event(True)
-                event.notify_publicity(needed_flyer =needed_flyer,needed_facebook=needed_facebook,edited=True)
+                event.notify_publicity(needed_flyer=needed_flyer,
+                                       needed_facebook=needed_facebook,
+                                       needed_coe_event=needed_COE_event,
+                                       edited=True)
                 request.session['success_message']='Event updated successfully'
                 for shift in shifts:
                     waitlist=shift.get_ordered_waitlist()
