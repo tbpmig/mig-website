@@ -12,6 +12,7 @@ from requirements.models import EventCategory,ProgressItem
 from event_cal.models import CalendarEvent, EventShift,AnnouncementBlurb,EventPhoto
 from mig_main.models import UserProfile,MemberProfile
 from history.models import ProjectReport
+
 class BaseEventPhotoForm(ModelForm):
     event = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Event','closeOnSelect':True}),queryset=CalendarEvent.objects.all(),required=False)
     project_report = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Report','closeOnSelect':True}),queryset=ProjectReport.objects.all(),required=False)
@@ -26,7 +27,7 @@ class BaseEventPhotoFormAlt(ModelForm):
 
 class BaseAnnouncementForm(ModelForm):
     contacts = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'element','placeholder':'Select Contact Person/People','closeOnSelect':True}), queryset=MemberProfile.get_members())
-
+    
     class Meta:
         model = AnnouncementBlurb
         fields=['start_date','end_date','title','text','contacts','sign_up_link']
@@ -41,13 +42,40 @@ class BaseEventForm(ModelForm):
     tweet_option = forms.ChoiceField(choices=TWEET_CHOICES,initial='N')
     class Meta:
         model = CalendarEvent
-        exclude=('completed','google_event_id','project_report')
+        fields = ['name',
+                  'term',
+                  'event_type',
+                  'description',
+                  'google_cal',
+                  'leaders',
+                  'assoc_officer',
+                  'announce_start',
+                  'announce_text',
+                  'preferred_items',
+                  'min_unsign_up_notice',
+                  'min_sign_up_notice',
+                  'members_only',
+                  'needs_carpool',
+                  'use_sign_in',
+                  'allow_advance_sign_up',
+                  'needs_facebook_event',
+                  'needs_flyer',
+                  'requires_UM_background_check',
+                  'requires_AAPS_background_check',
+                  'mutually_exclusive_shifts',
+                  'allow_overlapping_sign_ups',
+                 ]
+
     def clean(self):
         cleaned_data = super(BaseEventForm,self).clean()
         members_only = cleaned_data.get('members_only')
         tweet_option = cleaned_data.get('tweet_option')
+        # coe_option = cleaned_data.get('needs_COE_event')
         if members_only and not tweet_option=='N':
             raise ValidationError(_('Tweeting is not currentlys supported for members-only events'))
+        # TODO: uncomment parts.
+        # if members_only and not coe_option:
+        #    raise ValidationError(_('Members-only events cannot be on the COE Calendar.'))
         return cleaned_data
 class EventShiftForm(ModelForm):
     """

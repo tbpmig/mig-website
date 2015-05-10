@@ -1265,7 +1265,7 @@ def generate_announcements(request):
         return get_previous_page(request,alternate='event_cal:index')
     request.session['current_page']=request.path
     now = timezone.localtime(timezone.now())
-    announcement_parts = AnnouncementBlurb.objects.filter(start_date__lte=now.date).filter(end_date__gt=now.date)
+    announcement_parts = AnnouncementBlurb.get_current_blurbs()
     template = loader.get_template('event_cal/announcements.html')
     context_dict = {
         'announcement_parts':announcement_parts,
