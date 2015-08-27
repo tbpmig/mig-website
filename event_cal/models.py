@@ -1272,6 +1272,7 @@ class AnnouncementBlurb(models.Model):
     @classmethod
     def get_current_blurbs(cls):
         """Return a queryset of blurbs to include in today's announcements."""
+        now = timezone.localtime(timezone.now())
         return cls.objects.filter(
                     start_date__lte=now.date,
                     end_date__gt=now.date

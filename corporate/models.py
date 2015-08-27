@@ -33,7 +33,7 @@ class CompanyContact(models.Model):
     class Meta:
         abstract = True
 
-    address = models.CharField(max_length=256,blank=True)
+    address = models.CharField(max_length=256, blank=True)
     company = models.ForeignKey(Company)
     gets_email = models.BooleanField(default=False)
     has_contacted = models.BooleanField(default=False)
