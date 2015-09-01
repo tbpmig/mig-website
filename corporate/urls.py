@@ -7,4 +7,8 @@ urlpatterns = patterns('',
 	url(r'^resumes/$',views.resumes, name='resumes'),
 	url(r'^edit/$',views.update_corporate_page, name='update_corporate_page'),
 	url(r'^update_resource_guide/$',views.update_resource_guide, name='update_resource_guide'),
+	url(r'^add_contact/$',views.add_company_contact, name='add_company_contact'),
+	url(r'^add_company/$',views.add_company, name='add_company'),
+	url(r'^add_industry/$',views.add_jobfield, name='add_jobfield'),
+	url(r'^edit_contacts/$',views.edit_company_contacts, name='edit_company_contacts'),
 )

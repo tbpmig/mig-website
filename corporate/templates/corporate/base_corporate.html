@@ -8,12 +8,24 @@
 {% endblock %}
 
 {% block content %}
-{% if can_edit_corporate %}
+{% if can_edit_corporate or can_add_contact or can_edit_contacts or can_add_company %}
 <div class="row">
     <div class="col-md-12">
         <div class="btn-group">
+            {% if can_edit_corporate %}
             <a class="btn btn-info" href="{% url 'corporate:update_corporate_page' %}">Update Corporate Page</a>
             <a class="btn btn-info" href="{% url 'corporate:update_resource_guide' %}">Update Corporate Resource Guide</a>
+            {% endif %}
+            {% if can_add_contact %}
+            <a class="btn btn-success" href="{% url 'corporate:add_company_contact' %}">Add Corporate Contact</a>
+            {% endif %}
+            {% if can_edit_contacts %}
+            <a class="btn btn-warning" href="{% url 'corporate:edit_company_contacts' %}">Edit Corporate Contacts</a>
+            {% endif %}
+            {% if can_add_company %}
+            <a class="btn btn-success" href="{% url 'corporate:add_company' %}">Add Company Information</a>
+            <a class="btn btn-success" href="{% url 'corporate:add_jobfield' %}">Add Industry Information</a>
+            {% endif %}
         </div>
     </div>
 </div>

@@ -767,6 +767,25 @@ class Permissions:
         else:
             return False
     @classmethod
+    def can_add_corporate_contact(cls,user):
+        if user.is_superuser:
+            return True
+        current_positions = cls.get_current_officer_positions(user) 
+        if current_positions.exists():
+            return True
+        else:
+            return False
+    @classmethod
+    def can_add_company(cls,user):
+        if user.is_superuser:
+            return True
+        p=cls.get_profile(user)
+        if not p:
+            return False
+        if p.is_member():
+            return True
+        return False
+    @classmethod
     def can_add_event_photo(cls,user):
         if user.is_superuser:
             return True

@@ -17,7 +17,7 @@ class Company(models.Model):
     interact with it than by anything intrinsic to its own construction.
     """
     name = models.CharField(max_length=256)
-    hq_location = models.CharField(max_length=256)
+    hq_location = models.CharField('HQ Location',max_length=256)
     job_field = models.ManyToManyField('corporate.JobField')
 
     def __unicode__(self):
@@ -424,7 +424,8 @@ class JobField(models.Model):
                         'mig_main.Major',
                         verbose_name='Majors hired in the industry'
     )
-
+    def __unicode__(self):
+        return self.name
 
 class JobType(models.Model):
     """ The type of job (internship, LDP, etc.)
