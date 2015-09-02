@@ -483,24 +483,10 @@ class MemberProfile(UserProfile):
                     choices=ALUM_MAIL_FREQ_CHOICES,
                     default="WK"
     )
-    job_field = models.CharField(
-                    "What is your job field?",
-                    max_length=50,
-                    blank=True
-    )  # Deprecated
-    employer = models.CharField(
-                "Your employer",
-                max_length=60,
-                blank=True
-    )  # Deprecated
     preferred_email = models.CharField(
                             max_length=3,
                             choices=MAIL_PREF_CHOICES,
                             default="UM"
-    )
-    meeting_speak = models.BooleanField(
-                    "Are you interested in speaking at a meeting?",
-                    default=False
     )
     shirt_size = models.ForeignKey(ShirtSize, on_delete=models.PROTECT)
     short_bio = models.TextField()
