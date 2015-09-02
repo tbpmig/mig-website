@@ -282,3 +282,20 @@ def add_jobfield(request):
     context = RequestContext(request, context_dict)
     template = loader.get_template('generic_form.html')
     return HttpResponse(template.render(context))
+
+
+def view_company_contacts(request):
+    if not Permissions.can_edit_corporate_page(request.user):
+        request.session['error_message'] = 'You are not authorized to view company contacts'
+        return redirect('corporate:index')
+   
+    context_dict = {
+        'contacts': CompanyContact.get_contacts(),
+        'subnav': 'index',
+        'base': 'corporate/base_corporate.html',
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    template = loader.get_template('corporate/contacts_table.html')
+    return HttpResponse(template.render(context))

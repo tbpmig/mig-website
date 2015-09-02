@@ -11,4 +11,5 @@ urlpatterns = patterns('',
 	url(r'^add_company/$',views.add_company, name='add_company'),
 	url(r'^add_industry/$',views.add_jobfield, name='add_jobfield'),
 	url(r'^edit_contacts/$',views.edit_company_contacts, name='edit_company_contacts'),
+	url(r'^view_contacts/$',views.view_company_contacts, name='view_company_contacts'),
 )

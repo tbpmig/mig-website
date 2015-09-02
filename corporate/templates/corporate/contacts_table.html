@@ -1,0 +1,67 @@
+{% extends "corporate/base_corporate.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <a class="btn btn-default" href="{%url 'corporate:index' %}"><i class="glyphicon glyphicon-chevron-left"></i> To Corporate Page</a>
+       </div>
+</div>
+ 
+<div class="row">
+    <div class="col-md-12">
+        <h4>Company Contacts</h4>
+        <table class="table table-striped table-bordered table-autosort:0" id="header-fixed">
+            <thead style="background: white;">
+            <tr>
+                <th class="table-sortable:ignorecase table-filterable" title="Click to sort by company">Company <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th class="table-sortable:ignorecase table-filterable" title="click to sort by name">Name <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th class="table-sortable:ignorecase table-filterable" title="click to sort by whether they should get emailed">Gets email <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th class="table-sortable:ignorecase table-filterable" title="click to sort by speaking interest">Speaking Interest <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th class="table-sortable:ignorecase table-filterable" title="click to sort by whether they've contacted us">Has contacted us? <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th class="table-sortable:ignorecase table-filterable" title="click to sort by email">Email <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th class="table-sortable:ignorecase table-filterable" title="click to sort by address">Address <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th class="table-sortable:ignorecase table-filterable" title="click to sort by phone number">Phone <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th class="table-sortable:ignorecase table-filterable" title="click to sort by who they are a personal contact of">Personal contact of <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th class="table-sortable:ignorecase table-filterable" title="click to sort by initiating chapter">TBP Chapter <i class="fa fa-sort"> </i><br/><input name="filter" size="8" onkeyup="Table.filter(this,this)"></th>
+                <th>Short bio </th>
+                
+            </tr>
+        </thead>
+            {% for contact in contacts %}
+            <tr>
+                <td>{{contact.company}}</td>
+                {% if contact.is_member%}
+                <td><a href="{%url 'member_resources:profile' contact.member.uniqname %}">{{contact.get_name}}</a></td>
+                {% else %}
+                <td>{{contact.get_name}}</td>
+                {% endif %}
+                <td>{{contact.gets_email|yesno:"Yes,No"}}</td>
+                <td>{{contact.speaking_interest|yesno:"Yes,No"}}</td>
+                <td>{{contact.has_contacted|yesno:"Yes,No"}}</td>          
+                <td>{{contact.get_email}}</td>
+                <td>{{contact.address}}</td>
+                <td>{{contact.get_phone}}</td>
+                <td>{{contact.personal_contact_of}}</td>
+                <td>{{contact.get_init_chapter}}</td>
+                <td>{{contact.get_bio}}</td>
+                
+
+            </tr>
+            {% endfor %}
+        </table>
+       
+    </div>
+</div>
+
+
+{% endblock content %}
+{% block js %}
+<script src="{% static 'js/sort_filter_table.js' %}"></script>
+<script src="{% static 'js/sticky-header.js' %}"></script>
+<script type="text/javascript">
+    $(function(){
+        $("[rel='tooltip']").popover()
+    });
+</script>
+{% endblock %}

@@ -78,6 +78,10 @@ class CompanyContact(models.Model):
         """Returns True if the contact is a TBP but not a MI-G member."""
         pass
 
+    def get_init_chapter(self):
+        """Returns the contact's initiating TBP chapter, if any."""
+        pass
+
 
 class CorporateEmail(models.Model):
     """ Represents an email to be sent to the corporate contacts list.
@@ -474,6 +478,10 @@ class MemberContact(CompanyContact):
         """Returns True if the contact is a TBP but not a MI-G member."""
         return False
 
+    def get_init_chapter(self):
+        """Returns the contact's initiating TBP chapter, if any."""
+        return self.member.init_chapter
+
 
 class NonMemberContact(CompanyContact):
     """ Subclass of CompanyContact. Overrides the instance methods to work
@@ -518,7 +526,9 @@ class NonMemberContact(CompanyContact):
         if self.initiating_chapter:
             return True
         return False
-
+    def get_init_chapter(self):
+        """Returns the contact's initiating TBP chapter, if any."""
+        return self.initiating_chapter
 
 class OfferDetails(EmploymentExperienceBase):
     """ Subclass of EmploymentExperienceBase"""
