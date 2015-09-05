@@ -70,20 +70,14 @@ This is an automated notice that a member, %(member_name)s (%(uniqname)s), has u
 
 Wants to receive corporate emails: %(corp_email)s
 Desired Email Frequency: %(email_frequency)s
-Job Field: %(job_field)s
-Employer: %(employer)s
 Preferred Email: %(preferred_email)s
-Interested in Speaking at a Meeting: %(meeting_speak)s
 
 Thanks,
 The TBP Website'''%{'member_name':profile.get_firstlast_name(),
                     'uniqname':profile.uniqname,
                     'corp_email':'Yes' if profile.jobs_email else 'No',
                     'email_frequency':profile.get_alum_mail_freq_display(),
-                    'job_field':profile.job_field,
-                    'employer':profile.employer,
-                    'preferred_email':profile.get_email(),
-                    'meeting_speak':'Yes' if profile.meeting_speak else 'No'}
+                    'preferred_email':profile.get_email()}
     else:
         body = r'''Hi current membership officer,
 
