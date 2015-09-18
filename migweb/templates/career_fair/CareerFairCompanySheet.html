@@ -5,8 +5,10 @@
     <head>
     <meta charset=utf-8>
     <title>SWE/TBP Career Fair: Companies Attending</title>
-    <link rel="stylesheet" href="static/css/bootstrap2.css" type="text/css">
-    <link rel="stylesheet" href="static/css/cf.css" type="text/css">
+    {% load staticfiles %}
+<!--<link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">-->
+<link rel="stylesheet" type="text/css" href="{% static 'css/bootstrap2.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'css/cf.css' %}" />
     <meta name=description value="The SWE/TBP Career Fair held annually at the University of Michigan College of Engineering">
     <meta name=keywords value="job, career, fair, swe, engineering, tbp, michigan">
 
@@ -3887,10 +3889,11 @@ Interested in being part of the Visa story? Experience the excitement that comes
 
     </article>
     </body>
-    <script src="static/js/sort_filter_table.js"></script>
-    <script type="text/javascript" language="javascript" src="static/js/jquery-1.7.2.min.js"></script>
-    <script type="text/javascript" language="javascript" src="static/js/sticky-header.js"></script>
-    <script type="text/javascript" language="javascript" src="static/js/bootstrap2.min.js"></script>
+    <script type="text/javascript" language="javascript" src="{% static 'js/sort_filter_table.js' %}"></script>
+    <script src="//code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script type="text/javascript" language="javascript"  src="{% static 'js/sticky-header.js' %}"></script>
+    <!--<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js" defer></script>-->
+    <script type="text/javascript" language="javascript" src="{% static 'js/bootstrap2.min.js' %}"></script>
     <script type="text/javascript">
     $(function(){
         $("[rel='tooltip']").popover()
