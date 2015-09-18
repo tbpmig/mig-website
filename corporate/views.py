@@ -6,7 +6,8 @@ from django.template import RequestContext, loader
 
 from corporate.auxiliary_scripts import update_resume_zips
 from corporate.forms import AddContactForm,ContactFormSet
-from corporate.models import CorporateTextField, CorporateResourceGuide,CompanyContact, Company, JobField
+from corporate.models import CorporateTextField, CorporateResourceGuide
+from corporate.models import CompanyContact, Company, JobField, CorporateEmail
 from mig_main.utility import get_message_dict, Permissions
 
 
@@ -298,4 +299,53 @@ def view_company_contacts(request):
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     template = loader.get_template('corporate/contacts_table.html')
+    return HttpResponse(template.render(context))
+    
+def update_corporate_email(request):
+    if not Permissions.can_edit_corporate_page(request.user):
+        request.session['error_message'] = 'You are not authorized to email companies'
+        return redirect('corporate:index')
+    prefix = 'corporate_email'
+    existing_email = CorporateEmail.objects.filter(active=True)
+    UpdateEmailForm = modelform_factory(CorporateEmail)
+    if existing_email.exists():
+        form = UpdateEmailForm(request.POST or None,prefix=prefix,instance=existing_email[0])
+    else:
+        form = UpdateEmailForm(request.POST or None,prefix=prefix)
+        
+    if request.method == 'POST':
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.id=None
+            instance.pk=None
+            instance.save()
+            if existing_email.exists():
+                ex=existing_email[0]
+                ex.active=False
+                ex.save()
+            request.session['success_message'] = 'Company email successfully updated.'
+            return redirect('corporate:index')
+        else:
+            request.session['error_message'] = FORM_ERROR
+
+    context_dict = {
+        'form': form,
+        'subnav': 'index',
+        'prefix': prefix,
+        'has_files': False,
+        'submit_name': 'Update corporate email',
+        'back_button': {'link': reverse('corporate:index'),
+                        'text': 'To Corporate Page'},
+        'form_title': 'Update corporate email',
+        'help_text': ('Update the email sent to companies to encourage their'
+                      'participation in TBP corporate events.\n\nUse '
+                      '{{company_name}} in the subject line as a placeholder'
+                      'and {{extra_text}} in the body as a placeholder for the'
+                      'extra text to members or personal contacts.'),
+        'base': 'corporate/base_corporate.html',
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    template = loader.get_template('generic_form.html')
     return HttpResponse(template.render(context))
