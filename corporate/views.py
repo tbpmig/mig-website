@@ -3,13 +3,12 @@ from django.forms.models import modelformset_factory, modelform_factory
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.template import RequestContext, loader
-
+from django_ajax.decorators import ajax
 from corporate.auxiliary_scripts import update_resume_zips
 from corporate.forms import AddContactForm,ContactFormSet
 from corporate.models import CorporateTextField, CorporateResourceGuide
 from corporate.models import CompanyContact, Company, JobField, CorporateEmail
 from mig_main.utility import get_message_dict, Permissions
-
 
 FORM_ERROR = 'Your submision contained errors, please correct and resubmit.'
 
@@ -300,7 +299,55 @@ def view_company_contacts(request):
     context = RequestContext(request, context_dict)
     template = loader.get_template('corporate/contacts_table.html')
     return HttpResponse(template.render(context))
-    
+
+
+def view_and_send_email(request):
+    if not Permissions.can_edit_corporate_page(request.user):
+        request.session['error_message'] = 'You are not authorized to email companies'
+        return redirect('corporate:index')
+    existing_email = CorporateEmail.objects.filter(active=True)
+    if existing_email.exists():
+        existing_email = existing_email[0]
+    else:
+        request.session['error_message'] = 'No email specified'
+        return redirect('corporate:index')
+    contacts = CompanyContact.get_contacts(gets_email=True)
+    context_dict = {
+        'contacts': contacts,
+        'email':existing_email.preview_email(),
+        'mig_alum_email':existing_email.preview_email(mig_alum=True),
+        'other_alum_email':existing_email.preview_email(other_alum=True),
+        'previous_contact_email':existing_email.preview_email(previous_contact=True),
+        'personal_contact_email':existing_email.preview_email(personal_contact=True),
+        'subnav': 'index',
+        'base': 'corporate/base_corporate.html',
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    template = loader.get_template('corporate/view_and_send_email.html')
+    return HttpResponse(template.render(context))
+
+@ajax
+def send_corporate_email(request):
+    if not Permissions.can_edit_corporate_page(request.user):
+        request.session['error_message'] = 'You are not authorized to email companies'
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+    existing_email = CorporateEmail.objects.filter(active=True)
+    if existing_email.exists():
+        existing_email[0].send_corporate_email()
+        request.session['success_message']='Companies successfully emailed'
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
+    else:
+        request.session['error_message'] = 'Company email text does not exist'
+        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times</button>
+    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+
 def update_corporate_email(request):
     if not Permissions.can_edit_corporate_page(request.user):
         request.session['error_message'] = 'You are not authorized to email companies'

@@ -124,13 +124,13 @@ class CorporateEmail(models.Model):
                             'being involved with our chapter.')
         else:
             replace_text = ''
-        text = self.text.replace('<<extra_text>>', replace_text)
+        text = self.text.replace('{{extra_text}}', replace_text)
         body = r''' %(salutation)s Company Representative:
 
 %(text)s
 ''' % {'salutation': self.salutation, 'text': text}
-        subject = self.subject.replace('<<company_name>>', 'COMPANY')
-        return 'SUBJECT: ' + subject + '\n\n' + 'BODY: ' + body
+        subject = self.subject.replace('{{company_name}}', 'COMPANY')
+        return '**SUBJECT**: ' + subject + '\n\n' + '**BODY**:\n' + body
 
     def email_contact(self, company_contact):
         """ Creates an email to the provided contact. """
@@ -146,17 +146,17 @@ class CorporateEmail(models.Model):
             replace_text = self.previous_contact_text
         elif company_contact.personal_contact_of:
             contact = company_contact.personal_contact_of.get_firstlast_name()
-            replace_text = contact + ('said that you may be interested in'
+            replace_text = contact + (' said that you may be interested in '
                                       'being involved with our chapter.')
         else:
             replace_text = ''
-        text = self.text.replace('<<extra_text>>', replace_text)
+        text = self.text.replace('{{extra_text}}', replace_text)
         body = ('%(salutation)s %(name)s:\n\n'
                 '%(text)s')
         body = body % {'salutation': self.salutation,
                        'text': text,
                        'name': company_contact.get_name()}
-        subject = self.subject.replace('<<company_name>>',
+        subject = self.subject.replace('{{company_name}}',
                                        company_contact.company.name)
         return (subject, body, cro_email, [company_contact.get_email()])
 

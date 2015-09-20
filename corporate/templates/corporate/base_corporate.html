@@ -22,6 +22,8 @@
             {% if can_edit_contacts %}
             <a class="btn btn-warning" href="{% url 'corporate:edit_company_contacts' %}">Edit Corporate Contacts</a>
             <a class="btn btn-info" href="{% url 'corporate:view_company_contacts' %}">View Contacts</a>
+            <a class="btn btn-info" href="{% url 'corporate:update_corporate_email' %}">Update Email</a>
+            <a class="btn btn-warning" href="{% url 'corporate:view_and_send_email' %}">Email Contacts</a>
             {% endif %}
             {% if can_add_company %}
             <a class="btn btn-success" href="{% url 'corporate:add_company' %}">Add Company Information</a>
