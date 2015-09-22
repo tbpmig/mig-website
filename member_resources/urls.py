@@ -69,5 +69,6 @@ urlpatterns = patterns('',
     url(r'^view_electee_survey/(?P<uniqname>[a-z]{3,8})/$',views.view_electee_survey,name='view_electee_survey'),
     url(r'^manage_committee_members/(?P<term_id>\d+)/$',views.manage_committee_members,name='manage_committee_members'),
     url(r'^manage_committees/$',views.manage_committees,name='manage_committees'),
+    url(r'^view_photos/$',views.view_photos,name='view_photos'),
     
 )

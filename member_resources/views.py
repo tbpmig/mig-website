@@ -21,7 +21,7 @@ from django.core.urlresolvers import reverse
 
 from corporate.views import update_resume_zips
 from electees.models import ElecteeGroup, electee_stopped_electing, EducationalBackgroundForm,ElecteeInterviewSurvey,SurveyAnswer,SurveyQuestion,SurveyPart
-from event_cal.models import CalendarEvent, MeetingSignInUserData,InterviewShift
+from event_cal.models import CalendarEvent, MeetingSignInUserData,InterviewShift, EventPhoto
 from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardForm,BaseBackgroundCheckForm,MassAddBackgroundCheckForm,MeetingMinutesForm,CommitteeMemberForm
 from history.models import Award,Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport,BackgroundCheck,CommitteeMember
 from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet,ExternalServiceForm
@@ -2832,3 +2832,17 @@ def view_electee_survey(request,uniqname):
     context_dict.update(get_common_context(request))
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
+
+
+def view_photos(request):
+    if not Permissions.can_create_events(request.user):
+        request.session['error_message'] = 'You are not authorized to access photos'
+        return get_previous_page(request,alternate='member_resources:index')
+    context_dict = {
+        'photos':EventPhoto.objects.all(),
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    template = loader.get_template('member_resources/view_photos.html')
+    return HttpResponse(template.render(context))     

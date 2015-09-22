@@ -1,0 +1,20 @@
+{% extends "member_resources/base_member_resources.html" %}
+{% load staticfiles %}
+{% load member_resources_extras %}
+{% block content %}
+
+{% for photo in photos %}
+{% if forloop.counter0|divisibleby:4 %}
+<div class="row">
+{% endif %}
+<div class="col-md-3">
+<img  style="max-height:100%; max-width:100%;" src="{{photo.photo.thumbnail.url}}" ></img>
+</div>
+{% if forloop.counter|divisibleby:4 or forloop.last%}
+</div>
+{% endif %}    
+{% endfor %}
+</div>
+{% endblock content %}
+
+
