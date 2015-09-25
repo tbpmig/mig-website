@@ -24,8 +24,8 @@ def profile_setup(request):
     is_active_member = ActiveList.objects.filter(uniqname=request.user.username).exists()
     is_ugrad_electee = UndergradElecteeList.objects.filter(uniqname=request.user.username).exists()
     is_grad_electee = GradElecteeList.objects.filter(uniqname=request.user.username).exists()
-
-    needs_profile = not UserProfile.objects.filter(uniqname=request.user.username).exists()
+    needs_member_profile = is_active_member or is_ugrad_electee or is_grad_electee
+    needs_profile = not UserProfile.objects.filter(uniqname=request.user.username).exists() or needs_member_profile
     return {'is_active_member':is_active_member,
             'is_ugrad_electee':is_ugrad_electee,
             'is_grad_electee':is_grad_electee,

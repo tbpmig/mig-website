@@ -13,7 +13,7 @@ from django.http import HttpResponse, Http404 #HttpResponseRedirect
 from django.shortcuts import  get_object_or_404
 from django.shortcuts import redirect
 from django.template import RequestContext, loader
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import Max,Q,Count
 from django.core.exceptions import PermissionDenied
 from django.forms.models import modelformset_factory, modelform_factory
@@ -26,6 +26,7 @@ from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardFo
 from history.models import Award,Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport,BackgroundCheck,CommitteeMember
 from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet,ExternalServiceForm
 from member_resources.forms import ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet,TBPraiseForm
+from member_resources.forms import MemberProfileActiveFromNonMemberForm, MemberProfileElecteeFromNonMemberForm
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
 from member_resources.quorum import get_quorum_list,get_quorum_list_elections
 from migweb.context_processors import profile_setup
@@ -366,7 +367,10 @@ def member_profiles(request):
 
 def profile(request,uniqname):
     request.session['current_page']=request.path
-    if not user_is_member(request.user):
+    profile = get_object_or_404(UserProfile,uniqname=uniqname)
+    if not profile.is_member():
+        return non_member_profile(request,uniqname)
+    if not user_is_member(request.user) :
         request.session['error_message']='You must be logged in and a member to view member profiles.'
         return redirect('member_resources:index')
     template = loader.get_template('member_resources/userprofile.html')
@@ -403,6 +407,34 @@ def profile(request,uniqname):
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
+def non_member_profile(request,uniqname):
+    request.session['current_page']=request.path
+    profile = get_object_or_404(UserProfile,uniqname=uniqname)
+    
+    if not user_is_member(request.user) and not (request.user.username == uniqname):
+        request.session['error_message']='You must be logged in and a member to view profiles other than your own.'
+        return redirect('member_resources:index')
+    template = loader.get_template('member_resources/userprofile.html')
+    praise = TBPraise.objects.filter(recipient=profile)
+    is_user = request.user.userprofile.uniqname==uniqname
+
+    context_dict = {
+        'profile':profile,
+        'nonmember_profile':True,
+        'officer_positions':[],
+        'awards':[],
+        'distinction_terms':[],
+        'is_user':is_user,
+        'full_view':is_user or Permissions.can_view_others_data(request.user,uniqname),
+        'edit':False,
+        'has_distinctions':False,
+        'subnav':'member_profiles',
+        'praise':praise,
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
 def profile_edit(request,uniqname):
     request.session['current_page']=request.path
     if not user_is_member(request.user):
@@ -455,7 +487,7 @@ def profile_edit(request,uniqname):
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
-
+@transaction.atomic
 def profile_create(request):
     if not request.user.is_authenticated():
         request.session['error_message'] = 'You must be logged in to create a profile'
@@ -468,41 +500,66 @@ def profile_create(request):
     if not user_info["needs_profile"]:
         request.session['warning_message'] ='You already have a profile. Please edit that instead.'
         return redirect('member_resources:profile', request.user.username)
-    
+    has_nonmember_profile = UserProfile.objects.filter(uniqname = request.user.username).exists()
+    if has_nonmember_profile:
+        nm_profile = UserProfile.objects.get(uniqname = request.user.username)
     if user_info["is_active_member"]:
         
         if request.method =='POST':
-            user_profile = MemberProfile(uniqname=request.user.username,user=request.user)
-            user_profile.status = Status.objects.get(name='Active')
-            form = MemberProfileNewActiveForm(request.POST,request.FILES,instance=user_profile)
+            
+            if has_nonmember_profile:
+                user_profile = MemberProfile()
+                user_profile.status = Status.objects.get(name='Active')
+                form = MemberProfileActiveFromNonMemberForm(request.POST,request.FILES,instance=user_profile)
+            else:
+                user_profile = MemberProfile(uniqname=request.user.username,user=request.user)
+                user_profile.status = Status.objects.get(name='Active')
+                form = MemberProfileNewActiveForm(request.POST,request.FILES,instance=user_profile)
             if form.is_valid():
-                form.save()
+                if has_nonmember_profile:
+                    form.save(nm_profile)
+                else:
+                    form.save()
                 #update_resume_zips()
                 request.session['success_message']='Profile created successfully.'
                 return redirect('member_resources:profile',request.user.username)
             else:
                 request.session['error_message']='The form is invalid, please correct the errors noted below.'
         else:
-            form = MemberProfileNewActiveForm()
+            if has_nonmember_profile:
+                form = MemberProfileActiveFromNonMemberForm()
+            else:
+                form = MemberProfileNewActiveForm()
     elif user_info["is_grad_electee"] or user_info["is_ugrad_electee"]:
         if request.method =='POST':
-            user_profile = MemberProfile(uniqname=request.user.username,user=request.user)
+            user_profile = MemberProfile()
             user_profile.status = Status.objects.get(name='Electee')
+            user_profile.init_chapter = TBPChapter.objects.get(state='MI',letter='G')
+            user_profile.init_term = AcademicTerm.get_current_term()
             if user_info["is_grad_electee"]:
                 user_profile.standing = Standing.objects.get(name='Graduate')
             else:
                 user_profile.standing = Standing.objects.get(name='Undergraduate')
-            user_profile.init_chapter = TBPChapter.objects.get(state='MI',letter='G')
-            user_profile.init_term = AcademicTerm.get_current_term()
-            form = MemberProfileNewElecteeForm(request.POST,request.FILES,instance=user_profile)
+            if has_nonmember_profile:
+                form = MemberProfileElecteeFromNonMemberForm(request.POST,request.FILES,instance=user_profile)
+            else:
+                user_profile.uniqname=request.user.username
+                user_profile.user=request.user
+                form = MemberProfileNewElecteeForm(request.POST,request.FILES,instance=user_profile)
             if form.is_valid():
-                form.save()
+                if has_nonmember_profile:
+                    form.save(nm_profile)
+                else:
+                    form.save()
                 request.session['success_message']='Profile created successfully.'
                 return redirect('member_resources:profile',request.user.username)
             else:
                 request.session['error_message']='The form is invalid, please correct the errors noted below.'
         else:
-            form = MemberProfileNewElecteeForm()
+            if has_nonmember_profile:
+                form = MemberProfileElecteeFromNonMemberForm()
+            else:
+                form = MemberProfileNewElecteeForm()
     else:
         if request.method =='POST':
             user_profile = UserProfile(uniqname=request.user.username,user=request.user)
