@@ -44,7 +44,8 @@ ALUM_MAIL_FREQ_CHOICES = (
     ("YR", "Yearly"),
     ("SM", "Semesterly"),
     ("MO", "Monthly"),
-    ("WK", "Weekly (left on tbp.all)"),
+    ("WK", "Weekly"),
+    ("AC", "Remain Active Member"),
 )
 
 GENDER_CHOICES = (
