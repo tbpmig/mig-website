@@ -135,12 +135,17 @@ class AboutViewsTestCase(TestCase):
 
         # Test photos
         photo1 = AboutPhotoFactory()
+        TEST_TITLE = 'Test TITLE'
+        photo1.title = TEST_TITLE
+        photo1.save()
         resp = client.get(view_url)
         self.assertEqual(resp.status_code, 200)
         context = resp.context
         self.assertTrue('slideshow_photos' in context)
         self.assertTrue(context['slideshow_photos'].exists())
         self.assertEqual(context['slideshow_photos'][0], photo1)
+        self.assertEqual(unicode(context['slideshow_photos'][0]),
+                         'Photo: \"'+TEST_TITLE+'\"')
         photo1.active = False
         photo1.save()
         resp = client.get(view_url)
@@ -148,6 +153,7 @@ class AboutViewsTestCase(TestCase):
         context = resp.context
         self.assertTrue('slideshow_photos' in context)
         self.assertFalse(context['slideshow_photos'].exists())
+        self.assertEqual(unicode(photo1),'Photo: \"'+ TEST_TITLE+'\" (inactive)')
 
         photo2 = AboutPhotoFactory()
 
@@ -241,6 +247,7 @@ class AboutViewsTestCase(TestCase):
         self.assertEqual(resp.context['eligibility_text'][0].text,
                          JOINING_TEXT)
         self.assertEqual(resp.context['eligibility_text'][0].section, 'EL')
+        self.assertTrue(len(unicode(resp.context['eligibility_text'][0]))>0)
         self.assertTrue('ugrad_text' in resp.context)
         self.assertEqual(resp.context['ugrad_text'].count(), 1)
         self.assertEqual(resp.context['ugrad_text'][0].text, JOINING_TEXT)

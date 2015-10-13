@@ -1431,11 +1431,12 @@ def add_electee_DA_PA_status(request):
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
-def add_active_statuses(request):   
+
+def add_active_statuses_for_term(request,term_id):   
     if not Permissions.can_manage_active_progress(request.user):
         request.session['error_message']='You are not authorized to manage active members.'
         return redirect('member_resources:index')
-    term = AcademicTerm.get_current_term()
+    term = get_object_or_404(AcademicTerm,id=term_id)
     if request.method =='POST':
         formset = ManageActiveCurrentStatusFormSet(request.POST,prefix='current_status')
         if formset.is_valid():
@@ -1454,7 +1455,7 @@ def add_active_statuses(request):
     else:
         initial=[]
         for distinction in DistinctionType.objects.filter(status_type__name="Active"):
-            actives_already_received_distinction = MemberProfile.objects.filter(distinction__distinction_type=distinction,distinction__term=AcademicTerm.get_current_term())
+            actives_already_received_distinction = MemberProfile.objects.filter(distinction__distinction_type=distinction,distinction__term=term)
             actives = get_actives_with_status(distinction)
             for active in actives:
                 if active in actives_already_received_distinction:
@@ -1484,6 +1485,14 @@ def add_active_statuses(request):
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
+
+def add_active_statuses(request):   
+    if not Permissions.can_manage_active_progress(request.user):
+        request.session['error_message']='You are not authorized to manage active members.'
+        return redirect('member_resources:index')
+    term = AcademicTerm.get_current_term()
+    return add_active_statuses_for_term(request,term.id)
 
 def manage_active_statuses(request):   
     if not Permissions.can_manage_active_progress(request.user):
