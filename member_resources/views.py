@@ -109,14 +109,14 @@ def get_electees_with_status(distinction):
         if has_dist:
             electees_with_status.append(profile)
     return electees_with_status
-def get_actives_with_status(distinction):
-    query =  Q(distinction_type=distinction)& Q(term=AcademicTerm.get_current_term().semester_type)
+def get_actives_with_status(distinction,term):
+    query =  Q(distinction_type=distinction)& Q(term=term.semester_type)
     requirements = Requirement.objects.filter(query)
     unflattened_reqs = package_requirements(requirements)
     active_profiles = MemberProfile.get_actives() 
     actives_with_status = []
     for profile in active_profiles:
-        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
+        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=term))
         amount_req = 0;
         amount_has = 0;
         has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
@@ -1456,7 +1456,7 @@ def add_active_statuses_for_term(request,term_id):
         initial=[]
         for distinction in DistinctionType.objects.filter(status_type__name="Active"):
             actives_already_received_distinction = MemberProfile.objects.filter(distinction__distinction_type=distinction,distinction__term=term)
-            actives = get_actives_with_status(distinction)
+            actives = get_actives_with_status(distinction,term)
             for active in actives:
                 if active in actives_already_received_distinction:
                     continue
