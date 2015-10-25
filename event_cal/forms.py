@@ -45,6 +45,7 @@ class BaseEventForm(ModelForm):
         fields = ['name',
                   'term',
                   'event_type',
+                  'event_class',
                   'description',
                   'google_cal',
                   'leaders',
