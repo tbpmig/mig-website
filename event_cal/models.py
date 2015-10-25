@@ -100,6 +100,17 @@ class GoogleCalendar(models.Model):
         return self.name
 
 
+class EventClass(models.Model):
+    """A type of event.
+
+    Basically, this is a type of event that gets held semester after semester,
+    while a CalendarEvent is the particular event that happens on a specified
+    date/time. This is used to help group events by type of event.
+    """
+
+    name = models.CharField(max_length=64)
+
+
 class CalendarEvent(models.Model):
     """ An event on the TBP calendar.
 
@@ -123,6 +134,14 @@ class CalendarEvent(models.Model):
     )
     description = models.TextField('Event Description')
     event_type = models.ForeignKey('requirements.EventCategory')
+    event_class = models.ForeignKey(
+                        EventClass,
+                        verbose_name=('Choose the event\"class\" '
+                                      'from the list below. If the event is '
+                                      'not listed, leave this blank'),
+                        null=True,
+                        blank=True,
+    )
     google_cal = models.ForeignKey(GoogleCalendar)
     leaders = models.ManyToManyField(
                             'mig_main.MemberProfile',
