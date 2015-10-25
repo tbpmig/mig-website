@@ -1,5 +1,6 @@
 # Create your views here.
 from datetime import datetime,date,timedelta
+import re
 
 from django.core.cache import cache
 from django.core.management import call_command
@@ -18,7 +19,7 @@ from django.db.models import Min,Q
 from django_ajax.decorators import ajax
 
 from event_cal.forms import BaseEventPhotoForm,BaseEventPhotoFormAlt, BaseAnnouncementForm,BaseEventForm,EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset,MultiShiftFormset,EventEmailForm
-from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift,WaitlistSlot,InterviewPairing,UserCanBringPreferredItem
+from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, EventClass, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift,WaitlistSlot,InterviewPairing,UserCanBringPreferredItem
 from history.models import ProjectReport, Officer,NonEventProject,BackgroundCheck
 from mig_main.models import OfficerPosition,PREFERENCES,UserPreference,MemberProfile,UserProfile,AcademicTerm
 from mig_main.utility import get_previous_page, Permissions, get_message_dict
@@ -785,7 +786,19 @@ def create_multishift_event(request):
         formset = MultiShiftFormset(request.POST,prefix='shift')
         if form.is_valid() and formset.is_valid():
             event = form.save()
-
+            if not event.event_class:
+                    s = event.name.split()
+                    if re.match('(^(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$)|^[0-9]+.?[0-9]*$',s[-1]):
+                        s=s[0:-1]
+                    n = ' '.join(s).title()
+                    ec = EventClass.objects.filter(name=n)
+                    if ec.exists():
+                        ec=ec[0]
+                    else:
+                        ec = EventClass(name=n)
+                        ec.save()
+                    event.event_class=ec
+                    event.save()
             for shift_form in formset:
                 if not shift_form.is_valid():
                     continue
@@ -866,6 +879,19 @@ def create_event(request):
             formset[0].empty_permitted=False
             if formset.is_valid():
                 event.save()
+                if not event.event_class:
+                    s = event.name.split()
+                    if re.match('(^(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$)|^[0-9]+.?[0-9]*$',s[-1]):
+                        s=s[0:-1]
+                    n = ' '.join(s).title()
+                    ec = EventClass.objects.filter(name=n)
+                    if ec.exists():
+                        ec=ec[0]
+                    else:
+                        ec = EventClass(name=n)
+                        ec.save()
+                    event.event_class=ec
+                    event.save()
                 form.save_m2m()
                 formset.save()
                 request.session['success_message']='Event created successfully'
@@ -1044,6 +1070,19 @@ def edit_event(request, event_id):
             formset[0].empty_permitted=False
             if formset.is_valid():
                 event.save()
+                if not event.event_class:
+                    s = event.name.split()
+                    if re.match('(^(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$)|^[0-9]+.?[0-9]*$',s[-1]):
+                        s=s[0:-1]
+                    n = ' '.join(s).title()
+                    ec = EventClass.objects.filter(name=n)
+                    if ec.exists():
+                        ec=ec[0]
+                    else:
+                        ec = EventClass(name=n)
+                        ec.save()
+                    event.event_class=ec
+                    event.save()
                 form.save_m2m()
                 shifts=formset.save()
                 event.add_event_to_gcal(previous_cal=previous_cal)
@@ -1671,6 +1710,19 @@ def create_electee_interviews(request):
             active_event = form.save(commit=False)
             active_event.event_type=active_type
             active_event.save()
+            if not active_event.event_class:
+                    s = event.name.split()
+                    if re.match('(^(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$)|^[0-9]+.?[0-9]*$',s[-1]):
+                        s=s[0:-1]
+                    n = ' '.join(s).title()
+                    ec = EventClass.objects.filter(name=n)
+                    if ec.exists():
+                        ec=ec[0]
+                    else:
+                        ec = EventClass(name=n)
+                        ec.save()
+                    event.event_class=ec
+                    event.save()
             active_id = active_event.id
             form.save_m2m()
             leaders = active_event.leaders.all()

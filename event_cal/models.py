@@ -110,6 +110,8 @@ class EventClass(models.Model):
 
     name = models.CharField(max_length=64)
 
+    def __unicode__(self):
+        return self.name
 
 class CalendarEvent(models.Model):
     """ An event on the TBP calendar.
@@ -136,7 +138,7 @@ class CalendarEvent(models.Model):
     event_type = models.ForeignKey('requirements.EventCategory')
     event_class = models.ForeignKey(
                         EventClass,
-                        verbose_name=('Choose the event\"class\" '
+                        verbose_name=('Choose the event \"class\" '
                                       'from the list below. If the event is '
                                       'not listed, leave this blank'),
                         null=True,
