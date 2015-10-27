@@ -1698,7 +1698,7 @@ def create_electee_interviews(request):
         request.session['error_message']='You are not authorized to create electee interviews'
         return get_previous_page(request,alternate='event_cal:list')
     request.session['current_page']=request.path
-    EventForm = modelform_factory(CalendarEvent,form=BaseEventForm,exclude=('completed','google_event_id','project_report','event_type','members_only','needs_carpool','use_sign_in','allow_advance_sign_up','needs_facebook_event','needs_flyer','mutually_exclusive_shifts'))
+    EventForm = modelform_factory(CalendarEvent,form=BaseEventForm,exclude=('event_class','completed','google_event_id','project_report','event_type','members_only','needs_carpool','use_sign_in','allow_advance_sign_up','needs_facebook_event','needs_flyer','mutually_exclusive_shifts'))
     EventForm.base_fields['assoc_officer'].queryset=OfficerPosition.objects.filter(enabled=True)
     EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
     active_type = EventCategory.objects.get(name='Conducted Interviews')
@@ -1710,19 +1710,6 @@ def create_electee_interviews(request):
             active_event = form.save(commit=False)
             active_event.event_type=active_type
             active_event.save()
-            if not active_event.event_class:
-                    s = event.name.split()
-                    if re.match('(^(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$)|^[0-9]+.?[0-9]*$',s[-1]):
-                        s=s[0:-1]
-                    n = ' '.join(s).title()
-                    ec = EventClass.objects.filter(name=n)
-                    if ec.exists():
-                        ec=ec[0]
-                    else:
-                        ec = EventClass(name=n)
-                        ec.save()
-                    event.event_class=ec
-                    event.save()
             active_id = active_event.id
             form.save_m2m()
             leaders = active_event.leaders.all()
@@ -1736,6 +1723,17 @@ def create_electee_interviews(request):
             electee_event.name+=' (Electees)'
             active_event.name+=' (Actives)'
             active_event.save()
+            electee_event.save()
+            n = 'Electee Interviews'
+            ec = EventClass.objects.filter(name=n)
+            if ec.exists():
+                ec=ec[0]
+            else:
+                ec = EventClass(name=n)
+                ec.save()
+            active_event.event_class=ec
+            active_event.save()
+            electee_event.event_class=ec
             electee_event.save()
             for shift_form in formset:
                 if not shift_form.is_valid() or not shift_form.has_changed():
