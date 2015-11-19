@@ -31,6 +31,7 @@ urlpatterns = patterns(
         include('fora.urls', namespace='fora')),
     url(r'^members/',
         include('member_resources.urls', namespace='member_resources')),
+    url(r'^admin/plate/', include('django_spaghetti.urls')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^login/', 'migweb.views.login_view', name='login_view'),
     url(r'^accounts/login/$',

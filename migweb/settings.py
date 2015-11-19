@@ -117,6 +117,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_spaghett',
     # Uncomment the next line to enable the admin:
      'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
@@ -186,3 +187,10 @@ TEST_RUNNER='migweb.test_runner.MigTestRunner'
 ## Select2 Settings
 
 SELECT2_BOOTSTRAP=True
+
+# for visualization
+SPAGHETTI_SAUCE = {
+  'apps':['mig_main','event_cal','about','history','migweb','corporate','electees','elections','fora','member_resources','outreach','requirements'],
+  'show_fields':False,
+  'exclude':{'mig_main':['academicterm']}
+}
