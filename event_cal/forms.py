@@ -1,29 +1,65 @@
 from django import forms
 
 from django.contrib.admin import widgets
-from django.forms import ModelForm,Form,ValidationError
-from django.forms.models import modelformset_factory,inlineformset_factory, BaseInlineFormSet,BaseFormSet
+from django.forms import ModelForm, Form, ValidationError
+from django.forms.models import modelformset_factory, inlineformset_factory
+from django.forms.models import BaseInlineFormSet, BaseFormSet
 from django.forms.formsets import formset_factory
 from django.utils.translation import ugettext as _
 
-from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,ModelSelect2Field,Select2Widget
+from django_select2 import ModelSelect2MultipleField, Select2MultipleWidget
+from django_select2 import ModelSelect2Field, Select2Widget
 
 from requirements.models import EventCategory,ProgressItem
-from event_cal.models import CalendarEvent, EventShift,AnnouncementBlurb,EventPhoto
+from event_cal.models import CalendarEvent, EventShift 
+from event_cal.models import AnnouncementBlurb, EventPhoto
 from mig_main.models import UserProfile,MemberProfile
 from history.models import ProjectReport
 
 class BaseEventPhotoForm(ModelForm):
-    event = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Event','closeOnSelect':True}),queryset=CalendarEvent.objects.all(),required=False)
-    project_report = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Report','closeOnSelect':True}),queryset=ProjectReport.objects.all(),required=False)
+    event = ModelSelect2Field(
+                    widget=Select2Widget(
+                                select2_options={
+                                    'width': 'element',
+                                    'placeholder': 'Select Event',
+                                    'closeOnSelect': True
+                                }
+                    ),
+                    queryset=CalendarEvent.objects.all(),
+                    required=False,
+    )
+    project_report = ModelSelect2Field(
+                    widget=Select2Widget(
+                            select2_options={
+                                'width': 'element',
+                                'placeholder': 'Select Report',
+                                'closeOnSelect':True
+                            }
+                    ),
+                    queryset=ProjectReport.objects.all(),
+                    required=False
+    )
     class Meta:
         model = EventPhoto
-        fields = ['event','project_report','caption','photo']
+        fields = ['event', 'project_report', 'caption', 'photo']
+
+
 class BaseEventPhotoFormAlt(ModelForm):
-    event = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Event','closeOnSelect':True}),queryset=CalendarEvent.objects.all(),required=False)
+    event = ModelSelect2Field(
+                    widget=Select2Widget(
+                            select2_options={
+                                'width':'element',
+                                'placeholder':'Select Event',
+                                'closeOnSelect':True
+                            }
+                    ),
+                    queryset=CalendarEvent.objects.all(),
+                    required=False,
+    )
     class Meta:
         model = EventPhoto
         exclude = ('project_report',)
+
 
 class BaseAnnouncementForm(ModelForm):
     contacts = ModelSelect2MultipleField(widget=Select2MultipleWidget(select2_options={'width':'element','placeholder':'Select Contact Person/People','closeOnSelect':True}), queryset=MemberProfile.get_members())

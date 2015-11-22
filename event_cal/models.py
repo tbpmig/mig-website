@@ -113,6 +113,7 @@ class EventClass(models.Model):
     def __unicode__(self):
         return self.name
 
+
 class CalendarEvent(models.Model):
     """ An event on the TBP calendar.
 
@@ -188,6 +189,7 @@ class CalendarEvent(models.Model):
     # Shift aggregations to speed querying
     earliest_start = models.DateTimeField(default=datetime.now)
     latest_end = models.DateTimeField(default=datetime.now)
+
     @classmethod
     def get_current_meeting_query(cls):
         """ Returns a Q object for the query for meetings happening now."""
@@ -293,8 +295,9 @@ class CalendarEvent(models.Model):
     def save(self, *args, **kwargs):
         """ Saves the event. Also clears the cache entry for its ajax."""
         if self.eventshift_set.exists():
-            self.earliest_start = self.eventshift_set.all().order_by('start_time')[0].start_time
-            self.latest_end = self.eventshift_set.all().order_by('-end_time')[0].end_time
+            shifts = self.eventshift_set.all()
+            self.earliest_start = shifts.order_by('start_time')[0].start_time
+            self.latest_end = shifts.order_by('-end_time')[0].end_time
         super(CalendarEvent, self).save(*args, **kwargs)
         cache.delete('EVENT_AJAX'+unicode(self.id))
 
@@ -1041,7 +1044,6 @@ class EventShift(models.Model):
         """
         super(EventShift, self).save(*args, **kwargs)
         cache.delete('EVENT_AJAX'+unicode(self.event.id))
-        
 
     def delete(self, *args, **kwargs):
         """ Deletes the shift from the database.
