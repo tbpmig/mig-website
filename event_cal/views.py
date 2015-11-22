@@ -708,7 +708,7 @@ def list(request):
     events = CalendarEvent.objects.filter(query_members&query_date&query_event_type&query_location&query_can_attend).distinct()
     template = loader.get_template('event_cal/list.html')
     packed_events=[]
-    for event in events.annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift'):
+    for event in events.order_by('earliest_start'):
         packed_events.append({'event':event,'can_edit':Permissions.can_edit_event(event,request.user)})
     context_dict = {
         'events':packed_events,
@@ -757,7 +757,7 @@ def my_events(request):
     if hasattr(request.user,'userprofile'):
         has_profile = True
         query = Q(term=AcademicTerm.get_current_term(),eventshift__attendees__uniqname=request.user.userprofile.uniqname)|Q(term=AcademicTerm.get_current_term(),leaders__uniqname=request.user.userprofile.uniqname)
-        my_events = CalendarEvent.objects.filter(query).distinct().annotate(earliest_shift=Min('eventshift__start_time')).order_by('earliest_shift')
+        my_events = CalendarEvent.objects.filter(query).distinct().order_by('earliest_start')
         
     template = loader.get_template('event_cal/my_events.html')
     packed_events=[]
@@ -824,6 +824,7 @@ def create_multishift_event(request):
             request.session['success_message']='Event created successfully'
             event.add_event_to_gcal()
             event.notify_publicity()
+            event.save()
             tweet_option = form.cleaned_data.pop('tweet_option','N')
             if tweet_option=='T':
                 event.tweet_event(False)
@@ -897,6 +898,7 @@ def create_event(request):
                 request.session['success_message']='Event created successfully'
                 event.add_event_to_gcal()
                 event.notify_publicity()
+                event.save()
                 tweet_option = form.cleaned_data.pop('tweet_option','N')
                 if tweet_option=='T':
                     event.tweet_event(False)
@@ -1000,6 +1002,7 @@ def delete_shift(request, shift_id):
         if not e.completed  and e.eventshift_set.all().count() > 1:
             s.delete_gcal_event_shift()
             s.delete()
+            e.save()
             call_command('reset_upcoming_events')
             request.session['success_message']='Event shift deleted successfully'
         else:
@@ -1818,6 +1821,8 @@ def create_electee_interviews(request):
             request.session['success_message']='Event created successfully'
             active_event.add_event_to_gcal()
             electee_event.add_event_to_gcal()
+            active_event.save()
+            electee_event.save()
             tweet_option = form.cleaned_data.pop('tweet_option','N')
             if tweet_option=='T':
                 event.tweet_event(False)
