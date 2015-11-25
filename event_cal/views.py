@@ -1,11 +1,11 @@
 # Create your views here.
-from datetime import datetime,date,timedelta
+from datetime import datetime, date, timedelta
 import re
 
 from django.core.cache import cache
 from django.core.management import call_command
 from django.utils import timezone
-from django.http import HttpResponse#, Http404, HttpResponseRedirect
+from django.http import HttpResponse
 from django.shortcuts import redirect, get_object_or_404
 from django.template import RequestContext, loader
 from django.contrib.auth.decorators import permission_required, login_required
@@ -13,23 +13,67 @@ from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.core.mail import send_mail
 from django import forms
-from django.forms.models import modelformset_factory,modelform_factory
+from django.forms.models import modelformset_factory, modelform_factory
 from django.db.models import Min,Q
 
 from django_ajax.decorators import ajax
 
-from event_cal.forms import BaseEventPhotoForm,BaseEventPhotoFormAlt, BaseAnnouncementForm,BaseEventForm,EventShiftFormset, EventShiftEditFormset,CompleteEventFormSet, MeetingSignInForm, CompleteFixedProgressEventFormSet,EventFilterForm,AddProjectReportForm,InterviewShiftFormset,MultiShiftFormset,EventEmailForm
-from event_cal.models import GoogleCalendar,CalendarEvent, EventShift, EventClass, MeetingSignIn, MeetingSignInUserData,AnnouncementBlurb,CarpoolPerson,EventPhoto,InterviewShift,WaitlistSlot,InterviewPairing,UserCanBringPreferredItem
-from history.models import ProjectReport, Officer,NonEventProject,BackgroundCheck
-from mig_main.models import OfficerPosition,PREFERENCES,UserPreference,MemberProfile,UserProfile,AcademicTerm
+from event_cal import messages
+from event_cal.forms import (
+                AddProjectReportForm,
+                BaseEventPhotoForm,
+                BaseEventPhotoFormAlt,
+                BaseAnnouncementForm,
+                CompleteEventFormSet,
+                CompleteFixedProgressEventFormSet,
+                BaseEventForm,
+                EventEmailForm,
+                EventFilterForm,
+                EventShiftEditFormset,
+                EventShiftFormset,
+                InterviewShiftFormset,
+                MeetingSignInForm,
+                MultiShiftFormset,
+)
+from event_cal.models import (
+                AnnouncementBlurb,
+                CalendarEvent,
+                CarpoolPerson,
+                EventClass,
+                EventPhoto,
+                EventShift,
+                GoogleCalendar,
+                InterviewPairing,
+                InterviewShift,
+                MeetingSignIn,
+                MeetingSignInUserData,
+                UserCanBringPreferredItem,
+                WaitlistSlot,
+)
+from history.models import (
+                BackgroundCheck,
+                NonEventProject,
+                Officer,
+                ProjectReport,
+)
+from mig_main.models import (
+                AcademicTerm,
+                MemberProfile,
+                OfficerPosition,
+                PREFERENCES,
+                UserPreference,
+                UserProfile,
+)
 from mig_main.utility import get_previous_page, Permissions, get_message_dict
 from outreach.models import TutoringRecord
 from requirements.models import ProgressItem, EventCategory
 
-from event_cal.gcal_functions import initialize_gcal, process_auth,get_credentials
+from event_cal.gcal_functions import initialize_gcal, process_auth, get_credentials
 
-GCAL_USE_PREF = [d for d in PREFERENCES if d.get('name') == 'google_calendar_add'][0]
-GCAL_ACCT_PREF = [d for d in PREFERENCES if d.get('name') == 'google_calendar_account'][0]
+GCAL_USE_PREF = [d for d in PREFERENCES
+                if d.get('name') == 'google_calendar_add'][0]
+GCAL_ACCT_PREF = [d for d in PREFERENCES 
+                 if d.get('name') == 'google_calendar_account'][0]
 
 def notify_waitlist_move(event,shift,profile):
     body = r'''Hi %(name)s,
@@ -48,6 +92,77 @@ The TBP Website'''%{'name':profile.get_firstlast_name(),
                     'link':reverse('event_cal:event_detail',args=(event.id,))}
     
     send_mail('[TBP] You\'ve been moved off an event waitlist.',body,'tbp.mi.g@gmail.com',[profile.get_email()] ,fail_silently=False)
+
+def organize_shifts_interview(shifts, is_two_part):
+    if is_two_part:
+        times = sorted(
+                    set(
+                        [timezone.localtime(shift.first_shift.start_time)
+                         for shift in shifts]
+                    )
+        )
+        locations = sorted(
+                    set(
+                        [shift.first_shift.location.replace(
+                                '(Part 1)',
+                                ''
+                        ).replace(
+                                '(Part 2)',
+                                ''
+                        ) for shift in shifts]
+                    )
+        )
+        organized_shifts = [
+            {
+                'time': time,
+                'locations': [None for location in locations]
+            } for time in times
+        ]
+
+    else:
+        times = sorted(
+                set(
+                    [timezone.localtime(shift.start_time) for shift in shifts]
+                )
+        )
+        locations = sorted(
+            set(
+                [shift.location.replace(
+                                '(Part 1)',
+                                ''
+                ).replace(
+                    '(Part 2)',
+                    ''
+                ).lstrip() for shift in shifts]
+            )
+        )
+        organized_shifts = [
+            {
+                'time': time,
+                'locations': [None for location in locations]
+            }
+            for time in times
+        ]
+    for time_count, time in enumerate(times):
+        for location_count, location in enumerate(locations):
+            if is_two_part:
+                shift = shifts.filter(
+                            first_shift__start_time=time,
+                            first_shift__location__contains=location,
+                )
+            else:
+                shift = shifts.filter(
+                            start_time=time,
+                            location__contains=location,
+                )
+            if shift:
+                organized_shifts[time_count]['locations'][location_count] = shift[0]
+                if is_two_part:
+                    organized_shifts[time_count]['end_time'] = shift[0].second_shift.end_time
+                else:
+                    organized_shifts[time_count]['end_time'] = shift[0].end_time
+    return (organized_shifts, locations)
+
 
 def add_user_to_shift(profile,shift):
     shift.attendees.add(profile)
@@ -1592,167 +1707,250 @@ def add_project_report_to_event(request,event_id):
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
 
+
 def calendar_admin(request):
     if not Permissions.can_view_calendar_admin(request.user):
-        request.session['error_message']='You are not authorized to access calendar admin functionality.'
-        return get_previous_page(request,alternate='event_cal:index')
-    request.session['current_page']=request.path
+        request.session['error_message'] = messages.CAL_ADMIN_NO_PERMISSIONS
+        return get_previous_page(request, alternate='event_cal:index')
+    request.session['current_page'] = request.path
     template = loader.get_template('event_cal/calendar_admin.html')
-    links=[]
+    links = []
     if Permissions.can_create_events(request.user):
-        links.append({'link':reverse('event_cal:create_event'),'name':'Add Event'})
-        links.append({'link':reverse('event_cal:create_multishift_event'),'name':'Add Event with many shifts'})
+        links.append(
+                {
+                    'link': reverse('event_cal:create_event'),
+                    'name': 'Add Event',
+                }
+        )
+        links.append(
+                {
+                    'link': reverse('event_cal:create_multishift_event'),
+                    'name': 'Add Event with many shifts',
+                }
+        )
     if Permissions.can_add_announcements(request.user):
-        links.append({'link':reverse('event_cal:add_announcement'),'name':'Add Announcement'})
+        links.append(
+                {
+                    'link': reverse('event_cal:add_announcement'),
+                    'name': 'Add Announcement'
+                }
+        )
     if Permissions.can_generate_announcements(request.user):
-        links.append({'link':reverse('event_cal:generate_announcements'),'name':'Generate Announcements'})
-        links.append({'link':reverse('event_cal:edit_announcements'),'name':'Edit Announcements'})
+        links.append(
+                {
+                    'link': reverse('event_cal:generate_announcements'),
+                    'name': 'Generate Announcements',
+                }
+        )
+        links.append(
+                {
+                    'link': reverse('event_cal:edit_announcements'),
+                    'name': 'Edit Announcements'
+                }
+        )
     if Permissions.can_add_event_photo(request.user):
-        links.append({'link':reverse('event_cal:add_event_photo'),'name':'Add Event Photo'})
+        links.append(
+                {
+                    'link': reverse('event_cal:add_event_photo'),
+                    'name': 'Add Event Photo'
+                }
+        )
     if Permissions.can_manage_electee_progress(request.user):
-        links.append({'link':reverse('event_cal:create_electee_interviews'),'name':'Schedule Electee Interview Slots'})
+        links.append(
+                {
+                    'link': reverse('event_cal:create_electee_interviews'),
+                    'name': 'Schedule Electee Interview Slots',
+                }
+        )
     context_dict = {
-        'subnav':'admin',
-        'page_title':'Calendar Administrative Functions',
-        'links':links,
-        }
+        'subnav': 'admin',
+        'page_title': 'Calendar Administrative Functions',
+        'links': links,
+    }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
 
 def edit_announcements(request):
     if not Permissions.can_generate_announcements(request.user):
-        request.session['error_message']='You are not authorized to edit announcements.'
-        return get_previous_page(request,alternate='event_cal:index')
-    request.session['current_page']=request.path
+        request.session['error_message'] = messages.ANNOUNCE_NO_PERMISSIONS
+        return get_previous_page(request, alternate='event_cal:index')
+    request.session['current_page'] = request.path
     now = timezone.localtime(timezone.now())
-    announcement_parts = AnnouncementBlurb.objects.filter(end_date__gt=now.date)
+    announcement_parts = AnnouncementBlurb.objects.filter(
+                                                end_date__gt=now.date
+    )
     AnnouncementFormSet = modelformset_factory(AnnouncementBlurb)
+    prefix = 'announcements'
+    formset = AnnouncementFormSet(
+                request.POST or None,
+                prefix=prefix,
+                queryset=announcement_parts
+    )
     if request.method == 'POST':
-        formset = AnnouncementFormSet(request.POST,prefix='announcements',queryset=announcement_parts)
         if formset.is_valid():
             formset.save()
-            request.session['success_message']='The announcements were successfully updated.'
+            request.session['success_message'] = ('The announcements were '
+                                                  'successfully updated.')
             return redirect('event_cal:calendar_admin')
         else:
-            request.session['error_message']='There were errors in your submission. The changes were not saved. Please correct the errors and try again.'
-    else:
-        formset = AnnouncementFormSet(prefix='announcements',queryset=announcement_parts)
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
+
     template = loader.get_template('generic_formset.html')
     context_dict = {
-        'formset':formset,
-        'subnav':'admin',
-        'has_files':False,
-        'can_add_row':True,
-        'submit_name':'Update Announcements',
-        'form_title':'Edit Submitted Announcements',
-        'help_text':'Edit announcements for the current/future announcement cycles.',
-        'base':'event_cal/base_event_cal.html',
-        'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
-        }
+        'formset': formset,
+        'subnav': 'admin',
+        'has_files': False,
+        'can_add_row': True,
+        'submit_name': 'Update Announcements',
+        'form_title': 'Edit Submitted Announcements',
+        'help_text': ('Edit announcements for the current/future '
+                      'announcement cycles.'),
+        'base': 'event_cal/base_event_cal.html',
+        'back_button': {
+                'link': reverse('event_cal:calendar_admin'),
+                'text': 'To Calendar Admin'
+        },
+    }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
-def event_detail_table(request,event_id):
-    #need to do permissions here
-    has_profile =False
-    user_is_member=False
-    if hasattr(request.user,'userprofile'):  
+
+def event_detail_table(request, event_id):
+    has_profile = False
+    if hasattr(request.user, 'userprofile'):
         has_profile = True
-        try:
-            request.user.userprofile.memberprofile
-            user_is_member = True
-        except ObjectDoesNotExist:
-            pass
     if not has_profile:
-        request.session['error_message']='You must be logged in and have a profile to view the table view.'
-        return get_previous_page(request,alternate='event_cal:index')        
-    request.session['current_page']=request.path
+        request.session['error_message'] = messages.EVT_TABLE_REQS_PROFILE
+        return get_previous_page(request, alternate='event_cal:index')
+    request.session['current_page'] = request.path
     template = loader.get_template('event_cal/table_view.html')
-    event = get_object_or_404(CalendarEvent,id=event_id)
+    event = get_object_or_404(CalendarEvent, id=event_id)
     shifts = event.eventshift_set.order_by('start_time')
-    times = sorted(set([timezone.localtime(shift.start_time).time() for shift in shifts]))
-    dates = sorted(set([timezone.localtime(shift.start_time).date() for shift in shifts]))
-    organized_shifts = [{'time':time,'dates':[None for date in dates]} for time in times]
-    for time_count,time in enumerate(times):
-        for date_count,date in enumerate(dates):
-            shift = shifts.filter(start_time=timezone.make_aware(datetime.combine(date,time),timezone.get_default_timezone()))
+    times = sorted(
+                set(
+                    [timezone.localtime(shift.start_time).time()
+                     for shift in shifts]
+                )
+    )
+    dates = sorted(
+                set(
+                    [timezone.localtime(shift.start_time).date()
+                     for shift in shifts]
+                )
+    )
+    organized_shifts = [
+                {
+                    'time': time,
+                    'dates': [None for date in dates]
+                } for time in times
+    ]
+    for time_count, time in enumerate(times):
+        for date_count, date in enumerate(dates):
+            shift = shifts.filter(
+                        start_time=timezone.make_aware(
+                                        datetime.combine(date, time),
+                                        timezone.get_default_timezone()
+                        )
+            )
             if shift:
-                organized_shifts[time_count]['dates'][date_count]=shift[0]
+                organized_shifts[time_count]['dates'][date_count] = shift[0]
     context_dict = {
-        'event':event,
-        'can_edit_event':Permissions.can_edit_event(event,request.user),
-        'shifts':organized_shifts,
-        'dates':dates,
-        'has_profile':hasattr(request.user,'userprofile'),
-        'subnav':'list',
-        }
+        'event': event,
+        'can_edit_event': Permissions.can_edit_event(event, request.user),
+        'shifts': organized_shifts,
+        'dates': dates,
+        'has_profile': True,
+        'subnav': 'list',
+    }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
-    
-    
+
+
 def create_electee_interviews(request):
     if not Permissions.can_manage_electee_progress(request.user):
-        request.session['error_message']='You are not authorized to create electee interviews'
-        return get_previous_page(request,alternate='event_cal:list')
-    request.session['current_page']=request.path
-    EventForm = modelform_factory(CalendarEvent,form=BaseEventForm,exclude=('event_class','completed','google_event_id','project_report','event_type','members_only','needs_carpool','use_sign_in','allow_advance_sign_up','needs_facebook_event','needs_flyer','mutually_exclusive_shifts'))
-    EventForm.base_fields['assoc_officer'].queryset=OfficerPosition.objects.filter(enabled=True)
+        request.session['error_message'] = messages.INTERVIEW_CANNOT_CREATE
+        return get_previous_page(request, alternate='event_cal:list')
+    request.session['current_page'] = request.path
+    EventForm = modelform_factory(
+                        CalendarEvent,
+                        form=BaseEventForm,
+                        exclude=(
+                            'event_class',
+                            'completed',
+                            'google_event_id',
+                            'project_report',
+                            'event_type',
+                            'members_only',
+                            'needs_carpool',
+                            'use_sign_in',
+                            'allow_advance_sign_up',
+                            'needs_facebook_event',
+                            'needs_flyer',
+                            'mutually_exclusive_shifts'
+                        )
+    )
+    active_officers = OfficerPosition.objects.filter(enabled=True)
+    EventForm.base_fields['assoc_officer'].queryset = active_officers
     EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
     active_type = EventCategory.objects.get(name='Conducted Interviews')
     electee_type = EventCategory.objects.get(name='Attended Interviews')
     if request.method == 'POST':
-        form = EventForm(request.POST,prefix='event')
-        formset = InterviewShiftFormset(request.POST,prefix='shift')
+        form = EventForm(request.POST, prefix='event')
+        formset = InterviewShiftFormset(request.POST, prefix='shift')
         if form.is_valid() and formset.is_valid():
             active_event = form.save(commit=False)
-            active_event.event_type=active_type
+            active_event.event_type = active_type
             active_event.save()
             active_id = active_event.id
             form.save_m2m()
             leaders = active_event.leaders.all()
             electee_event = active_event
-            electee_event.pk=None
+            electee_event.pk = None
             electee_event.save()
-            active_event=CalendarEvent.objects.get(id=active_id)
-            electee_event.event_type=electee_type
-            electee_event.mutually_exclusive_shifts=True
-            electee_event.leaders=leaders
-            electee_event.name+=' (Electees)'
-            active_event.name+=' (Actives)'
+            active_event = CalendarEvent.objects.get(id=active_id)
+            electee_event.event_type = electee_type
+            electee_event.mutually_exclusive_shifts = True
+            electee_event.leaders = leaders
+            electee_event.name += ' (Electees)'
+            active_event.name += ' (Actives)'
             active_event.save()
             electee_event.save()
             n = 'Electee Interviews'
             ec = EventClass.objects.filter(name=n)
             if ec.exists():
-                ec=ec[0]
+                ec = ec[0]
             else:
                 ec = EventClass(name=n)
                 ec.save()
-            active_event.event_class=ec
+            active_event.event_class = ec
             active_event.save()
-            electee_event.event_class=ec
+            electee_event.event_class = ec
             electee_event.save()
             for shift_form in formset:
                 if not shift_form.is_valid() or not shift_form.has_changed():
-                    #if it hasn't changed, then it's an extra blank form
+                    # if it hasn't changed, then it's an extra blank form
                     continue
-                cleaned_data=shift_form.cleaned_data
-                shift_date=cleaned_data['date']
+                cleaned_data = shift_form.cleaned_data
+                shift_date = cleaned_data['date']
                 shifts_start = cleaned_data['start_time']
-                mid_time =datetime.combine(shift_date,shifts_start)
-                end_time = datetime.combine(shift_date,shift_form.cleaned_data['end_time']) 
+                mid_time = datetime.combine(shift_date, shifts_start)
+                end_time = datetime.combine(
+                                shift_date,
+                                shift_form.cleaned_data['end_time']
+                )
                 locations = shift_form.cleaned_data['locations'].split(',')
                 num_parts = shift_form.cleaned_data['number_of_parts']
                 odd_shift = False
-                alternate_last = (len(locations)%num_parts)==1
+                alternate_last = (len(locations) % num_parts) == 1
 
-                while mid_time<end_time:
+                while mid_time < end_time:
                     odd_shift = not odd_shift
                     if num_parts > 1:
                         if odd_shift:
@@ -1760,30 +1958,38 @@ def create_electee_interviews(request):
                         else:
                             end_shifts = []
                     start_time = mid_time
-                    mid_time +=timedelta(minutes=shift_form.cleaned_data['duration'])
-                    for idx,location in enumerate(locations):
+                    mid_time += timedelta(
+                                    minutes=shift_form.cleaned_data['duration']
+                    )
+                    for idx, location in enumerate(locations):
                         if idx == (len(locations)-1) and alternate_last:
                             part = 1 if odd_shift else 2
                         else:
-                            part = (idx%num_parts)+1
+                            part = (idx % num_parts)+1
                         electee_shift = EventShift()
-                        electee_shift.start_time = timezone.make_aware(start_time,timezone.get_current_timezone())
-                        electee_shift.end_time = timezone.make_aware(mid_time,timezone.get_current_timezone())
+                        tz = timezone.get_current_timezone()
+                        electee_shift.start_time = timezone.make_aware(
+                                                            start_time,
+                                                            tz
+                        )
+                        electee_shift.end_time = timezone.make_aware(
+                                                            mid_time,
+                                                            tz
+                        )
                         if num_parts > 1:
                             electee_shift.location = location.lstrip() + ' (Part '+unicode(part)+')'
                         else:
                             electee_shift.location = location.lstrip()
-                        interview_type=shift_form.cleaned_data['interview_type']
-                        if interview_type=='U' or interview_type=='UI':
+                        interview_type = shift_form.cleaned_data['interview_type']
+                        if interview_type == 'U' or interview_type == 'UI':
                             electee_shift.ugrads_only = True
-                        elif interview_type=='G' or interview_type=='GI':
+                        elif interview_type == 'G' or interview_type == 'GI':
                             electee_shift.grads_only = True
                         electee_shift.max_attendance = 1
                         electee_shift.electees_only = True
                         electee_shift.event = electee_event
-                        #electee_shift.on_campus=True
                         electee_shift.save()
-                        electee_shift_id=electee_shift.id
+                        electee_shift_id = electee_shift.id
                         active_shift = electee_shift
                         active_shift.pk = None
                         active_shift.save()
@@ -1791,20 +1997,21 @@ def create_electee_interviews(request):
                         active_shift.electees_only = False
                         active_shift.actives_only = True
                         active_shift.event = active_event
-                        if interview_type=='U':
+                        if interview_type == 'U':
                             active_shift.ugrads_only = True
-                            active_shift.grads_only=False
-                        elif interview_type=='G':
+                            active_shift.grads_only = False
+                        elif interview_type == 'G':
                             active_shift.grads_only = True
-                            active_shift.ugrads_only=False
+                            active_shift.ugrads_only = False
                         else:
                             active_shift.grads_only = False
-                            active_shift.ugrads_only=False
-                        #active_shift.on_campus=True
+                            active_shift.ugrads_only = False
                         active_shift.save()
                         interview_shift = InterviewShift()
                         interview_shift.interviewer_shift = active_shift
-                        electee_shift =  EventShift.objects.get(id=electee_shift_id)
+                        electee_shift = EventShift.objects.get(
+                                                    id=electee_shift_id
+                        )
                         interview_shift.interviewee_shift = electee_shift
                         interview_shift.term = active_event.term
                         interview_shift.save()
@@ -1814,275 +2021,340 @@ def create_electee_interviews(request):
                             else:
                                 end_shifts.append(electee_shift)
                     if num_parts > 1 and not odd_shift:
-                        for idx,start_shift in enumerate(start_shifts):
-                            pairing = InterviewPairing(first_shift=start_shift,second_shift=end_shifts[idx-1])
+                        for idx, start_shift in enumerate(start_shifts):
+                            pairing = InterviewPairing(
+                                        first_shift=start_shift,
+                                        second_shift=end_shifts[idx-1]
+                            )
                             pairing.save()
-                        #TODO: create the pairings
-            request.session['success_message']='Event created successfully'
+
+            request.session['success_message'] = 'Event created successfully'
             active_event.add_event_to_gcal()
             electee_event.add_event_to_gcal()
             active_event.save()
             electee_event.save()
-            tweet_option = form.cleaned_data.pop('tweet_option','N')
-            if tweet_option=='T':
+            tweet_option = form.cleaned_data.pop('tweet_option', 'N')
+            if tweet_option == 'T':
                 event.tweet_event(False)
-            elif tweet_option=='H':
+            elif tweet_option == 'H':
                 event.tweet_event(True)
             return redirect('event_cal:list')
-            
         else:
-            request.session['error_message']='There were errors in the submitted event, please correct the errors noted below.'
+            request.session['error_message'] = messages.EVT_SUBMIT_ERROR
     else:
         form = EventForm(prefix='event')
-        formset= InterviewShiftFormset(prefix='shift')
-    dp_ids=['id_event-announce_start']
+        formset = InterviewShiftFormset(prefix='shift')
+    dp_ids = ['id_event-announce_start']
     for count in range(len(formset)):
-        dp_ids.append('id_shift-%d-date'%(count))
+        dp_ids.append('id_shift-%d-date' % (count))
     template = loader.get_template('event_cal/create_event.html')
     context_dict = {
-        'form':form,
-        'formset':formset,
-        'dp_ids':dp_ids,
-        'dp_ids_dyn':['date'],
-        'prefix':'shift',
-        'subnav':'admin',
-        'submit_name':'Create Interview Slots',
-        'form_title':'Electee Interview Slot Creation',
-        'help_text':'Create the interview slots. Just one per session, separate events will be automatically created for actives and electees.\n Note: the \"Grad interviewee anyone interviewer\" option is discouraged due to the nature of the case studies.',
-        'shift_title':'Shift days and time windows',
-        'shift_help_text':'Shifts will be automatically created within the window you specify, for the duration you give. Note that if your duration does not line up with the end time, you may go longer than you planned.',
-        'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
-        'event_photos':EventPhoto.objects.all(),
-#        'date_prefixes':[{'id_shift':['start_time_0','end_time_0']}],
+        'form': form,
+        'formset': formset,
+        'dp_ids': dp_ids,
+        'dp_ids_dyn': ['date'],
+        'prefix': 'shift',
+        'subnav': 'admin',
+        'submit_name': 'Create Interview Slots',
+        'form_title': 'Electee Interview Slot Creation',
+        'help_text': ('Create the interview slots. Just one per session, '
+                      'separate events will be automatically created for '
+                      'actives and electees.\n Note: the \"Grad interviewee '
+                      'anyone interviewer\" option is discouraged due to the '
+                      'nature of the case studies.'),
+        'shift_title': 'Shift days and time windows',
+        'shift_help_text': ('Shifts will be automatically created within the '
+                            'window you specify, for the duration you give. '
+                            'Note that if your duration does not line up with '
+                            'the end time, you may go longer than you '
+                            'planned.'),
+        'back_button': {
+            'link': reverse('event_cal:calendar_admin'),
+            'text': 'To Calendar Admin',
+        },
+        'event_photos': EventPhoto.objects.all(),
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context_dict['edit']=True
-    context = RequestContext(request,context_dict )
+    context_dict['edit'] = True
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
-    
-def interview_view_electees(request,event_id):
-    #need to do permissions here
-    has_profile =False
-    user_is_member=False
-    if hasattr(request.user,'userprofile'):  
+
+
+def interview_view_electees(request, event_id):
+    has_profile = False
+    user_is_member = False
+    if hasattr(request.user, 'userprofile'):
         has_profile = True
-        try:
-            request.user.userprofile.memberprofile
-            user_is_member = True
-        except ObjectDoesNotExist:
-            pass
+        user_is_member = request.user.userprofile.is_member()
     if not user_is_member:
-        request.session['error_message']='You must be logged in, have a profile, and be a member to view the interview sign-up.'
-        return get_previous_page(request,alternate='event_cal:index')        
-    
+        request.session['error_message'] = INTERVIEW_NOT_MEMBER
+        return get_previous_page(request, alternate='event_cal:index')
+
     template = loader.get_template('event_cal/interview_view.html')
-    event = get_object_or_404(CalendarEvent,id=event_id)
+    event = get_object_or_404(CalendarEvent, id=event_id)
     if not event.event_type.name == 'Attended Interviews':
-        request.session['error_message']='Cannot view interview format for event that isn\'t an interview.'
-        return get_previous_page(request,alternate='event_cal:index')   
-    request.session['current_page']=request.path
+        request.session['error_message'] = messages.NOT_INTERVIEW
+        return get_previous_page(request, alternate='event_cal:index')
+    request.session['current_page'] = request.path
     shifts = event.eventshift_set.order_by('start_time')
     is_two_part = False
     if shifts[0].pairing_first.exists() or shifts[0].pairing_second.exists():
-        #the interview is 2-part
-        shifts = InterviewPairing.objects.filter(first_shift__event=event).distinct().order_by('first_shift.start_time')
         is_two_part = True
-        times = sorted(set([timezone.localtime(shift.first_shift.start_time) for shift in shifts]))
-        locations = sorted(set([shift.first_shift.location.replace('(Part 1)','').replace('(Part 2)','') for shift in shifts]))
-        organized_shifts = [{'time':time,'locations':[None for location in locations]} for time in times]
-        for time_count,time in enumerate(times):
-            for location_count,location in enumerate(locations):
-                shift = shifts.filter(first_shift__start_time=time,first_shift__location__contains=location)
-                if shift:
-                    organized_shifts[time_count]['locations'][location_count]=shift[0]
-                    organized_shifts[time_count]['end_time']=shift[0].second_shift.end_time
-    else:
-        times = sorted(set([timezone.localtime(shift.start_time) for shift in shifts]))
-        locations = sorted(set([shift.location for shift in shifts]))
-        organized_shifts = [{'time':time,'locations':[None for location in locations]} for time in times]
-        for time_count,time in enumerate(times):
-            for location_count,location in enumerate(locations):
-                shift = shifts.filter(start_time=time,location=location)
-                if shift:
-                    organized_shifts[time_count]['locations'][location_count]=shift[0]
-                    organized_shifts[time_count]['end_time']=shift[0].end_time
+        shifts = InterviewPairing.objects.filter(
+            first_shift__event=event
+        ).distinct().order_by('first_shift.start_time')
+    organized_shifts, locations = organize_shifts_interview(shifts, is_two_part)
+
     context_dict = {
-        'event':event,
-        'can_edit_event':Permissions.can_edit_event(event,request.user),
-        'shifts':organized_shifts,
-        'locations':locations,
-        'has_profile':hasattr(request.user,'userprofile'),
-        'subnav':'list',
-        'is_two_part':is_two_part,
+        'event': event,
+        'can_edit_event': Permissions.can_edit_event(event, request.user),
+        'shifts': organized_shifts,
+        'locations': locations,
+        'has_profile': hasattr(request.user, 'userprofile'),
+        'subnav': 'list',
+        'is_two_part': is_two_part,
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
-    
-def interview_view_actives(request,event_id):
-    #need to do permissions here
-    has_profile =False
-    user_is_member=False
-    if hasattr(request.user,'userprofile'):  
+
+
+def interview_view_actives(request, event_id):
+    has_profile = False
+    user_is_member = False
+    user_is_active = False
+    if hasattr(request.user, 'userprofile'):
         has_profile = True
-        try:
-            request.user.userprofile.memberprofile
-            user_is_member = True
-        except ObjectDoesNotExist:
-            pass
+        user_is_member = request.user.userprofile.is_member()
+        user_is_active = request.user.userprofile.is_active()
     if not user_is_member:
-        request.session['error_message']='You must be logged in, have a profile, and be a member to view the interview sign-up.'
-        return get_previous_page(request,alternate='event_cal:index')        
-    
+        request.session['error_message'] = INTERVIEW_NOT_MEMBER
+        return get_previous_page(request, alternate='event_cal:index')
+    if not user_is_active:
+        request.session['error_message'] = INTERVIEW_NOT_ACTIVE
+        return get_previous_page(request, alternate='event_cal:index')
+
     template = loader.get_template('event_cal/interview_view_actives.html')
-    event = get_object_or_404(CalendarEvent,id=event_id)
+    event = get_object_or_404(CalendarEvent, id=event_id)
     if not event.event_type.name == 'Conducted Interviews':
-        request.session['error_message']='Cannot view interview format for event that isn\'t an interview.'
-        return get_previous_page(request,alternate='event_cal:index')   
-    request.session['current_page']=request.path
-    request.session['current_page']=request.path
+        request.session['error_message'] = messages.NOT_INTERVIEW
+        return get_previous_page(request, alternate='event_cal:index')
+    request.session['current_page'] = request.path
+    request.session['current_page'] = request.path
     shifts = event.eventshift_set.order_by('start_time')
 
-    times = sorted(set([timezone.localtime(shift.start_time) for shift in shifts]))
-    locations = sorted(set([shift.location.replace('(Part 1)','').replace('(Part 2)','').lstrip() for shift in shifts]))
-    organized_shifts = [{'time':time,'locations':[None for location in locations]} for time in times]
-    for time_count,time in enumerate(times):
-        for location_count,location in enumerate(locations):
-            shift = shifts.filter(start_time=time,location__contains=location)
-            if shift:
-                organized_shifts[time_count]['locations'][location_count]=shift[0]
-                organized_shifts[time_count]['end_time']=shift[0].end_time
+    organized_shifts, locations = organize_shifts_interview(shifts, False)
     context_dict = {
-        'event':event,
-        'can_edit_event':Permissions.can_edit_event(event,request.user),
-        'shifts':organized_shifts,
-        'locations':locations,
-        'has_profile':hasattr(request.user,'userprofile'),
-        'subnav':'list',
+        'event': event,
+        'can_edit_event': Permissions.can_edit_event(event, request.user),
+        'shifts': organized_shifts,
+        'locations': locations,
+        'has_profile': has_profile,
+        'subnav': 'list',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
-    
-# These are for the interview slots   
+
+
+# These are for the interview slots
 @ajax
 @login_required
-def sign_up_paired(request,  shift_id):
-    shift = get_object_or_404(InterviewPairing,id=shift_id)
+def sign_up_paired(request, shift_id):
+    shift = get_object_or_404(InterviewPairing, id=shift_id)
     event = shift.first_shift.event
-    if shift.first_shift.start_time < timezone.now():
-        request.session['error_message']='You cannot sign up for an event in the past'
-    elif shift.first_shift.start_time-timedelta(hours=event.min_sign_up_notice)<timezone.now():
-        request.session['error_message']='This event blocks sign-up %s hours before start'%(event.min_sign_up_notice)
-    elif shift.first_shift.max_attendance and (shift.first_shift.attendees.count() >= shift.first_shift.max_attendance):
-        request.session['error_message']='Shift is full'
+    has_error = False
+    ERROR_MSG = ''
+    min_signup = event.min_sign_up_notice
+    start_time = shift.first_shift.start_time
+    num_attendees = shift.first_shift.attendees.count()
+    max_attendance = shift.first_shift.max_attendance
+    if start_time < timezone.now():
+        has_error = True
+        ERROR_MSG = messages.EVT_IN_PAST
+    elif (start_time-timedelta(hours=min_signup) < timezone.now()):
+        has_error = True
+        ERROR_MSG = messages.EVT_SIGNUP_CLOSED % (min_signup)
+    elif (max_attendance and
+          (num_attendees >= max_attendance)):
+        has_error = True
+        ERROR_MSG = messages.SHIFT_FULL
     else:
-        if hasattr(request.user,'userprofile'):
+        if hasattr(request.user, 'userprofile'):
             profile = request.user.userprofile
-            if event.requires_AAPS_background_check and not BackgroundCheck.user_can_mindset(profile):
-                request.session['error_message']='You must pass an AAPS background check and complete training to sign up for this event'
-            elif event.requires_UM_background_check and not BackgroundCheck.user_can_work_w_minors(profile):
-                request.session['error_message']='You must pass a UM background check and complete training to sign up for this event'    
-            elif event.mutually_exclusive_shifts and profile in event.get_event_attendees():
-                request.session['error_message']='You may only sign up for one shift for this event. Unsign up for the other before continuing'
+            if (event.requires_AAPS_background_check and
+               not BackgroundCheck.user_can_mindset(profile)):
+                has_error = True
+                ERROR_MSG = messages.EVT_NEEDS_AAPS_BACKGROUND
+            elif (event.requires_UM_background_check and
+                  not BackgroundCheck.user_can_work_w_minors(profile)):
+                has_error = True
+                ERROR_MSG = EVT_NEEDS_UM_BACKGROUND
+            elif (event.mutually_exclusive_shifts and
+                  profile in event.get_event_attendees()):
+                has_error = True
+                ERROR_MSG = EVT_ALLOWS_ONE_SHIFT
             elif profile.is_member or not event.members_only:
                 if shift.first_shift.ugrads_only and not profile.is_ugrad():
-                    request.session['error_message']='Shift is for undergrads only'
+                    has_error = True
+                    ERROR_MSG = SHIFT_UGRADS_ONLY
                 elif shift.first_shift.grads_only and not profile.is_grad():
-                    request.session['error_message']='Shift is for grads only'
-                elif shift.first_shift.electees_only and not profile.is_electee():
-                    request.session['error_message']='Shift is for electees only'
-                elif shift.first_shift.actives_only and not profile.is_active():
-                    request.session['error_message']='Shift is for actives only'
+                    has_error = True
+                    ERROR_MSG = messages.SHIFT_GRADS_ONLY
+                elif (shift.first_shift.electees_only and
+                      not profile.is_electee()):
+                    has_error = True
+                    ERROR_MSG = SHIFT_ELECTEES_ONLY
+                elif (shift.first_shift.actives_only and
+                      not profile.is_active()):
+                    has_error = True
+                    ERROR_MSG = SHIFT_ACTIVES_ONLY
                 else:
-                    add_user_to_shift(request.user.userprofile,shift.first_shift)
-                    add_user_to_shift(request.user.userprofile,shift.second_shift)
-                    request.session['success_message']='You have successfully signed up for the event'
-                    if event.preferred_items.lstrip() and not event.usercanbringpreferreditem_set.filter(user=profile).exists():
-                        request.session['info_message']='Please indicate if you can bring items to the event.'
-                        return redirect('event_cal:preferred_items_request',shift.event.id)
+                    add_user_to_shift(
+                                request.user.userprofile,
+                                shift.first_shift
+                    )
+                    add_user_to_shift(
+                                request.user.userprofile,
+                                shift.second_shift
+                    )
+                    request.session['success_message'] = EVT_SIGNUP_SUCCESS
+                    can_bring = event.usercanbringpreferreditem_set.filter(
+                                                                user=profile
+                    )
+                    if (event.preferred_items.lstrip() and
+                       not can_bring.exists()):
+                        request.session['info_message'] = messages.ITEMS
+                        return redirect(
+                                'event_cal:preferred_items_request',
+                                shift.event.id,
+                        )
                     if event.needs_carpool:
-                        request.session['info_message']='If you need or can give a ride, please also sign up for the carpool'
-                        return redirect('event_cal:carpool_sign_up',event_id)
+                        request.session['info_message'] = messages.CARPOOL
+                        return redirect('event_cal:carpool_sign_up', event_id)
             else:
-                request.session['error_message']='This event is members-only'
+                has_error = True
+                ERROR_MSG = 'This event is members-only'
         else:
-            request.session['error_message']='You must create a profile before signing up to events' 
-    if 'error_message' in request.session:
-        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+            has_error = True
+            ERROR_MSG = 'You must create a profile before signing up to events'
+    if has_error:
+        return {
+            'fragments': {
+                '#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+    <strong>Error:</strong>%s</div>''' % (ERROR_MSG)
+            }
+        }
     shift_id = unicode(shift.first_shift.id)
-    return_dict= {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,shift_id,reverse('event_cal:unsign_up_paired', args=[ shift.id] ),shift_id),
-                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    return_dict = {
+        'fragments': {
+            '#shift-signup'+shift_id: r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>''' % (shift_id, shift_id, reverse('event_cal:unsign_up_paired', args=[shift.id]), shift_id),
+            '#ajax-message': r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
-    if hasattr(request.user,'userprofile'):
+    <strong>Success:</strong>%s</div>''' % (request.session.pop('success_message'))
+        }
+    }
+    if hasattr(request.user, 'userprofile'):
         profile = request.user.userprofile
-        gcal_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_add')
+        gcal_pref = UserPreference.objects.filter(
+                            user=profile,
+                            preference_type='google_calendar_add'
+        )
         if gcal_pref.exists():
             use_cal_pref = gcal_pref[0].preference_value
         else:
             use_cal_pref = GCAL_USE_PREF['default']
-        show_manual_add_gcal_button=(use_cal_pref!='always')
+        show_manual_add_gcal_button = (use_cal_pref != 'always')
     else:
-        show_manual_add_gcal_button=False
+        show_manual_add_gcal_button = False
     if show_manual_add_gcal_button:
-        return_dict['fragments']['#shift-gcal'+shift_id]=r'''<a id="shift-gcal%s" class="btn btn-primary btn-sm" onclick="$('#shift-gcal%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-gcal%s').attr('disabled',false);})"><i class="glyphicon glyphicon-calendar"></i> Add event to gcal</a>'''%(shift_id,shift_id,reverse('event_cal:add_shift_to_gcal_paired', args=[ shift.id] ),shift_id)
-    return return_dict  
+        return_dict['fragments']['#shift-gcal'+shift_id] = r'''<a id="shift-gcal%s" class="btn btn-primary btn-sm" onclick="$('#shift-gcal%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-gcal%s').attr('disabled',false);})"><i class="glyphicon glyphicon-calendar"></i> Add event to gcal</a>''' % (shift_id, shift_id, reverse('event_cal:add_shift_to_gcal_paired', args=[shift.id]), shift_id)
+    return return_dict
+
+
 @ajax
 @login_required
-def manual_remove_user_from_paired_shift(request,shift_id,username):
-    shift = get_object_or_404(InterviewPairing,id=shift_id)
+def manual_remove_user_from_paired_shift(request, shift_id, username):
+    shift = get_object_or_404(InterviewPairing, id=shift_id)
     e = shift.first_shift.event
-    if not Permissions.can_edit_event(e,request.user):
-        request.session['error_message']='You are not authorized to remove attendees'
+    if not Permissions.can_edit_event(e, request.user):
+        request.session['error_message'] = ('You are not authorized to remove '
+                                            'attendees')
     else:
-        profile = get_object_or_404(UserProfile,uniqname=username)
-        unsign_up_user(shift.first_shift,profile)
-        unsign_up_user(shift.second_shift,profile)
+        profile = get_object_or_404(UserProfile, uniqname=username)
+        unsign_up_user(shift.first_shift, profile)
+        unsign_up_user(shift.second_shift, profile)
 
-        request.session['success_message']='You have successfully unsigned up %s from the event.'%(username)
+        request.session['success_message'] = ('You have successfully unsigned '
+                                              'up %s from'
+                                              ' the event.') % (username)
     if 'error_message' in request.session:
-        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+        return {
+            'fragments': {
+                '#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+    <strong>Error:</strong>%s</div>''' % (request.session.pop('error_message'))
+            }
+        }
     shift_id = unicode(shift.first_shift.id)
-    return_dict= {'fragments':{'#shift-'+shift_id+'-attendee-'+username:'',
-                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    return_dict = {
+        'fragments': {
+            '#shift-'+shift_id+'-attendee-'+username: '',
+            '#ajax-message': r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
+    <strong>Success:</strong>%s</div>''' % (request.session.pop('success_message'))
+        }
+    }
     if username == request.user.username:
-        return_dict['fragments']['#shift-signup'+shift_id]=r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up_paired', args=[ shift.id] ),shift_id)
-    return return_dict   
+        return_dict['fragments']['#shift-signup'+shift_id] = r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>''' % (shift_id, shift_id, reverse('event_cal:sign_up_paired', args=[shift.id]), shift_id)
+    return return_dict
+
+
 @ajax
 @login_required
-def unsign_up_paired(request,  shift_id):
-    shift = get_object_or_404(InterviewPairing,id=shift_id)
+def unsign_up_paired(request, shift_id):
+    shift = get_object_or_404(InterviewPairing, id=shift_id)
     event = shift.first_shift.event
+    start_time = shift.first_shift.start_time
+    min_signup = event.min_unsign_up_notice
     if shift.first_shift.start_time < timezone.now():
-        request.session['error_message']='You cannot unsign-up for an event that has started'
-    elif shift.first_shift.start_time-timedelta(hours=event.min_unsign_up_notice)<timezone.now():
-        request.session['error_message']='This event blocks sign-up %s hours before start'%(event.min_unsign_up_notice)
+        request.session['error_message'] = ('You cannot unsign-up for an event'
+                                            ' that has started')
+    elif start_time-timedelta(hours=min_signup) < timezone.now():
+        request.session['error_message'] = messages.EVT_SIGNUP_CLOSED % (
+                                                                min_signup
+        )
     else:
-        if hasattr(request.user,'userprofile'):
-            unsign_up_user(shift.first_shift,request.user.userprofile)
-            unsign_up_user(shift.second_shift,request.user.userprofile)
+        if hasattr(request.user, 'userprofile'):
+            unsign_up_user(shift.first_shift, request.user.userprofile)
+            unsign_up_user(shift.second_shift, request.user.userprofile)
 
-            request.session['success_message']='You have successfully unsigned up from the event.'
+            request.session['success_message'] = ('You have successfully '
+                                                  'unsigned up from the '
+                                                  'event.')
         else:
-            request.session['error_message']='You must create a profile before unsigning up'
+            request.session['error_message'] = ('You must create a profile '
+                                                'before unsigning up')
     if 'error_message' in request.session:
-        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+        return {
+            'fragments': {
+                '#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+    <strong>Error:</strong>%s</div>''' % (request.session.pop('error_message'))
+            }
+        }
     shift_id = unicode(shift.first_shift.id)
-    return {'fragments':{'#shift-'+shift_id+'-attendee-'+request.user.username:'',
-                        '#shift-gcal'+shift_id:r'''<a id="shift-gcal%s" class="hidden"></a>'''%(shift_id),
-                        '#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up_paired', args=[ shift.id] ),shift_id),
-                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    return {
+        'fragments': {
+            '#shift-'+shift_id+'-attendee-'+request.user.username: '',
+            '#shift-gcal'+shift_id: r'''<a id="shift-gcal%s" class="hidden"></a>''' % (shift_id),
+            '#shift-signup'+shift_id: r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>''' % (shift_id, shift_id, reverse('event_cal:sign_up_paired', args=[shift.id]), shift_id),
+            '#ajax-message': r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
+    <strong>Success:</strong>%s</div>''' % (request.session.pop('success_message'))
+        }
+    }
