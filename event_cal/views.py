@@ -1255,11 +1255,16 @@ def edit_event(request, event_id):
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
 
+
 def update_completed_event(request, event_id):
-    e = get_object_or_404(CalendarEvent,id=event_id)
-    if not Permissions.can_edit_event(e,request.user):
-        request.session['error_message']='You are not authorized to edit this event'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+    e = get_object_or_404(CalendarEvent, id=event_id)
+    if not Permissions.can_edit_event(e, request.user):
+        request.session['error_message'] = 'You are not authorized to edit this event'
+        return get_previous_page(
+                        request,
+                        alternate='event_cal:event_detail',
+                        args=(event_id,)
+                )
     if e.can_complete_event():
         request.session['error_message'] = ('This event hasn\'t been '
                                             'completed yet. Do that first.')
@@ -1291,7 +1296,7 @@ def update_completed_event(request, event_id):
             for instance in instances:
                 if not instance.member.is_member():
                     continue
-                if instance not in instances_list]:   
+                if instance not in instances_list:
                     # double check they don't already have progress?
                     if not e.eventshift_set.filter(
                             attendees=instance.member
