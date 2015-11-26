@@ -1,6 +1,10 @@
 ANNOUNCE_NO_PERMISSIONS = 'You are not authorized to edit announcements.'
+ANNOUNCE_NO_PERMISSIONS_ADD = 'You are not authorized to add announcements.'
+ANNOUNCE_NO_PERMISSIONS_ADD = ('You are not authorized to generate '
+                               'announcements.')
 
-CAL_ADMIN_NO_PERMISSIONS = 'You are not authorized to access calendar admin functionality.'
+CAL_ADMIN_NO_PERMISSIONS = ('You are not authorized to access calendar '
+                            'admin functionality.')
 
 EVT_IN_PAST = 'You cannot sign up for an event in the past'
 EVT_SIGNUP_CLOSED = 'This event blocks sign-up %s hours before start'
@@ -15,6 +19,8 @@ EVT_SUBMIT_ERROR = ('There were errors in the submitted event, please correct '
                     'the errors noted below.')
 EVT_TABLE_REQS_PROFILE = ('You must be logged in and have a profile to view '
                           'the table view.')
+EVT_NO_PERMISSIONS = 'You are not authorized to edit this event'
+EVT_NO_EDIT = 'You are not authorized to edit this event'
 
 SHIFT_FULL = 'Shift is full'
 SHIFT_ACTIVES_ONLY = 'Shift is for actives only'
@@ -38,3 +44,9 @@ INTERVIEW_CANNOT_CREATE = 'You are not authorized to create electee interviews'
 GENERIC_SUBMIT_ERROR = ('There were errors in your submission. The changes '
                         'were not saved. Please correct the errors and try '
                         'again.')
+GCAL_STILL_GOOD = ('Current Credentials still valid, re-authentication '
+                   'unnecessary.')
+PROJ_REP_NO_PERMISSIONS = ('You are not authorized to create '
+                                 'project reports.')
+TUTOR_NOT_MEMBER = ('You must be logged in, have a profile, and be a member '
+                    'to submit a tutoring form.')

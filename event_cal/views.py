@@ -1261,215 +1261,325 @@ def update_completed_event(request, event_id):
         request.session['error_message']='You are not authorized to edit this event'
         return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
     if e.can_complete_event():
-        request.session['error_message'] = 'This event hasn\'t been completed yet. Do that first.'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+        request.session['error_message'] = ('This event hasn\'t been '
+                                            'completed yet. Do that first.')
+        return get_previous_page(
+                    request,
+                    alternate='event_cal:event_detail',
+                    args=(event_id,)
+            )
     if e.is_fixed_progress():
         form_type = CompleteFixedProgressEventFormSet
         is_fixed = True
     else:
         form_type = CompleteEventFormSet
         is_fixed = False
-    form_prefix='update_event'
+    form_prefix = 'update_event'
     if request.method == 'POST':
-        formset = form_type(request.POST,prefix='update_event',queryset=ProgressItem.objects.filter(related_event=e))
+        formset = form_type(
+                    request.POST,
+                    prefix='update_event',
+                    queryset=ProgressItem.objects.filter(related_event=e)
+        )
         if formset.is_valid():
             instances = formset.save(commit=False)
             for obj in formset.deleted_objects:
                 obj.delete()
-            first_shift=e.eventshift_set.all()[0]
+            first_shift = e.eventshift_set.all()[0]
             duplicate_progress = set()
+            instances_list = [item[0] for item in formset.changed_objects]
             for instance in instances:
                 if not instance.member.is_member():
                     continue
-                if instance not in [item[0] for item in formset.changed_objects if item[0]==instance]:   
+                if instance not in instances_list]:   
                     # double check they don't already have progress?
-                    if not e.eventshift_set.filter(attendees=instance.member).exists():
+                    if not e.eventshift_set.filter(
+                            attendees=instance.member
+                            ).exists():
                         first_shift.attendees.add(instance.member)
                         first_shift.save()
-                    if ProgressItem.objects.filter(related_event=e,member=instance.member).exists():
-                        duplicate_progress|=set([instance.member])
+                    if ProgressItem.objects.filter(
+                            related_event=e,
+                            member=instance.member
+                            ).exists():
+                        duplicate_progress |= set([instance.member])
                         continue
-                    instance.term=AcademicTerm.get_current_term()
-                    instance.event_type=e.event_type
-                    instance.date_completed=date.today()
-                    instance.related_event=e
-                    instance.name=e.name
+                    instance.term = AcademicTerm.get_current_term()
+                    instance.event_type = e.event_type
+                    instance.date_completed = date.today()
+                    instance.related_event = e
+                    instance.name = e.name
                 if is_fixed:
-                    instance.amount_completed=1
+                    instance.amount_completed = 1
                 instance.save()
             for instance in formset.deleted_objects:
-                for shift in e.eventshift_set.filter(attendees=instance.member):
+                for shift in e.eventshift_set.filter(
+                                attendees=instance.member
+                        ):
                     shift.attendees.remove(instance.member)
                     shift.save()
-                    
+
             if duplicate_progress:
-                request.session['warning_message']='The following members had progress listed twice, with latter listings ignored: '+ ','.join([prof.uniqname for prof in duplicate_progress])+'. Go to update progress to check that the amount of progress is correct'
-            request.session['success_message']='Event and progress updated successfully'
-            return redirect('event_cal:event_detail',event_id)
+                request.session['warning_message'] = (
+                                'The following members had progress listed '
+                                'twice, with latter listings ignored: ' +
+                                ','.join(
+                                    [prof.uniqname for prof
+                                     in duplicate_progress]
+                                ) +
+                                '. Go to update progress to check that the '
+                                'amount of progress is correct')
+            request.session['success_message'] = ('Event and progress updated '
+                                                  'successfully')
+            return redirect('event_cal:event_detail', event_id)
         else:
-            request.session['error_message']='There were errors in your submission. Progress was not updated. Please correct the errors and try again.'
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
     else:
-        formset = form_type(prefix='update_event',queryset=ProgressItem.objects.filter(related_event=e).order_by('member__last_name'))
+        formset = form_type(
+                    prefix='update_event',
+                    queryset=ProgressItem.objects.filter(
+                                related_event=e
+                        ).order_by('member__last_name')
+        )
     template = loader.get_template('generic_formset.html')
     context_dict = {
-        'formset':formset,
-        'prefix':form_prefix,
-        'subnav':'list',
-        'has_files':False,
-        'submit_name':'Update Event',
-        'back_button':{'link':reverse('event_cal:event_detail',args=[event_id]),'text':'To  %s Page'%(e.name)},
-        'form_title':'Update Completion Report for  %s'%(e.name),
-        'help_text':'Note that this is *not* the project report. Use this to update the progress of an event that has already been completed. Those with progress are listed below.',
-        'can_add_row':True,
-        'base':'event_cal/base_event_cal.html',
+        'formset': formset,
+        'prefix': form_prefix,
+        'subnav': 'list',
+        'has_files': False,
+        'submit_name': 'Update Event',
+        'back_button': {
+                'link': reverse('event_cal:event_detail', args=[event_id]),
+                'text': 'To  %s Page' % (e.name)
+        },
+        'form_title': 'Update Completion Report for  %s' % (e.name),
+        'help_text': ('Note that this is *not* the project report. Use '
+                      'this to update the progress of an event that has '
+                      'already been completed. Those with progress are '
+                      'listed below.'),
+        'can_add_row': True,
+        'base': 'event_cal/base_event_cal.html',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
-## change it so that the form has an extra column that is whether or not they signed in
-# include the attendees as options as well
+
+
+# TODO: change it so that the form has an extra column that is whether
+# or not they signed in
+# include the attendees as options as well -- not sure what this means
 def complete_event(request, event_id):
-    e = get_object_or_404(CalendarEvent,id=event_id)
-    if not Permissions.can_edit_event(e,request.user):
-        request.session['error_message']='You are not authorized to edit this event'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+    e = get_object_or_404(CalendarEvent, id=event_id)
+    if not Permissions.can_edit_event(e, request.user):
+        request.session['error_message'] = messages.EVT_NO_EDIT
+        return get_previous_page(
+                    request,
+                    alternate='event_cal:event_detail',
+                    args=(event_id,)
+            )
     if not e.can_complete_event():
-        request.session['error_message'] = 'This event can\'t be completed yet.'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+        request.session['error_message'] = ('This event can\'t be '
+                                            'completed yet.')
+        return get_previous_page(
+                    request,
+                    alternate='event_cal:event_detail',
+                    args=(event_id,)
+            )
     if e.is_fixed_progress():
         form_type = CompleteFixedProgressEventFormSet
         is_fixed = True
     else:
         form_type = CompleteEventFormSet
         is_fixed = False
-    form_prefix='complete_event'
+    form_prefix = 'complete_event'
     if request.method == 'POST':
-        formset = form_type(request.POST,prefix=form_prefix,queryset=ProgressItem.objects.none())
+        formset = form_type(
+                    request.POST,
+                    prefix=form_prefix,
+                    queryset=ProgressItem.objects.none()
+        )
         if formset.is_valid():
             instances = formset.save(commit=False)
             for obj in formset.deleted_objects:
                 obj.delete()
-            first_shift=e.eventshift_set.all()[0]
+            first_shift = e.eventshift_set.all()[0]
             duplicate_progress = set()
             for instance in instances:
                 if not instance.member.is_member():
                     continue
                 # double check they don't already have progress?
-                if not e.eventshift_set.filter(attendees=instance.member).exists():
+                if not e.eventshift_set.filter(
+                            attendees=instance.member
+                        ).exists():
                     first_shift.attendees.add(instance.member)
                     first_shift.save()
-                if ProgressItem.objects.filter(related_event=e,member=instance.member).exists():
-                    duplicate_progress|=set([instance.member])
+                if ProgressItem.objects.filter(
+                            related_event=e,
+                            member=instance.member
+                        ).exists():
+                    duplicate_progress |= set([instance.member])
                     continue
-                instance.term=AcademicTerm.get_current_term()
-                instance.event_type=e.event_type
-                instance.date_completed=date.today()
-                instance.related_event=e
-                instance.name=e.name
+                instance.term = AcademicTerm.get_current_term()
+                instance.event_type = e.event_type
+                instance.date_completed = date.today()
+                instance.related_event = e
+                instance.name = e.name
                 if is_fixed:
-                    instance.amount_completed=1
+                    instance.amount_completed = 1
                 instance.save()
-            confirmed_attendees=MemberProfile.objects.filter(progressitem__related_event=e)
+            confirmed_attendees = MemberProfile.objects.filter(
+                                                progressitem__related_event=e
+            )
             for shift in e.eventshift_set.all():
                 shift.waitlistslot_set.all().delete()
-                for attendee in shift.attendees.exclude(pk__in=confirmed_attendees):
+                for attendee in shift.attendees.exclude(
+                                    pk__in=confirmed_attendees
+                                ):
                     if attendee.is_member():
                         shift.attendees.remove(attendee)
                 shift.save()
-            e.completed=True
+            e.completed = True
             e.save()
             if duplicate_progress:
-                request.session['warning_message']='The following members had progress listed twice, with latter listings ignored: '+ ','.join([prof.uniqname for prof in duplicate_progress])+'. Go to update progress to check that the amount of progress is correct'
-            request.session['success_message']='Event and progress updated successfully'
-            request.session['project_report_event']=event_id
-            return redirect('event_cal:event_project_report',event_id)
+                request.session['warning_message'] = (
+                                    'The following members had progress '
+                                    'listed twice, with latter listings '
+                                    'ignored: ' +
+                                    ','.join(
+                                        [prof.uniqname for prof
+                                         in duplicate_progress]
+                                        ) +
+                                    '. Go to update progress to check that '
+                                    'the amount of progress is correct')
+            request.session['success_message'] = ('Event and progress '
+                                                  'updated successfully')
+            request.session['project_report_event'] = event_id
+            return redirect('event_cal:event_project_report', event_id)
         else:
-            request.session['error_message']='There were errors in your submission. Progress was not updated. Please correct the errors and try again.'
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
     else:
         # create initial
-        initial=[]
-        attendees = UserProfile.objects.filter(event_attendee__event=e).distinct()
+        initial = []
+        attendees = UserProfile.objects.filter(
+                        event_attendee__event=e
+        ).distinct()
         for attendee in attendees.order_by('last_name'):
             if not attendee.is_member():
                 continue
-            if ProgressItem.objects.filter(related_event=e,member=attendee.memberprofile).exists():
+            if ProgressItem.objects.filter(
+                                related_event=e,
+                                member=attendee.memberprofile
+                    ).exists():
                 continue
             if is_fixed:
-                initial.append({'member':attendee.memberprofile})
+                initial.append({'member': attendee.memberprofile})
             else:
-                initial.append({'member':attendee.memberprofile,'amount_completed':round(e.get_attendee_hours_at_event(attendee),2)})
-        form_type.extra=len(initial)+1
-        formset = form_type(prefix=form_prefix,queryset=ProgressItem.objects.none(),initial=initial)
+                initial.append(
+                        {
+                            'member': attendee.memberprofile,
+                            'amount_completed': round(
+                                    e.get_attendee_hours_at_event(attendee),
+                                    2
+                            )
+                        }
+                )
+        form_type.extra = len(initial)+1
+        formset = form_type(
+                    prefix=form_prefix,
+                    queryset=ProgressItem.objects.none(),
+                    initial=initial
+        )
     template = loader.get_template('generic_formset.html')
     context_dict = {
-        'formset':formset,
-        'prefix':form_prefix,
-        'subnav':'list',
-        'has_files':False,
-        'submit_name':'Complete Event',
-        'back_button':{'link':reverse('event_cal:event_detail',args=[event_id]),'text':'To  %s Page'%(e.name)},
-        'form_title':'Completion Report for  %s'%(e.name),
-        'help_text':'Note that this is *not* the project report. Use this to assign progress for those who attended the event. The list of those who signed up for the event, as well as the number of hours they signed up for, is included below. Please make any changes necessary and then click the complete event button. If the event uses a sign-in feature, only those who signed up in advance but did not sign in are included below. Those who signed in have already had their progress assigned.',
-        'can_add_row':True,
-        'base':'event_cal/base_event_cal.html',
+        'formset': formset,
+        'prefix': form_prefix,
+        'subnav': 'list',
+        'has_files': False,
+        'submit_name': 'Complete Event',
+        'back_button': {
+                'link': reverse('event_cal:event_detail', args=[event_id]),
+                'text': 'To  %s Page' % (e.name)
+        },
+        'form_title': 'Completion Report for %s' % (e.name),
+        'help_text': ('Note that this is *not* the project report. Use this '
+                      'to assign progress for those who attended the event. '
+                      'The list of those who signed up for the event, as well '
+                      'as the number of hours they signed up for, is included '
+                      'below. Please make any changes necessary and then '
+                      'click the complete event button. If the event uses a '
+                      'sign-in feature, only those who signed up in advance '
+                      'but did not sign in are included below. Those who '
+                      'signed in have already had their progress assigned.'),
+        'can_add_row': True,
+        'base': 'event_cal/base_event_cal.html',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
 
 def generate_announcements(request):
     if not Permissions.can_generate_announcements(request.user):
-        request.session['error_message']='You are not authorized to generate the weekly announcements.'
-        return get_previous_page(request,alternate='event_cal:index')
-    request.session['current_page']=request.path
+        request.session['error_message'] = messages.ANNOUNCE_NO_PERMISSIONS_GEN
+        return get_previous_page(request, alternate='event_cal:index')
+    request.session['current_page'] = request.path
     now = timezone.localtime(timezone.now())
     announcement_parts = AnnouncementBlurb.get_current_blurbs()
     template = loader.get_template('event_cal/announcements.html')
     context_dict = {
-        'announcement_parts':announcement_parts,
-        'subnav':'admin',
-        'announcement_events':CalendarEvent.get_upcoming_events(True),
+        'announcement_parts': announcement_parts,
+        'subnav': 'admin',
+        'announcement_events': CalendarEvent.get_upcoming_events(True),
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
 
 def add_announcement(request):
     if not Permissions.can_add_announcements(request.user):
-        request.session['error_message']='You are not authorized to contribute weekly announcements.'
-        return get_previous_page(request,alternate='event_cal:index')
-    AnnouncementForm = modelform_factory(AnnouncementBlurb,form=BaseAnnouncementForm)
-    if request.method =='POST':
-        form = AnnouncementForm(request.POST)
+        request.session['error_message'] = messages.ANNOUNCE_NO_PERMISSIONS_ADD
+        return get_previous_page(request, alternate='event_cal:index')
+    AnnouncementForm = modelform_factory(
+                            AnnouncementBlurb,
+                            form=BaseAnnouncementForm
+    )
+    form = AnnouncementForm(request.POST or None)
+    if request.method == 'POST':
         if form.is_valid():
             form.save()
-            request.session['success_message']='Announcement(s) submitted successfully'
-            return get_previous_page(request,alternate='event_cal:index')          
+            request.session['success_message'] = ('Announcement(s) submitted '
+                                                  'successfully')
+            return get_previous_page(request, alternate='event_cal:index')
         else:
-            request.session['error_message']='There were errors in your submission, please correct them and resubmit. Your submission was not saved.'
-    else:
-        form = AnnouncementForm()
-    dp_ids=['id_start_date','id_end_date']
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
+    dp_ids = ['id_start_date', 'id_end_date']
     template = loader.get_template('generic_form.html')
     context_dict = {
-        'form':form,
-        'dp_ids':dp_ids,
-        'subnav':'admin',
-        'has_files':False,
-        'submit_name':'Submit Announcement',
-        'form_title':'Add an Announcement Section',
-        'help_text':'Add an announcement to be included in the weekly email summary. Do not submit announcements for events. Those are automatically included using the information provided in the event details.',
-        'base':'event_cal/base_event_cal.html',
-        'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
+        'form': form,
+        'dp_ids': dp_ids,
+        'subnav': 'admin',
+        'has_files': False,
+        'submit_name': 'Submit Announcement',
+        'form_title': 'Add an Announcement Section',
+        'help_text': ('Add an announcement to be included in the weekly email '
+                      'summary. Do not submit announcements for events. Those '
+                      'are automatically included using the information '
+                      'provided in the event details.'),
+        'base': 'event_cal/base_event_cal.html',
+        'back_button': {
+                'link': reverse('event_cal:calendar_admin'),
+                'text': 'To Calendar Admin'
+        },
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
 
 def gcal_test(request):
     if not request.user.is_superuser:
@@ -1478,74 +1588,85 @@ def gcal_test(request):
     if c is None or c.invalid:
         return initialize_gcal()
     else:
-        request.session['warning_message']='Current Credentials still valid, re-authentication unnecessary.'
-        return get_previous_page(request,alternate='event_cal:index')
+        request.session['warning_message'] = messages.GCAL_STILL_GOOD
+        return get_previous_page(request, alternate='event_cal:index')
+
 
 def oauth(request):
-    code = request.GET.get('code',None)
+    code = request.GET.get('code', None)
     process_auth(code)
+    return get_previous_page(request, alternate='event_cal:list')
 
-    return get_previous_page(request,alternate='event_cal:list')
 
-def event_project_report(request,event_id):
-    e=get_object_or_404(CalendarEvent,id=event_id)
-    request.session['project_report_event']=event_id
-    request.session.pop('project_report_non_event',None)
-    request.session.pop('project_report_id',None)
-    return project_report(request)
-def project_report_by_id(request,report_id):
-    request.session.pop('project_report_event',None)
-    request.session.pop('project_report_non_event',None)
-    request.session['project_report_id']=report_id
+def event_project_report(request, event_id):
+    e = get_object_or_404(CalendarEvent, id=event_id)
+    request.session['project_report_event'] = event_id
+    request.session.pop('project_report_non_event', None)
+    request.session.pop('project_report_id', None)
     return project_report(request)
 
-def non_event_project_report(request,ne_id):
-    request.session.pop('project_report_event',None)
-    request.session.pop('project_report_id',None)
-    request.session['project_report_non_event']=ne_id
+
+def project_report_by_id(request, report_id):
+    request.session.pop('project_report_event', None)
+    request.session.pop('project_report_non_event', None)
+    request.session['project_report_id'] = report_id
     return project_report(request)
+
+
+def non_event_project_report(request, ne_id):
+    request.session.pop('project_report_event', None)
+    request.session.pop('project_report_id', None)
+    request.session['project_report_non_event'] = ne_id
+    return project_report(request)
+
 
 def project_report(request):
     if not Permissions.can_create_events(request.user):
-        request.session['error_message']='You are not authorized to create project reports.'
-        return get_previous_page(request,alternate='event_cal:index')
-    related_event = request.session.pop('project_report_event',None)
-    related_non_event = request.session.pop('project_report_non_event',None)
-    report_id = request.session.pop('project_report_id',None)
+        request.session['error_message'] = messages.PROJ_REP_NO_PERMISSIONS
+        return get_previous_page(request, alternate='event_cal:index')
+    related_event = request.session.pop('project_report_event', None)
+    related_non_event = request.session.pop('project_report_non_event', None)
+    report_id = request.session.pop('project_report_id', None)
     if related_event:
         event = CalendarEvent.objects.get(id=related_event)
-        event_name=event.name
+        event_name = event.name
         if event.project_report:
-            event_name=event.project_report.name
-        ProjectReportForm =modelform_factory(ProjectReport,exclude=('term',))
+            event_name = event.project_report.name
+        ProjectReportForm = modelform_factory(ProjectReport, exclude=('term',))
     elif related_non_event:
         non_event = NonEventProject.objects.get(id=related_non_event)
-        event_name=non_event.name
+        event_name = non_event.name
         if non_event.project_report:
-            event_name=non_event.project_report.name
-        ProjectReportForm =modelform_factory(ProjectReport,exclude=('term',))
+            event_name = non_event.project_report.name
+        ProjectReportForm = modelform_factory(ProjectReport, exclude=('term',))
     elif report_id:
-        report = get_object_or_404(ProjectReport,id=report_id)
-        event_name=report.name
-        ProjectReportForm =modelform_factory(ProjectReport,exclude=('term',))
+        report = get_object_or_404(ProjectReport, id=report_id)
+        event_name = report.name
+        ProjectReportForm = modelform_factory(ProjectReport, exclude=('term',))
     else:
         event_name = 'Unspecified Event'
         ProjectReportForm = modelform_factory(ProjectReport)
 
-    if request.method =='POST':
+    if request.method == 'POST':
         if related_event and event.project_report:
-            form = ProjectReportForm(request.POST,instance=event.project_report)
+            form = ProjectReportForm(
+                            request.POST,
+                            instance=event.project_report
+            )
         elif related_non_event and non_event.project_report:
-            form = ProjectReportForm(request.POST,instance=non_event.project_report)
+            form = ProjectReportForm(
+                            request.POST,
+                            instance=non_event.project_report
+            )
         elif report_id:
-            form = ProjectReportForm(request.POST,instance=report)
+            form = ProjectReportForm(request.POST, instance=report)
         else:
             form = ProjectReportForm(request.POST)
-        
+
         if form.is_valid():
             if related_event:
                 pr = form.save(commit=False)
-                event= CalendarEvent.objects.get(id=related_event)
+                event = CalendarEvent.objects.get(id=related_event)
                 pr.term = event.term
                 pr.save()
                 event.project_report = pr
@@ -1557,14 +1678,17 @@ def project_report(request):
                 non_event.project_report = pr
                 non_event.save()
             elif report_id:
-                pr=form.save()
+                pr = form.save()
             else:
                 pr = form.save()
-                request.session['warning_message']='Project report not attached to event, please fix this.'
-            request.session['success_message']='Project report created successfully'
+                request.session['warning_message'] = ('Project report not '
+                                                      'attached to event; '
+                                                      'please fix this.')
+            request.session['success_message'] = ('Project report created '
+                                                  'successfully')
             return redirect('event_cal:index')
         else:
-            request.session['error_message']='Project report contained errors, was not saved.'
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
     else:
         if related_event and event.project_report:
             form = ProjectReportForm(instance=event.project_report)
@@ -1575,136 +1699,176 @@ def project_report(request):
         else:
             form = ProjectReportForm()
     template = loader.get_template('generic_form.html')
-    dp_ids=['id_planning_start_date']
-    context_dict ={
-        'form':form,
-        'dp_ids':dp_ids,
-        'subnav':'list',
-        'has_files':False,
-        'submit_name':'Create/update project report',
-        'form_title':'Create project report for %s'%(event_name),
-        'help_text':'These are reports sent to the national organization to determine eligibility for certain chapter awards. They are also used for transition material to help future project leaders perform a similar event. Please be descriptive in your responses.',
-        'base':'event_cal/base_event_cal.html',
+    dp_ids = ['id_planning_start_date']
+    context_dict = {
+        'form': form,
+        'dp_ids': dp_ids,
+        'subnav': 'list',
+        'has_files': False,
+        'submit_name': 'Create/update project report',
+        'form_title': 'Create project report for %s' % (event_name),
+        'help_text': ('These are reports sent to the national organization '
+                      'to determine eligibility for certain chapter awards. '
+                      'They are also used for transition material to help '
+                      'future project leaders perform a similar event. Please '
+                      'be descriptive in your responses.'),
+        'base': 'event_cal/base_event_cal.html',
         }
     if related_event:
-        request.session['project_report_event']=related_event
+        request.session['project_report_event'] = related_event
     if related_non_event:
-        request.session['project_report_non_event']=related_non_event
+        request.session['project_report_non_event'] = related_non_event
     if report_id:
-        request.session['project_report_id']=report_id
+        request.session['project_report_id'] = report_id
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
-    
+
 
 def submit_tutoring_form(request):
-    is_member=False
-    if hasattr(request.user,'userprofile'):
-        if request.user.userprofile.is_member():
-            is_member=True
-            profile = request.user.userprofile.memberprofile
+    is_member = False
+    if hasattr(request.user, 'userprofile'):
+        is_member = request.user.userprofile.is_member()
 
     if not is_member:
-        request.session['error_message']='You must be logged in, have a profile, and be a member to submit a tutoring form.'
-        return get_previous_page(request,alternate='event_cal:index')
-    TutoringForm = modelform_factory(TutoringRecord, exclude=('approved','tutor',))
-    tutoring_chair = OfficerPosition.objects.filter(name='Campus Outreach Officer')
-    current_chair = Officer.objects.filter(position__name='Campus Outreach Officer',term=AcademicTerm.get_current_term()).distinct()
+        request.session['error_message'] = messages.TUTOR_NOT_MEMBER
+        return get_previous_page(request, alternate='event_cal:index')
+
+    profile = request.user.userprofile.memberprofile
+    TutoringForm = modelform_factory(
+                    TutoringRecord,
+                    exclude=('approved', 'tutor',)
+    )
+    tutoring_chair = OfficerPosition.objects.filter(
+                    name='Campus Outreach Officer'
+    )
+    current_chair = Officer.objects.filter(
+                    position__name='Campus Outreach Officer',
+                    term=AcademicTerm.get_current_term()
+    ).distinct()
     if current_chair.exists():
-        tutoring_chair_name = current_chair[0].user.get_firstlast_name()+'\n'
+        tutoring_chair = current_chair[0].user
+        tutoring_chair_name = tutoring_chair.get_firstlast_name()+'\n'
     else:
-        tutoring_chair_name=''
+        tutoring_chair_name = ''
     if tutoring_chair.exists():
-        tutoring_email=tutoring_chair[0].email
+        tutoring_email = tutoring_chair[0].email
         tutoring_name = tutoring_chair[0].name
     else:
-        tutoring_email='tbp.campusoutreach@umich.edu'
-        tutoring_name='Campus Outreach Officer'
-    if request.method =='POST':
+        tutoring_email = 'tbp.campusoutreach@umich.edu'
+        tutoring_name = 'Campus Outreach Officer'
+    if request.method == 'POST':
         form = TutoringForm(request.POST)
         if form.is_valid():
             tutoring_record = form.save(commit=False)
             tutoring_record.tutor = profile
             tutoring_record.approved = False
             tutoring_record.save()
-            request.session['success_message']='Tutoring Form submitted successfully'
-            #TODO move these to a more sensible location and use kyle & my email script
+            request.session['success_message'] = ('Tutoring Form submitted '
+                                                  'successfully')
+            # TODO move these to a more sensible location
+            # and use kyle & my email script
             recipient = tutoring_record.student_uniqname
             tutor_name = tutoring_record.tutor.get_firstlast_name()
             recipient_email = recipient+"@umich.edu"
             number_hours_str = str(tutoring_record.number_hours)
-            number_hours = number_hours_str.rstrip('0').rstrip('.') if '.' in number_hours_str else number_hours_str
+            number_hours = (
+                number_hours_str.rstrip('0').rstrip('.')
+                if '.' in number_hours_str
+                else number_hours_str
+            )
             body = r'''Hello!
-            
-%(tutor)s logged that you were tutored for %(hours)s hours on %(date)s. We'd like to know how it went. If you have any feedback for us we invite you to fill out an (anonymous) feedback form: http://tinyurl.com/TBPtutoringSurvey
 
-If you have any other questions about tutoring, please feel free to email me at %(email)s,
-            
+%(tutor)s logged that you were tutored for %(hours)s hours on %(date)s.
+We'd like to know how it went. If you have any feedback for us we invite you to
+fill out an (anonymous) feedback form: http://tinyurl.com/TBPtutoringSurvey
+
+If you have any other questions about tutoring, please feel free to email me
+at %(email)s,
+
 Regards,
 %(chair_name)s%(position_name)s
 %(email)s
 
-Note: This is an automated email. Please do not reply to it as responses are not checked.'''%{'tutor':tutor_name,'hours':number_hours,'date':unicode(tutoring_record.date_tutored),'email':tutoring_email,'chair_name':tutoring_chair_name,'position_name':tutoring_name,}
-            send_mail('We want your feedback on your recent tutoring session.',body,tutoring_email,[recipient_email],fail_silently=True)
-            return get_previous_page(request,alternate='event_cal:index')          
+Note: This is an automated email. Please do not reply to it as responses
+are not checked.''' % {
+                'tutor': tutor_name,
+                'hours': number_hours,
+                'date': unicode(tutoring_record.date_tutored),
+                'email': tutoring_email,
+                'chair_name': tutoring_chair_name,
+                'position_name': tutoring_name,
+            }
+            send_mail(
+                'We want your feedback on your recent tutoring session.',
+                body,
+                tutoring_email,
+                [recipient_email],
+                fail_silently=True
+            )
+            return get_previous_page(request, alternate='event_cal:index')
         else:
-            request.session['error_message']='There were errors in your submission, please correct them and resubmit. Your submission was not saved.'
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
     else:
         form = TutoringForm()
-    dp_ids=['id_date_tutored']
+    dp_ids = ['id_date_tutored']
     template = loader.get_template('generic_form.html')
     context_dict = {
-        'form':form,
-        'dp_ids':dp_ids,
-        'subnav':'tutoring_form',
-        'has_files':False,
-        'submit_name':'Submit Tutoring Form',
-        'form_title':'Tutoring Summary Form',
-        'help_text':'Please log your tutoring here. By submitting this form, you attest that you tutored the student for the claimed number of hours. Note that the student will be emailed and given the opportunity to provide anonymous feedback.',
-        'base':'event_cal/base_event_cal.html',
-        }
+        'form': form,
+        'dp_ids': dp_ids,
+        'subnav': 'tutoring_form',
+        'has_files': False,
+        'submit_name': 'Submit Tutoring Form',
+        'form_title': 'Tutoring Summary Form',
+        'help_text': ('Please log your tutoring here. By submitting this form,'
+                      ' you attest that you tutored the student for the '
+                      'claimed number of hours. Note that the student will be '
+                      'emailed and given the opportunity to provide anonymous '
+                      'feedback.'),
+        'base': 'event_cal/base_event_cal.html',
+    }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
 
-def add_project_report_to_event(request,event_id):
-    event=get_object_or_404(CalendarEvent,id=event_id)
-    if not Permissions.can_edit_event(event,request.user):
-        request.session['error_message']='You are not authorized to edit this event'
-        return get_previous_page(request,alternate='event_cal:index')
-
-    if request.method =='POST':
-        form = AddProjectReportForm(request.POST)
-        form.fields['report'].queryset = Permissions.project_reports_you_can_view(request.user)
+def add_project_report_to_event(request, event_id):
+    event = get_object_or_404(CalendarEvent, id=event_id)
+    if not Permissions.can_edit_event(event, request.user):
+        request.session['error_message'] = messages.EVT_NO_PERMISSIONS
+        return get_previous_page(request, alternate='event_cal:index')
+    initial = {'report': event.project_report}
+    form = AddProjectReportForm(request.POST or None, initial=initial)
+    reports = Permissions.project_reports_you_can_view(request.user)
+    form.fields['report'].queryset = reports
+    if request.method == 'POST':
         if form.is_valid():
-            report = form.cleaned_data.pop('report',None)
+            report = form.cleaned_data.pop('report', None)
             if report:
-                event.project_report=report
+                event.project_report = report
                 event.save()
-            request.session['success_message']='Project Report attached successfully.'
-            return get_previous_page(request,alternate='event_cal:index')          
+            request.session['success_message'] = ('Project Report attached '
+                                                  'successfully.')
+            return get_previous_page(request, alternate='event_cal:index')
         else:
-            request.session['error_message']='There were errors in your submission, please correct them and resubmit. Your submission was not saved.'
-    else:
-        initial={'report':event.project_report}
-        form = AddProjectReportForm(initial=initial)
-        form.fields['report'].queryset = Permissions.project_reports_you_can_view(request.user)
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
     template = loader.get_template('generic_form.html')
     context_dict = {
-        'form':form,
-        'subnav':'list',
-        'has_files':False,
-        'submit_name':'Add/Update Attached Report',
-        'form_title':'Attach project report to %s'%(event.name),
-        'help_text':'You may have several events that share a common project report. Use this form to attach an existing project report to this event.',
-        'base':'event_cal/base_event_cal.html',
+        'form': form,
+        'subnav': 'list',
+        'has_files': False,
+        'submit_name': 'Add/Update Attached Report',
+        'form_title': 'Attach project report to %s' % (event.name),
+        'help_text': ('You may have several events that share a common '
+                      'project report. Use this form to attach an existing '
+                      'project report to this event.'),
+        'base': 'event_cal/base_event_cal.html',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
 
