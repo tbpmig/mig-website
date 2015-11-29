@@ -27,6 +27,7 @@ SHIFT_ACTIVES_ONLY = 'Shift is for actives only'
 SHIFT_ELECTEES_ONLY = 'Shift is for electees only'
 SHIFT_GRADS_ONLY = 'Shift is for grads only'
 SHIFT_UGRADS_ONLY = 'Shift is for undergrads only'
+SHIFT_ERRORS = 'Either there were errors in your shift(s) or you forgot to include one.'
 
 CARPOOL = 'If you need or can give a ride, please also sign up for the carpool'
 

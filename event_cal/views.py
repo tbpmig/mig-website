@@ -14,7 +14,7 @@ from django.core.urlresolvers import reverse
 from django.core.mail import send_mail
 from django import forms
 from django.forms.models import modelformset_factory, modelform_factory
-from django.db.models import Min,Q
+from django.db.models import Min, Q
 
 from django_ajax.decorators import ajax
 
@@ -68,30 +68,58 @@ from mig_main.utility import get_previous_page, Permissions, get_message_dict
 from outreach.models import TutoringRecord
 from requirements.models import ProgressItem, EventCategory
 
-from event_cal.gcal_functions import initialize_gcal, process_auth, get_credentials
+from event_cal.gcal_functions import (
+                initialize_gcal,
+                process_auth,
+                get_credentials,
+)
+
+
+NUMBER_OR_NUMERAL = '(^(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$)|^[0-9]+.?[0-9]*$'
 
 GCAL_USE_PREF = [d for d in PREFERENCES
-                if d.get('name') == 'google_calendar_add'][0]
-GCAL_ACCT_PREF = [d for d in PREFERENCES 
-                 if d.get('name') == 'google_calendar_account'][0]
+                 if d.get('name') == 'google_calendar_add'][0]
+GCAL_ACCT_PREF = [d for d in PREFERENCES
+                  if d.get('name') == 'google_calendar_account'][0]
 
-def notify_waitlist_move(event,shift,profile):
+
+def notify_waitlist_move(event, shift, profile):
+    carpool_text = ''
+    if event.needs_carpool:
+        carpool_text = ('The event is listed as needing a carpool, please '
+                        'visit the event page to sign up for the carpool')
+    start_time = timezone.localtime(shift.start_time)
     body = r'''Hi %(name)s,
 
-This is an automated notice that you have been moved off of the waitlist for the event: %(event)s and have automatically been added to the list of attendees.
-Your shift is listed as starting at %(start_time)s, so plan accordingly. %(carpool)s
+This is an automated notice that you have been moved off of the waitlist for
+the event: %(event)s and have automatically been added to the list of
+attendees.
+Your shift is listed as starting at %(start_time)s, so plan accordingly.
+%(carpool)s
 
-If you no longer plan to attend the event, please unsign-up so that another person may take your spot.
+If you no longer plan to attend the event, please unsign-up so that another
+person may take your spot.
 The event is viewable at: https://tbp.engin.umich.edu%(link)s
 
 Thanks,
-The TBP Website'''%{'name':profile.get_firstlast_name(),
-                    'event':event.name,
-                    'start_time':timezone.localtime(shift.start_time).strftime("%I:%M %p on %A, %B %d, %Y"),
-                    'carpool':'The event is listed as needing a carpool, please visit the event page to sign up for the carpool' if event.needs_carpool else '',
-                    'link':reverse('event_cal:event_detail',args=(event.id,))}
-    
-    send_mail('[TBP] You\'ve been moved off an event waitlist.',body,'tbp.mi.g@gmail.com',[profile.get_email()] ,fail_silently=False)
+The TBP Website''' % {
+        'name': profile.get_firstlast_name(),
+        'event': event.name,
+        'start_time': start_time.strftime(
+                                "%I:%M %p on %A, %B %d, %Y"
+        ),
+        'carpool': carpool_text
+        'link': reverse('event_cal:event_detail', args=(event.id,))
+    }
+
+    send_mail(
+        '[TBP] You\'ve been moved off an event waitlist.',
+        body,
+        'tbp.mi.g@gmail.com',
+        [profile.get_email()],
+        fail_silently=False
+    )
+
 
 def organize_shifts_interview(shifts, is_two_part):
     if is_two_part:
@@ -164,87 +192,117 @@ def organize_shifts_interview(shifts, is_two_part):
     return (organized_shifts, locations)
 
 
-def add_user_to_shift(profile,shift):
+def add_user_to_shift(profile, shift):
     shift.attendees.add(profile)
-    gcal_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_add')
+    gcal_pref = UserPreference.objects.filter(
+                        user=profile,
+                        preference_type='google_calendar_add'
+    )
     if gcal_pref.exists():
         use_cal_pref = gcal_pref[0].preference_value
     else:
         use_cal_pref = GCAL_USE_PREF['default']
     if use_cal_pref == 'always':
-        email_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_account')
+        email_pref = UserPreference.objects.filter(
+                                    user=profile,
+                                    preference_type='google_calendar_account'
+        )
         if email_pref.exists():
             cal_email_pref = email_pref[0].preference_value
         else:
             cal_email_pref = GCAL_ACCT_PREF['default']
-        if cal_email_pref =='umich' or not profile.is_member() or not profile.memberprofile.alt_email:
+        if (cal_email_pref == 'umich' or
+           not profile.is_member() or
+           not profile.memberprofile.alt_email):
             email_to_use = profile.uniqname+'@umich.edu'
         else:
             email_to_use = profile.memberprofile.alt_email
-        shift.add_attendee_to_gcal(profile.get_firstlast_name(),email_to_use)
-        
-def remove_user_from_shift(profile,shift):  
+        shift.add_attendee_to_gcal(profile.get_firstlast_name(), email_to_use)
+
+
+def remove_user_from_shift(profile, shift):
     shift.attendees.remove(profile)
-    email_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_account')
+    email_pref = UserPreference.objects.filter(
+                        user=profile,
+                        preference_type='google_calendar_account'
+    )
     if email_pref.exists():
         cal_email_pref = email_pref[0].preference_value
     else:
         cal_email_pref = GCAL_ACCT_PREF['default']
-    if cal_email_pref =='umich' or not profile.is_member() or not profile.memberprofile.alt_email:
+    if (cal_email_pref == 'umich' or
+       not profile.is_member() or
+       not profile.memberprofile.alt_email):
         email_to_use = profile.uniqname+'@umich.edu'
     else:
         email_to_use = profile.memberprofile.alt_email
     shift.delete_gcal_attendee(email_to_use)
 
+
 def get_permissions(user):
-    return {
-    }
+    return {}
+
+
 def get_common_context(request):
-    upcoming_html = cache.get('upcoming_events_html',None)
-    if hasattr(request.user,'userprofile'):
+    upcoming_html = cache.get('upcoming_events_html', None)
+    tz_now = timezone.localtime(timezone.now())
+    if hasattr(request.user, 'userprofile'):
         profile = request.user.userprofile
-        gcal_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_add')
+        gcal_pref = UserPreference.objects.filter(
+                    user=profile,
+                    preference_type='google_calendar_add'
+        )
         if gcal_pref.exists():
             use_cal_pref = gcal_pref[0].preference_value
         else:
             use_cal_pref = GCAL_USE_PREF['default']
-        show_manual_add_gcal_button=(use_cal_pref!='always')
+        show_manual_add_gcal_button = (use_cal_pref != 'always')
     else:
-        show_manual_add_gcal_button=False
+        show_manual_add_gcal_button = False
     if not upcoming_html:
-        upcoming_html=loader.render_to_string('event_cal/upcoming_events.html',{'upcoming_events':CalendarEvent.get_upcoming_events(),'now':timezone.localtime(timezone.now())})
-        cache.set('upcoming_events_html',upcoming_html)
-    context_dict=get_message_dict(request)
+        upcoming_html = loader.render_to_string(
+                    'event_cal/upcoming_events.html',
+                    {
+                        'upcoming_events': CalendarEvent.get_upcoming_events(),
+                        'now': tz_now
+                    }
+        )
+        cache.set('upcoming_events_html', upcoming_html)
+    context_dict = get_message_dict(request)
     context_dict.update({
-        'request':request,
-        'now':timezone.localtime(timezone.now()),
-        'upcoming_events':upcoming_html,
-        'edit_page':False,
-        'main_nav':'cal',
-        'show_manual_add_gcal_button':show_manual_add_gcal_button,
-        })
+        'request': request,
+        'now': tz_now,
+        'upcoming_events': upcoming_html,
+        'edit_page': False,
+        'main_nav': 'cal',
+        'show_manual_add_gcal_button': show_manual_add_gcal_button,
+    })
     return context_dict
 
-#VIEWS
+
+# VIEWS
 def index(request):
-    request.session['current_page']=request.path
+    request.session['current_page'] = request.path
     template = loader.get_template('event_cal/calendar.html')
     gcals = GoogleCalendar.objects.filter(~Q(name='Office Hours Calendar'))
     if not Permissions.view_officer_meetings_by_default(request.user):
         gcals = gcals.filter(~Q(name='Officer Calendar'))
     context_dict = {
-        "google_cals":gcals,
-        'office_hours_cal':GoogleCalendar.objects.filter(name='Office Hours Calendar'),
-        'subnav':'gcal',
+        'google_cals': gcals,
+        'office_hours_cal': GoogleCalendar.objects.filter(
+                                    name='Office Hours Calendar'
+        ),
+        'subnav': 'gcal',
     }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict)
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
+
 @login_required
-def meeting_sign_in(request,shift_id):
-    shift = get_object_or_404(EventShift,id=shift_id)
+def meeting_sign_in(request, shift_id):
+    shift = get_object_or_404(EventShift, id=shift_id)
     event = shift.event
     sign_in_sheets = MeetingSignIn.objects.filter(event=event)
     current_tz = timezone.get_current_timezone()
@@ -253,47 +311,89 @@ def meeting_sign_in(request,shift_id):
         sign_in_sheet = sign_in_sheets[0]
     else:
         sign_in_sheet = None
-    
+
     if not shift.can_sign_in():
         if not event.use_sign_in:
-            request.session['error_message']='Sign-in not available for this event'
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
+            request.session['error_message'] = ('Sign-in not available for '
+                                                'this event')
+            return get_previous_page(
+                        request,
+                        alternate='event_cal:event_detail',
+                        args=(unicode(event.id),)
+            )
         elif shift.is_full():
-            request.session['error_message']='You cannot sign-in; the event is full'
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
+            request.session['error_message'] = ('You cannot sign-in; the '
+                                                'event is full')
+            return get_previous_page(
+                        request,
+                        alternate='event_cal:event_detail',
+                        args=(unicode(event.id),)
+            )
         else:
-            request.session['error_message']='You can only sign-in during the event'
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
+            request.session['error_message'] = ('You can only sign-in during '
+                                                'the event')
+            return get_previous_page(
+                            request,
+                            alternate='event_cal:event_detail',
+                            args=(unicode(event.id),)
+            )
 
-            
-    if not hasattr(request.user,'userprofile'):
-        request.session['error_message']='You must create a profile before signing in to a meeting'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
+    if not hasattr(request.user, 'userprofile'):
+        request.session['error_message'] = ('You must create a profile before '
+                                            'signing in to a meeting')
+        return get_previous_page(
+                        request,
+                        alternate='event_cal:event_detail',
+                        args=(unicode(event.id),)
+        )
     elif not request.user.userprofile.is_member and event.members_only:
-        request.session['error_message']='Sorry, this event is members-only'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
+        request.session['error_message'] = 'Sorry, this event is members-only'
+        return get_previous_page(
+                    request,
+                    alternate='event_cal:event_detail',
+                    args=(unicode(event.id),)
+        )
     else:
         profile = request.user.userprofile
         if shift.ugrads_only and not profile.is_ugrad():
-            request.session['error_message']='Shift is for undergrads only'
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
+            request.session['error_message'] = 'Shift is for undergrads only'
+            return get_previous_page(
+                        request,
+                        alternate='event_cal:event_detail',
+                        args=(unicode(event.id),)
+            )
         elif shift.grads_only and not profile.is_grad():
-            request.session['error_message']='Shift is for grads only'
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
+            request.session['error_message'] = 'Shift is for grads only'
+            return get_previous_page(
+                            request,
+                            alternate='event_cal:event_detail',
+                            args=(unicode(event.id),)
+            )
         elif shift.electees_only and not profile.is_electee():
-            request.session['error_message']='Shift is for electees only'
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
+            request.session['error_message'] = 'Shift is for electees only'
+            return get_previous_page(
+                            request,
+                            alternate='event_cal:event_detail',
+                            args=(unicode(event.id),)
+            )
         elif shift.actives_only and not profile.is_active():
-            request.session['error_message']='Shift is for actives only'
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
-        if request.method =='POST':
+            request.session['error_message'] = 'Shift is for actives only'
+            return get_previous_page(
+                            request,
+                            alternate='event_cal:event_detail',
+                            args=(unicode(event.id),)
+            )
+        if request.method == 'POST':
             if not sign_in_sheet:
                 form = MeetingSignInForm(request.POST)
             else:
                 sign_in_sheet = sign_in_sheets[0]
-                form = MeetingSignInForm(request.POST,question_text=sign_in_sheet.quick_question)
+                form = MeetingSignInForm(
+                            request.POST,
+                            question_text=sign_in_sheet.quick_question
+                )
             if form.is_valid():
-                if not sign_in_sheet or form.cleaned_data['secret_code']==sign_in_sheet.code_phrase:
+                if not sign_in_sheet or form.cleaned_data['secret_code'] == sign_in_sheet.code_phrase:
                     if profile.is_member() and (profile.memberprofile not in event.get_attendees_with_progress()):
                         if sign_in_sheet:
                             user_data = MeetingSignInUserData()
@@ -305,146 +405,186 @@ def meeting_sign_in(request,shift_id):
                             if 'free_response' in form.cleaned_data:
                                 user_data.free_response = form.cleaned_data['free_response']
                                 if not user_data.free_response:
-                                    user_data.free_response='no response given'
+                                    user_data.free_response = 'no response given'
                             user_data.save()
                         hours = (shift.end_time-shift.start_time).seconds/3600.0
                         if event.is_fixed_progress():
                             hours = 1
-                        p=ProgressItem(member=profile.memberprofile,term=AcademicTerm.get_current_term(),amount_completed=hours,event_type=event.event_type,related_event=event,date_completed=date.today(),name=event.name)
+                        p = ProgressItem(
+                                member=profile.memberprofile,
+                                term=AcademicTerm.get_current_term(),
+                                amount_completed=hours,
+                                event_type=event.event_type,
+                                related_event=event,
+                                date_completed=date.today(),
+                                name=event.name
+                        )
                         p.save()
-                        request.session['success_message']='You were signed in successfully'
+                        request.session['success_message'] = 'You were signed in successfully'
                     elif profile.is_member():
-                        request.session['warning_message']='You were already signed in'
+                        request.session['warning_message'] = 'You were already signed in'
                     shift.attendees.add(profile)
-                    return get_previous_page(request,alternate='event_cal:event_detail',args=(unicode(event.id),))
+                    return get_previous_page(
+                                request,
+                                alternate='event_cal:event_detail',
+                                args=(unicode(event.id),)
+                    )
                 else:
-                    request.session['error_message']='The meeting\'s secret code was wrong. You were not signed in.'
+                    request.session['error_message'] = ('The meeting\'s secret'
+                                                        ' code was wrong. You '
+                                                        'were not signed in.')
             else:
-                request.session['error_message']='There were errors in your sign-in form; you were not signed in. Please correct the errors and try again.'
+                request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
         else:
             if not sign_in_sheet:
                 form = MeetingSignInForm()
             else:
                 sign_in_sheet = sign_in_sheets[0]
-                form = MeetingSignInForm(question_text=sign_in_sheet.quick_question)
+                form = MeetingSignInForm(
+                                question_text=sign_in_sheet.quick_question
+                )
     template = loader.get_template('generic_form.html')
     context_dict = {
-        'form':form,
-        'subnav':'list',
-        'has_files':False,
-        'submit_name':'Sign into Meeting',
-#        'back_button':{'link':reverse('member_resources:view_progress',args=[uniqname]),'text':'To %s\'s Progress'%(profile.get_firstlast_name())},
-        'form_title':'Sign into %s'%(event.name),
-        'help_text':'Please enter the meeting sign-in code and answer the following quick survey questions',
-#        'can_add_row':False,
-        'base':'event_cal/base_event_cal.html',
+        'form': form,
+        'subnav': 'list',
+        'has_files': False,
+        'submit_name': 'Sign into Meeting',
+        'form_title': 'Sign into %s' % (event.name),
+        'help_text': ('Please enter the meeting sign-in code and answer the '
+                      'following quick survey questions'),
+        'base': 'event_cal/base_event_cal.html',
     }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict)
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
-def event_detail(request,event_id):
-    event = get_object_or_404(CalendarEvent,id=event_id)
-    if event.event_type.name == 'Conducted Interviews':
-        return redirect('event_cal:interview_view_actives',event_id)
-    elif event.event_type.name == 'Attended Interviews':
-        return redirect('event_cal:interview_view_electees',event_id)
 
-    request.session['current_page']=request.path
-    has_profile =False
-    user_is_member=False
-    if hasattr(request.user,'userprofile'):  
+def event_detail(request, event_id):
+    event = get_object_or_404(CalendarEvent, id=event_id)
+    if event.event_type.name == 'Conducted Interviews':
+        return redirect('event_cal:interview_view_actives', event_id)
+    elif event.event_type.name == 'Attended Interviews':
+        return redirect('event_cal:interview_view_electees', event_id)
+
+    request.session['current_page'] = request.path
+    has_profile = False
+    user_is_member = False
+    if hasattr(request.user, 'userprofile'):
         has_profile = True
-        try:
-            request.user.userprofile.memberprofile
-            user_is_member = True
-        except ObjectDoesNotExist:
-            pass
+        user_is_member = request.user.userprofile.is_member()
     template = loader.get_template('event_cal/detail.html')
-    request.session['project_report_event']=event_id
+    request.session['project_report_event'] = event_id
     context_dict = {
-        'event':event,
-        'has_profile':hasattr(request.user,'userprofile'),
-        'is_member':user_is_member,
-        'can_edit_event':Permissions.can_edit_event(event,request.user),
-        'can_add_sign_in':(Permissions.can_create_events(request.user) and not MeetingSignIn.objects.filter(event=event).exists() and event.use_sign_in),
-        'can_complete':(event.can_complete_event() and Permissions.can_edit_event(event,request.user)),
-        'subnav':'list',
-        'show_shifts':True,
+        'event': event,
+        'has_profile': hasattr(request.user, 'userprofile'),
+        'is_member': user_is_member,
+        'can_edit_event': Permissions.can_edit_event(event, request.user),
+        'can_add_sign_in': (Permissions.can_create_events(request.user) and not MeetingSignIn.objects.filter(event=event).exists() and event.use_sign_in),
+        'can_complete': (event.can_complete_event() and Permissions.can_edit_event(event, request.user)),
+        'subnav': 'list',
+        'show_shifts': True,
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
 
 @ajax
 @login_required
-def add_to_waitlist(request,shift_id):
-    shift = get_object_or_404(EventShift,id=shift_id)
+def add_to_waitlist(request, shift_id):
+    shift = get_object_or_404(EventShift, id=shift_id)
     event = shift.event
     if shift.start_time < timezone.now():
-        request.session['error_message']='You cannot sign up for an event in the past'
+        request.session['error_message'] = 'You cannot sign up for an event in the past'
     elif not (shift.max_attendance and (shift.attendees.count() >= shift.max_attendance)):
-        request.session['error_message']='Shift isn\'t full'
-    elif shift.max_attendance==0:
-        request.session['error_message']='Shift has capacity 0, unable to add to waitlist'
-    else:
-        if hasattr(request.user,'userprofile'):
-            profile = request.user.userprofile
-            existing_waitlist = WaitlistSlot.objects.filter(shift=shift,user=profile).exists()
-            if existing_waitlist:
-                request.session['error_message']='You are already on the waitlist'
-            elif event.requires_AAPS_background_check and not BackgroundCheck.user_can_mindset(profile):
-                request.session['error_message']='You must pass an AAPS background check and complete training to sign up for this event'
-            elif event.requires_UM_background_check and not BackgroundCheck.user_can_work_w_minors(profile):
-                request.session['error_message']='You must pass a UM background check and complete training to sign up for this event'    
-            elif event.mutually_exclusive_shifts and profile in event.get_event_attendees():
-                request.session['error_message']='You may only sign up for one shift for this event. Unsign up for the other before continuing'
-            elif profile.is_member or not event.members_only:
-                if shift.ugrads_only and not profile.is_ugrad():
-                    request.session['error_message']='Shift is for undergrads only'
-                elif shift.grads_only and not profile.is_grad():
-                    request.session['error_message']='Shift is for grads only'
-                elif shift.electees_only and not profile.is_electee():
-                    request.session['error_message']='Shift is for electees only'
-                elif shift.actives_only and not profile.is_active():
-                    request.session['error_message']='Shift is for actives only'
-                elif not event.allow_overlapping_sign_ups and event.does_shift_overlap_with_users_other_shifts(shift,request.user.userprofile):
-                    request.session['error_message']='You are signed up for a shift that overlaps with this one.'
-                else:
-                    waitlist=WaitlistSlot(shift=shift,user=profile)
-                    waitlist.save()
-                    request.session['success_message']='You have successfully been added to the waitlist.'
+        request.session['error_message'] = 'Shift isn\'t full'
+    elif shift.max_attendance == 0:
+        request.session['error_message'] = 'Shift has capacity 0, unable to add to waitlist'
+    elif hasattr(request.user, 'userprofile'):
+        profile = request.user.userprofile
+        existing_waitlist = WaitlistSlot.objects.filter(shift=shift, user=profile).exists()
+        if existing_waitlist:
+            request.session['error_message'] = 'You are already on the waitlist'
+        elif event.requires_AAPS_background_check and not BackgroundCheck.user_can_mindset(profile):
+            request.session['error_message'] = 'You must pass an AAPS background check and complete training to sign up for this event'
+        elif event.requires_UM_background_check and not BackgroundCheck.user_can_work_w_minors(profile):
+            request.session['error_message'] = 'You must pass a UM background check and complete training to sign up for this event'
+        elif event.mutually_exclusive_shifts and profile in event.get_event_attendees():
+            request.session['error_message'] = 'You may only sign up for one shift for this event. Unsign up for the other before continuing'
+        elif profile.is_member or not event.members_only:
+            if shift.ugrads_only and not profile.is_ugrad():
+                request.session['error_message'] = 'Shift is for undergrads only'
+            elif shift.grads_only and not profile.is_grad():
+                request.session['error_message'] = 'Shift is for grads only'
+            elif shift.electees_only and not profile.is_electee():
+                request.session['error_message'] = 'Shift is for electees only'
+            elif shift.actives_only and not profile.is_active():
+                request.session['error_message'] = 'Shift is for actives only'
+            elif not event.allow_overlapping_sign_ups and event.does_shift_overlap_with_users_other_shifts(shift, request.user.userprofile):
+                request.session['error_message'] = 'You are signed up for a shift that overlaps with this one.'
             else:
-                request.session['error_message']='This event is members-only'
+                waitlist = WaitlistSlot(shift=shift, user=profile)
+                waitlist.save()
+                request.session['success_message'] = ('You have successfully '
+                                                      'been added to the '
+                                                      'waitlist.')
         else:
-            request.session['error_message']='You must create a profile before signing up to events' 
+            request.session['error_message'] = 'This event is members-only'
+    else:
+        request.session['error_message'] = ('You must create a profile before '
+                                            'signing up to events')
     if 'error_message' in request.session:
-        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+        return {
+            'fragments': {
+                '#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
-    return {'fragments':{'#shift-waitlist'+shift_id:r'''<a id="shift-waitlist%s" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-waitlist%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Leave waitlist (there are currently %s users ahead of you).</a>'''%(shift_id,shift_id,reverse('event_cal:remove_from_waitlist', args=[ shift_id] ),shift_id,shift.get_users_waitlist_spot(profile)),
-                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <strong>Error:</strong>%s</div>''' % (
+                        request.session.pop('error_message')
+                )
+            }
+        }
+    return {
+        'fragments': {
+            '#shift-waitlist'+shift_id: r'''<a id="shift-waitlist%s" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-waitlist%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Leave waitlist (there are currently %s users ahead of you).</a>''' % (
+                            shift_id,
+                            shift_id,
+                            reverse(
+                                'event_cal:remove_from_waitlist',
+                                args=[shift_id]
+                            ),
+                            shift_id,
+                            shift.get_users_waitlist_spot(profile)
+            ),
+            '#ajax-message': r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
+    <strong>Success:</strong>%s</div>''' % (
+                            request.session.pop('success_message')
+            )
+        }
+    }
+
 
 @ajax
 @login_required
 def remove_from_waitlist(request,  shift_id):
-    shift = get_object_or_404(EventShift,id=shift_id)
+    shift = get_object_or_404(EventShift, id=shift_id)
     event = shift.event
     if shift.start_time < timezone.now():
-        request.session['error_message']='You cannot unsign-up for an event that has started'
+        request.session['error_message'] = 'You cannot unsign-up for an event that has started'
     else:
-        if hasattr(request.user,'userprofile'):
-            existing_waitlist = WaitlistSlot.objects.filter(shift=shift,user=request.user.userprofile)
+        if hasattr(request.user, 'userprofile'):
+            existing_waitlist = WaitlistSlot.objects.filter(
+                                    shift=shift,
+                                    user=request.user.userprofile
+            )
             existing_waitlist.delete()
-            request.session['success_message']='You have successfully unsigned up from the waitlist.'
+            request.session['success_message'] = 'You have successfully unsigned up from the waitlist.'
         else:
-            request.session['error_message']='You must create a profile before unsigning up'
+            request.session['error_message'] = 'You must create a profile before unsigning up'
     if 'error_message' in request.session:
-        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+        return {'fragments':{'#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
     return {'fragments':{'#shift-waitlist'+shift_id:r'''<a id="shift-waitlist%s" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-waitlist%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Add self to waitlist (there
@@ -452,6 +592,7 @@ def remove_from_waitlist(request,  shift_id):
                         '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}} 
+
 
 @ajax
 @login_required
@@ -484,6 +625,7 @@ def add_shift_to_gcal(request,  shift_id):
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}    
 
+
 @ajax
 @login_required
 def add_shift_to_gcal_paired(request,  shift_id):
@@ -515,7 +657,8 @@ def add_shift_to_gcal_paired(request,  shift_id):
     return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}} 
-    
+
+
 @ajax
 @login_required
 def sign_up(request,  shift_id):
@@ -582,161 +725,228 @@ def sign_up(request,  shift_id):
         return_dict['fragments']['#shift-gcal'+shift_id]=r'''<a id="shift-gcal%s" class="btn btn-primary btn-sm" onclick="$('#shift-gcal%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-gcal%s').attr('disabled',false);})"><i class="glyphicon glyphicon-calendar"></i> Add event to gcal</a>'''%(shift_id,shift_id,reverse('event_cal:add_shift_to_gcal', args=[ shift_id] ),shift_id)
     return return_dict    
 
-def unsign_up_user(shift,profile):
-    remove_user_from_shift(profile,shift)
-    waitlist=shift.get_ordered_waitlist()
+
+def unsign_up_user(shift, profile):
+    remove_user_from_shift(profile, shift)
+    waitlist = shift.get_ordered_waitlist()
     if waitlist.exists():
-        w=waitlist[0]
-        add_user_to_shift(w.user,shift)
-        notify_waitlist_move(shift.event,shift,w.user)
+        w = waitlist[0]
+        add_user_to_shift(w.user, shift)
+        notify_waitlist_move(shift.event, shift, w.user)
         w.delete()
     if not profile in shift.event.get_event_attendees():
-        CarpoolPerson.objects.filter(event=shift.event,person=profile).delete()
-        UserCanBringPreferredItem.objects.filter(event=shift.event,user=profile).delete()
+        CarpoolPerson.objects.filter(
+                event=shift.event,
+                person=profile
+        ).delete()
+        UserCanBringPreferredItem.objects.filter(
+                event=shift.event,
+                user=profile
+        ).delete()
+
 
 @ajax
 @login_required
-def manual_remove_user_from_shift(request,shift_id,username):
-    shift = get_object_or_404(EventShift,id=shift_id)
-    e= shift.event
-    if not Permissions.can_edit_event(e,request.user):
-        request.session['error_message']='You are not authorized to remove attendees'
+def manual_remove_user_from_shift(request, shift_id, username):
+    shift = get_object_or_404(EventShift, id=shift_id)
+    e = shift.event
+    if not Permissions.can_edit_event(e, request.user):
+        request.session['error_message'] = 'You are not authorized to remove attendees'
     else:
-        shift = get_object_or_404(EventShift,id=shift_id)
-        profile = get_object_or_404(UserProfile,uniqname=username)
-        unsign_up_user(shift,profile)
-        request.session['success_message']='You have successfully unsigned up %s from the event.'%(username)
+        shift = get_object_or_404(EventShift, id=shift_id)
+        profile = get_object_or_404(UserProfile, uniqname=username)
+        unsign_up_user(shift, profile)
+        request.session['success_message'] = 'You have successfully unsigned up %s from the event.' % (username)
     if 'error_message' in request.session:
-        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+        return {'fragments': {'#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+    <strong>Error:</strong>%s</div>''' % (request.session.pop('error_message'))}}
     return_dict= {'fragments':{'#shift-'+shift_id+'-attendee-'+username:'',
-                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+                        '#ajax-message': r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
+    <strong>Success:</strong>%s</div>''' % (request.session.pop('success_message'))}}
     if username == request.user.username:
-        return_dict['fragments']['#shift-signup'+shift_id]=r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up', args=[ shift_id] ),shift_id)
+        return_dict['fragments']['#shift-signup'+shift_id] = r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up', args=[ shift_id] ),shift_id)
     return return_dict                   
-    
+
+
 @ajax
 @login_required
 def unsign_up(request, shift_id):
-    shift = get_object_or_404(EventShift,id=shift_id)
+    shift = get_object_or_404(EventShift, id=shift_id)
     event = shift.event
     if shift.start_time < timezone.now():
-        request.session['error_message']='You cannot unsign-up for an event that has started'
-    elif shift.start_time-timedelta(hours=event.min_unsign_up_notice)<timezone.now():
-        request.session['error_message']='This event blocks unsign-up %s hours before start'%(event.min_unsign_up_notice)
+        request.session['error_message'] = 'You cannot unsign-up for an event that has started'
+    elif shift.start_time-timedelta(hours=event.min_unsign_up_notice) < timezone.now():
+        request.session['error_message'] = 'This event blocks unsign-up %s hours before start'%(event.min_unsign_up_notice)
     else:
         if hasattr(request.user,'userprofile'):
-            unsign_up_user(shift,request.user.userprofile)
+            unsign_up_user(shift, request.user.userprofile)
 
-            request.session['success_message']='You have successfully unsigned up from the event.'
+            request.session['success_message'] = 'You have successfully unsigned up from the event.'
         else:
-            request.session['error_message']='You must create a profile before unsigning up'
+            request.session['error_message'] = 'You must create a profile before unsigning up'
     if 'error_message' in request.session:
-        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+        return {'fragments': {'#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
+    <strong>Error:</strong>%s</div>''' % (request.session.pop('error_message'))}}
 
-    return {'fragments':{'#shift-'+shift_id+'-attendee-'+request.user.username:'',
-                        '#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up', args=[ shift_id] ),shift_id),
-                        '#shift-gcal'+shift_id:r'''<a id="shift-gcal%s" class="hidden"></a>'''%(shift_id),
-                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    return {'fragments': {
+                '#shift-'+shift_id+'-attendee-'+request.user.username: '',
+                '#shift-signup'+shift_id: r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up', args=[ shift_id] ),shift_id),
+                '#shift-gcal'+shift_id: r'''<a id="shift-gcal%s" class="hidden"></a>'''%(shift_id),
+                '#ajax-message': r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
+    <strong>Success:</strong>%s</div>''' % (request.session.pop('success_message'))}}
+
 
 @login_required
-def carpool_sign_up(request,event_id):
-    event = get_object_or_404(CalendarEvent,id=event_id)
-    if not hasattr(request.user,'userprofile'):
-        request.session['error_message']='You must create  profile before signing up to a carpool'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+def carpool_sign_up(request, event_id):
+    event = get_object_or_404(CalendarEvent, id=event_id)
+    if not hasattr(request.user, 'userprofile'):
+        request.session['error_message'] = ('You must create  profile before '
+                                            'signing up to a carpool')
+        return get_previous_page(
+                        request,
+                        alternate='event_cal:event_detail',
+                        args=(event_id,)
+        )
     profile = request.user.userprofile
     if not event.needs_carpool:
-        request.session['error_message']='A carpool isn\'t set up for this event.'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+        request.session['error_message'] = ('A carpool isn\'t set up for '
+                                            'this event.')
+        return get_previous_page(
+                        request,
+                        alternate='event_cal:event_detail',
+                        args=(event_id,)
+        )
     if event.carpoolperson_set.filter(person=profile).exists():
-        request.session['warning_message']='You are already signed up for the carpool.'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
-    CarpoolForm = modelform_factory(CarpoolPerson,exclude=('person','event'))
-    if request.method =='POST':
-        form = CarpoolForm(request.POST)
+        request.session['warning_message'] = 'You are already signed up for the carpool.'
+        return get_previous_page(
+                        request,
+                        alternate='event_cal:event_detail',
+                        args=(event_id,)
+        )
+    CarpoolForm = modelform_factory(
+                        CarpoolPerson,
+                        exclude=('person', 'event')
+    )
+    form = CarpoolForm(request.POST or None)
+    if request.method == 'POST':
         if form.is_valid():
             instance = form.save(commit=False)
-            instance.person=profile
-            instance.event=event
+            instance.person = profile
+            instance.event = event
             instance.save()
-            request.session['success_message']='You have signed up for the carpool'
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+            request.session['success_message'] = ('You have signed up for '
+                                                  'the carpool')
+            return get_previous_page(
+                            request,
+                            alternate='event_cal:event_detail',
+                            args=(event_id,)
+            )
         else:
-            request.session['warning_message']='There were errors in your submission'
-    else:
-        form = CarpoolForm()
+            request.session['warning_message'] = messages.GENERIC_SUBMIT_ERROR
     template = loader.get_template('generic_form.html')
     context_dict = {
-        'form':form,
-        'subnav':'list',
-        'has_files':False,
-        'submit_name':'Sign up for Carpool',
-        'form_title':'Sign up for carpool for  %s'%(event.name),
-        'help_text':'If you need a ride or can drive people, please sign up to participate in the carpool',
-        'base':'event_cal/base_event_cal.html',
+        'form': form,
+        'subnav': 'list',
+        'has_files': False,
+        'submit_name': 'Sign up for Carpool',
+        'form_title': 'Sign up for carpool for  %s' % (event.name),
+        'help_text': ('If you need a ride or can drive people, please sign up '
+                      'to participate in the carpool'),
+        'base': 'event_cal/base_event_cal.html',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
+
 @login_required
-def preferred_items_request(request,event_id):
-    event = get_object_or_404(CalendarEvent,id=event_id)
-    if not hasattr(request.user,'userprofile'):
-        request.session['error_message']='You must create  profile before indicating you can bring an item'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+def preferred_items_request(request, event_id):
+    event = get_object_or_404(CalendarEvent, id=event_id)
+    if not hasattr(request.user, 'userprofile'):
+        request.session['error_message'] = ('You must create  profile before '
+                                            'indicating you can bring an item')
+        return get_previous_page(
+                            request,
+                            alternate='event_cal:event_detail',
+                            args=(event_id,)
+        )
     profile = request.user.userprofile
     if not event.preferred_items.lstrip():
-        request.session['error_message']='This event doesn\'t need any items.'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+        request.session['error_message'] = ('This event doesn\'t need any '
+                                            'items.')
+        return get_previous_page(
+                            request,
+                            alternate='event_cal:event_detail',
+                            args=(event_id,)
+        )
     if event.usercanbringpreferreditem_set.filter(user=profile).exists():
-        request.session['warning_message']='You already indicated if you can bring the needed items.'
-        return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
-    ItemForm = modelform_factory(UserCanBringPreferredItem,exclude=('user','event'))
+        request.session['warning_message'] = ('You already indicated if you '
+                                              'can bring the needed items.')
+        return get_previous_page(
+                            request,
+                            alternate='event_cal:event_detail',
+                            args=(event_id,)
+        )
+    ItemForm = modelform_factory(
+                    UserCanBringPreferredItem,
+                    exclude=('user', 'event')
+    )
     form = ItemForm(request.POST or None)
     if request.method =='POST':
         if form.is_valid():
             instance = form.save(commit=False)
-            instance.user=profile
-            instance.event=event
+            instance.user = profile
+            instance.event = event
             instance.save()
-            request.session['success_message']='You have indicated if you can bring the item(s) needed.'
+            request.session['success_message'] = ('You have indicated if you '
+                                                  'can bring the item(s) '
+                                                  'needed.')
             if event.needs_carpool:
-                request.session['info_message']='If you need or can give a ride, please also sign up for the carpool'
+                request.session['info_message'] = ('If you need or can give a '
+                                                   'ride, please also sign up '
+                                                   'for the carpool')
                 return redirect('event_cal:carpool_sign_up',event_id)
-            return get_previous_page(request,alternate='event_cal:event_detail',args=(event_id,))
+            return get_previous_page(
+                            request,
+                            alternate='event_cal:event_detail',
+                            args=(event_id,)
+            )
         else:
-            request.session['error_message']='There were errors in your submission'
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
     template = loader.get_template('generic_form.html')
     context_dict = {
-        'form':form,
-        'subnav':'list',
-        'has_files':False,
-        'submit_name':'Submit',
-        'form_title':'Can you bring the needed/preferred items?',
-        'help_text':'This event needs the following items:\n'+event.preferred_items+'\nWhile it is not required that you bring them, it is helpful. Please indicate if you can bring them.',
-        'base':'event_cal/base_event_cal.html',
+        'form': form,
+        'subnav': 'list',
+        'has_files': False,
+        'submit_name': 'Submit',
+        'form_title': 'Can you bring the needed/preferred items?',
+        'help_text': ('This event needs the following items:\n' + 
+                      event.preferred_items + 
+                      '\nWhile it is not required that you bring them, it is '
+                      'helpful. Please indicate if you can bring them.'),
+        'base': 'event_cal/base_event_cal.html',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
+
 @login_required
 def add_event_photo(request):
     if not hasattr(request.user,'userprofile') and request.user.userprofile.is_member():
         request.session['error_message']='You must create  profile before adding photos'
         return get_previous_page(request,alternate='event_cal:index')
     if Permissions.can_create_events(request.user):# and not request.user.is_superuser:
-        EventPhotoForm = modelform_factory(EventPhoto,form=BaseEventPhotoForm)
+        EventPhotoForm = modelform_factory(
+                            EventPhoto,
+                            form=BaseEventPhotoForm
+        )
         has_pr=True
     else:
         EventPhotoForm = modelform_factory(EventPhoto,form=BaseEventPhotoFormAlt)
@@ -759,19 +969,21 @@ def add_event_photo(request):
             form.fields['project_report'].queryset = Permissions.project_reports_you_can_view(request.user)
     template = loader.get_template('generic_form.html')
     context_dict = {
-        'form':form,
-        'subnav':'photo',
-        'has_files':True,
-        'submit_name':'Add Event Photo',
-        'form_title':'Add Event Photo',
-        'help_text':'You may optionally associate the photo with a particular event and/or project report.',
-        'base':'event_cal/base_event_cal.html',
+        'form': form,
+        'subnav': 'photo',
+        'has_files': True,
+        'submit_name': 'Add Event Photo',
+        'form_title': 'Add Event Photo',
+        'help_text': ('You may optionally associate the photo with a '
+                      'particular event and/or project report.'),
+        'base': 'event_cal/base_event_cal.html',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
-        
+
+
 def list(request):
     request.session['current_page']=request.path
     user_is_member = False
@@ -822,23 +1034,25 @@ def list(request):
         form = EventFilterForm(initial=initial)
     events = CalendarEvent.objects.filter(query_members&query_date&query_event_type&query_location&query_can_attend).distinct()
     template = loader.get_template('event_cal/list.html')
-    packed_events=[]
+    packed_events = []
     for event in events.order_by('earliest_start'):
         packed_events.append({'event':event,'can_edit':Permissions.can_edit_event(event,request.user)})
     context_dict = {
-        'events':packed_events,
-        'user_is_member':user_is_member,
-        'has_profile':has_profile,
-        'form':form,
-        'dp_ids':['dp_before','dp_after'],
-        'sorted_event_categories':EventCategory.flatten_category_tree(),
-        'selected_boxes':selected_boxes,
-        'subnav':'list',
+        'events': packed_events,
+        'user_is_member': user_is_member,
+        'has_profile': has_profile,
+        'form': form,
+        'dp_ids': ['dp_before', 'dp_after'],
+        'sorted_event_categories': EventCategory.flatten_category_tree(),
+        'selected_boxes': selected_boxes,
+        'subnav': 'list',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
+
 @ajax
 def get_event_ajax(request,event_id):
     event_html = cache.get('EVENT_AJAX'+event_id,None)
@@ -849,10 +1063,10 @@ def get_event_ajax(request,event_id):
         if hasattr(request.user,'userprofile'):  
             has_profile = True
         context_dict = {
-            'event':event,
-            'can_edit_event':can_edit,
-            'has_profile':has_profile,
-            'user':request.user,
+            'event': event,
+            'can_edit_event': can_edit,
+            'has_profile': has_profile,
+            'user': request.user,
             'show_shifts': not (event.event_type.name=='Attended Interviews' or event.event_type.name=='Conducted Interviews'), 
             }
         context_dict.update(get_permissions(request.user))
@@ -864,7 +1078,9 @@ def get_event_ajax(request,event_id):
             cache.set('EVENT_AJAX'+event_id,event_html,60*60*2)
 
                 
-    return {'fragments':{'#event'+event_id:event_html}}
+    return {'fragments': {'#event'+event_id: event_html}}
+
+
 def my_events(request):
     request.session['current_page']=request.path
     my_events = []
@@ -879,14 +1095,15 @@ def my_events(request):
     for event in my_events:
         packed_events.append({'event':event,'can_edit':Permissions.can_edit_event(event,request.user)})
     context_dict = {
-        'my_events':packed_events,
-        'has_profile':has_profile,
-        'subnav':'my_events',
+        'my_events': packed_events,
+        'has_profile': has_profile,
+        'subnav': 'my_events',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
 
 def create_multishift_event(request):
     if not Permissions.can_create_events(request.user):
@@ -896,38 +1113,38 @@ def create_multishift_event(request):
     EventForm = modelform_factory(CalendarEvent,form=BaseEventForm,exclude=('completed','google_event_id','project_report','use_sign_in'))
     EventForm.base_fields['assoc_officer'].queryset=OfficerPosition.objects.filter(enabled=True)
     EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
+    form = EventForm(request.POST or None, prefix='event')
+    formset = MultiShiftFormset(request.POST or None, prefix='shift')
     if request.method == 'POST':
-        form = EventForm(request.POST,prefix='event')
-        formset = MultiShiftFormset(request.POST,prefix='shift')
         if form.is_valid() and formset.is_valid():
             event = form.save()
             if not event.event_class:
                     s = event.name.split()
-                    if re.match('(^(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$)|^[0-9]+.?[0-9]*$',s[-1]):
-                        s=s[0:-1]
+                    if re.match(NUMBER_OR_NUMERAL, s[-1]):
+                        s = s[0:-1]
                     n = ' '.join(s).title()
                     ec = EventClass.objects.filter(name=n)
                     if ec.exists():
-                        ec=ec[0]
+                        ec = ec[0]
                     else:
                         ec = EventClass(name=n)
                         ec.save()
-                    event.event_class=ec
+                    event.event_class = ec
                     event.save()
             for shift_form in formset:
                 if not shift_form.is_valid():
                     continue
-                cleaned_data=shift_form.cleaned_data
-                shift_date=cleaned_data['date']
+                cleaned_data = shift_form.cleaned_data
+                shift_date = cleaned_data['date']
                 shifts_start = cleaned_data['start_time']
-                mid_time =datetime.combine(shift_date,shifts_start)
-                end_time = datetime.combine(shift_date,shift_form.cleaned_data['end_time']) 
-                while mid_time<end_time:
+                mid_time = datetime.combine(shift_date, shifts_start)
+                end_time = datetime.combine(shift_date, shift_form.cleaned_data['end_time']) 
+                while mid_time < end_time:
                     start_time = mid_time
-                    mid_time +=timedelta(minutes=shift_form.cleaned_data['duration'])
+                    mid_time += timedelta(minutes=shift_form.cleaned_data['duration'])
                     event_shift = EventShift()
-                    event_shift.start_time = timezone.make_aware(start_time,timezone.get_current_timezone())
-                    event_shift.end_time = timezone.make_aware(mid_time,timezone.get_current_timezone())
+                    event_shift.start_time = timezone.make_aware(start_time, timezone.get_current_timezone())
+                    event_shift.end_time = timezone.make_aware(mid_time, timezone.get_current_timezone())
                     event_shift.location = shift_form.cleaned_data['location']
                     event_shift.ugrads_only = shift_form.cleaned_data['ugrads_only']
                     event_shift.grads_only = shift_form.cleaned_data['grads_only']
@@ -940,73 +1157,93 @@ def create_multishift_event(request):
             event.add_event_to_gcal()
             event.notify_publicity()
             event.save()
-            tweet_option = form.cleaned_data.pop('tweet_option','N')
-            if tweet_option=='T':
+            tweet_option = form.cleaned_data.pop('tweet_option', 'N')
+            if tweet_option == 'T':
                 event.tweet_event(False)
-            elif tweet_option=='H':
+            elif tweet_option == 'H':
                 event.tweet_event(True)
             return redirect('event_cal:list')
 
         else:
-            request.session['error_message']='There were errors in the submitted event, please correct the errors noted below.'
-    else:
-        form = EventForm(prefix='event')
-        formset= MultiShiftFormset(prefix='shift')
-    dp_ids=['id_event-announce_start']
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
+    dp_ids = ['id_event-announce_start']
     for count in range(len(formset)):
-        dp_ids.append('id_shift-%d-date'%(count))
+        dp_ids.append('id_shift-%d-date' % (count))
     template = loader.get_template('event_cal/create_event.html')
     context_dict = {
-        'form':form,
-        'formset':formset,
-        'dp_ids':dp_ids,
-        'dp_ids_dyn':['date'],
-        'prefix':'shift',
-        'subnav':'admin',
-        'submit_name':'Create Event',
-        'form_title':'Multiple shift event creation',
-        'help_text':'Easily create shifts with multiple, regularly spaced events. Simply specify the start and end time for each block of time and the shift length. Do not use this for electee interview creation, use the intended form.',
-        'shift_title':'Shift days and time windows',
-        'shift_help_text':'Shifts will be automatically created within the window you specify, for the duration you give. Note that if your duration does not line up with the end time, you may go longer than you planned.',
-        'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
-        'event_photos':EventPhoto.objects.all(),
-#        'date_prefixes':[{'id_shift':['start_time_0','end_time_0']}],
+        'form': form,
+        'edit': True,
+        'formset': formset,
+        'dp_ids': dp_ids,
+        'dp_ids_dyn': ['date'],
+        'prefix': 'shift',
+        'subnav': 'admin',
+        'submit_name': 'Create Event',
+        'form_title': 'Multiple shift event creation',
+        'help_text': ('Easily create shifts with multiple, regularly spaced '
+                      'events. Simply specify the start and end time for each '
+                      'block of time and the shift length. Do not use this '
+                      'for electee interview creation, use the intended '
+                      'form.'),
+        'shift_title': 'Shift days and time windows',
+        'shift_help_text': ('Shifts will be automatically created within the '
+                            'window you specify, for the duration you give. '
+                            'Note that if your duration does not line up '
+                            'with the end time, you may go longer than you '
+                            'planned.'),
+        'back_button': {
+                'link': reverse('event_cal:calendar_admin'),
+                'text': 'To Calendar Admin'
+        },
+        'event_photos': EventPhoto.objects.all(),
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context_dict['edit']=True
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request,context_dict)
     return HttpResponse(template.render(context))
+
 
 def create_event(request):
     if not Permissions.can_create_events(request.user):
         request.session['error_message']='You are not authorized to create events'
-        return get_previous_page(request,alternate='event_cal:list')
-    request.session['current_page']=request.path
-    EventForm = modelform_factory(CalendarEvent,form=BaseEventForm,exclude=('completed','google_event_id','project_report'))
-    EventForm.base_fields['assoc_officer'].queryset=OfficerPosition.objects.filter(enabled=True)
+        return get_previous_page(request, alternate='event_cal:list')
+    request.session['current_page'] = request.path
+    EventForm = modelform_factory(
+                    CalendarEvent,
+                    form=BaseEventForm,
+                    exclude=('completed', 'google_event_id', 'project_report'),
+    )
+    EventForm.base_fields['assoc_officer'].queryset = OfficerPosition.objects.filter(enabled=True)
     EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
+    form = EventForm(request.POST or None, prefix='event')
+    formset = EventShiftFormset(
+                    request.POST or None,
+                    prefix='shift',
+                    instance=CalendarEvent(),
+    )
     if request.method == 'POST':
-        form = EventForm(request.POST,prefix='event')
-        formset = EventShiftFormset(request.POST,prefix='shift')
         if form.is_valid():
             event = form.save(commit=False)
-            formset = EventShiftFormset(request.POST,prefix='shift',instance=event)
-            formset[0].empty_permitted=False
+            formset = EventShiftFormset(
+                                request.POST,
+                                prefix='shift',
+                                instance=event
+            )
+            formset[0].empty_permitted = False
             if formset.is_valid():
                 event.save()
                 if not event.event_class:
                     s = event.name.split()
-                    if re.match('(^(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$)|^[0-9]+.?[0-9]*$',s[-1]):
-                        s=s[0:-1]
+                    if re.match(NUMBER_OR_NUMERAL, s[-1]):
+                        s = s[0:-1]
                     n = ' '.join(s).title()
                     ec = EventClass.objects.filter(name=n)
                     if ec.exists():
-                        ec=ec[0]
+                        ec = ec[0]
                     else:
                         ec = EventClass(name=n)
                         ec.save()
-                    event.event_class=ec
+                    event.event_class = ec
                     event.save()
                 form.save_m2m()
                 formset.save()
@@ -1014,101 +1251,111 @@ def create_event(request):
                 event.add_event_to_gcal()
                 event.notify_publicity()
                 event.save()
-                tweet_option = form.cleaned_data.pop('tweet_option','N')
-                if tweet_option=='T':
+                tweet_option = form.cleaned_data.pop('tweet_option', 'N')
+                if tweet_option == 'T':
                     event.tweet_event(False)
-                elif tweet_option=='H':
+                elif tweet_option == 'H':
                     event.tweet_event(True)
                 if event.use_sign_in:
-                    request.session['info_message']='Please create a sign-in for %s'%(unicode(event),)
-                    event_id=int(event.id)
+                    request.session['info_message'] = 'Please create a sign-in for %s' % (unicode(event),)
+                    event_id = int(event.id)
                     return redirect('event_cal:create_meeting_signin', event_id)
                 else:
                     return redirect('event_cal:list')
             else:
-                request.session['error_message']='Either there were errors in your shift(s) or you forgot to include one.'
+                request.session['error_message'] = messages.SHIFT_ERRORS
         else:
-            request.session['error_message']='There were errors in the submitted event, please correct the errors noted below.'
-    else:
-        form = EventForm(prefix='event')
-        formset= EventShiftFormset(prefix='shift',instance=CalendarEvent())
-    dp_ids=['id_event-announce_start']
+            request.session['error_message'] = messags.GENERIC_SUBMIT_ERROR
+    dp_ids = ['id_event-announce_start']
     for count in range(len(formset)):
-        dp_ids.append('id_shift-%d-start_time_0'%(count))
-        dp_ids.append('id_shift-%d-end_time_0'%(count))
+        dp_ids.append('id_shift-%d-start_time_0' % (count))
+        dp_ids.append('id_shift-%d-end_time_0' % (count))
     template = loader.get_template('event_cal/create_event.html')
     context_dict = {
-        'form':form,
-        'formset':formset,
-        'dp_ids':dp_ids,
-        'dp_ids_dyn':['start_time_0', 'end_time_0'],
-        'prefix':'shift',
-        'subnav':'admin',
-        'submit_name':'Create Event',
-        'form_title':'Create New Event',
-        'help_text':'',
-        'shift_title':'Event Shifts',
-        'shift_help_text':'',
-        'back_button':{'link':reverse('event_cal:calendar_admin'),'text':'To Calendar Admin'},
-        'event_photos':EventPhoto.objects.all(),
-#        'date_prefixes':[{'id_shift':['start_time_0','end_time_0']}],
+        'form': form,
+        'edit': True,
+        'formset': formset,
+        'dp_ids': dp_ids,
+        'dp_ids_dyn': ['start_time_0', 'end_time_0'],
+        'prefix': 'shift',
+        'subnav': 'admin',
+        'submit_name': 'Create Event',
+        'form_title': 'Create New Event',
+        'help_text': '',
+        'shift_title': 'Event Shifts',
+        'shift_help_text': '',
+        'back_button': {
+                    'link': reverse('event_cal:calendar_admin'),
+                    'text': 'To Calendar Admin'
+        },
+        'event_photos': EventPhoto.objects.all(),
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context_dict['edit']=True
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
 
 def create_meeting_signin(request, event_id):
     if not Permissions.can_create_events(request.user):
-        request.session['error_message']='You are not authorized to create meeting signins.'
-        return get_previous_page(request,alternate='event_cal:list')
-    e=get_object_or_404(CalendarEvent,id=event_id)
+        request.session['error_message'] = ('You are not authorized to create '
+                                            'meeting signins.')
+        return get_previous_page(request, alternate='event_cal:list')
+    e = get_object_or_404(CalendarEvent, id=event_id)
     if not e.use_sign_in:
-        request.session['error_message']='You can only create a meeting signin for a meeting.'
-        return get_previous_page(request,alternate='event_cal:list')
-    MeetingSignInForm = modelform_factory(MeetingSignIn,exclude=('event',))
+        request.session['error_message'] = ('You can only create a meeting '
+                                            'signin for a meeting.')
+        return get_previous_page(request, alternate='event_cal:list')
+    MeetingSignInForm = modelform_factory(MeetingSignIn, exclude=('event',))
+    form = MeetingSignInForm(request.POST or None)
     if request.method == 'POST':
-        form = MeetingSignInForm(request.POST)
         if form.is_valid():
             signin = form.save(commit=False)
-            signin.event=e
+            signin.event = e
             signin.save()
-            request.session['success_message']='Event created successfully'
+            request.session['success_message'] = 'Event created successfully'
             return redirect('event_cal:list')
         else:
-            request.session['error_message']='There were errors in the submitted meeting sign_in, please correct the errors noted below.'
-    else:
-        form = MeetingSignInForm()
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
     template = loader.get_template('generic_form.html')
     context_dict = {
-        'form':form,
-        'subnav':'list',
-        'has_files':False,
-        'submit_name':'Create  Sign-in',
-        'back_button':{'link':reverse('event_cal:event_detail',args=[event_id]),'text':'To %s Page'%(e.name)},
-        'form_title':'Add Sign in for %s'%(e.name),
-        'help_text':'In order to use the sign-in feature, please create a sign-in form. Note that the form will automatically have an optional \"Free Response\" question in addition to the quick question you provide.',
-#        'can_add_row':False,
-        'base':'event_cal/base_event_cal.html',
+        'form': form,
+        'subnav': 'list',
+        'has_files': False,
+        'submit_name': 'Create  Sign-in',
+        'back_button': {
+                'link': reverse('event_cal:event_detail', args=[event_id]),
+                'text': 'To %s Page' % (e.name)
+        },
+        'form_title': 'Add Sign in for %s' % (e.name),
+        'help_text': ('In order to use the sign-in feature, please create a '
+                      'sign-in form. Note that the form will automatically '
+                      'have an optional \"Free Response\" question in '
+                      'addition to the quick question you provide.'),
+        'base': 'event_cal/base_event_cal.html',
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
 
 def delete_event(request, event_id):
-    e= get_object_or_404(CalendarEvent,id=event_id)
-    if Permissions.can_edit_event(e,request.user) and not e.completed:
+    e = get_object_or_404(CalendarEvent, id=event_id)
+    if Permissions.can_edit_event(e, request.user) and not e.completed:
         e.delete_gcal_event()
         e.delete()
         call_command('reset_upcoming_events')
-        request.session['success_message']='Event deleted successfully'
+        request.session['success_message'] = 'Event deleted successfully'
         return redirect('event_cal:list')
     else:
-        request.session['error_message']='You do not have sufficient permissions to delete this event, or it has already been completed.'
+        request.session['error_message'] = ('You do not have sufficient '
+                                            'permissions to delete this '
+                                            'event, or it has already been '
+                                            'completed.')
         return redirect('event_cal:index')
+
+
 @ajax
 def delete_shift(request, shift_id):
     s = get_object_or_404(EventShift,id=shift_id)
@@ -1121,145 +1368,189 @@ def delete_shift(request, shift_id):
             call_command('reset_upcoming_events')
             request.session['success_message']='Event shift deleted successfully'
         else:
-            request.session['error_message']='Shifts can only be deleted for open events with more than one shift.'
+            request.session['error_message'] = ('Shifts can only be deleted '
+                                                'for open events with more '
+                                                'than one shift.')
     
     else:
-        request.session['error_message']='You do not have sufficient permissions to delete this shift.'
+        request.session['error_message'] = ('You do not have sufficient '
+                                            'permissions to delete this '
+                                            'shift.')
 
     if 'error_message' in request.session:
-        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+        return {
+            'fragments': {
+                '#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
-    return {'fragments':{'#eventshift'+shift_id:'',
-                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <strong>Error:</strong>%s</div>''' % (
+                                request.session.pop('error_message')
+                            )
+            }
+        }
+    return {
+        'fragments': {
+            '#eventshift'+shift_id: '',
+            '#ajax-message': r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
-def email_participants(request,event_id):
-    e= get_object_or_404(CalendarEvent,id=event_id)
-    if not Permissions.can_edit_event(e,request.user) or not hasattr(request.user,'userprofile') or not request.user.userprofile.is_member():
-        request.session['error_message']='You are not authorized to email this event\'s participants.'
-        return get_previous_page(request,alternate='event_cal:list')
+    <strong>Success:</strong>%s</div>''' % (
+                            request.session.pop('success_message')
+                        )
+        }
+    }
+
+
+def email_participants(request, event_id):
+    e = get_object_or_404(CalendarEvent, id=event_id)
+    if (not Permissions.can_edit_event(e, request.user) or
+       not hasattr(request.user, 'userprofile') or
+       not request.user.userprofile.is_member()):
+        request.session['error_message'] = ('You are not authorized to email '
+                                            'this event\'s participants.')
+        return get_previous_page(request, alternate='event_cal:list')
+    form = EventEmailForm(request.POST or None)
     if request.method == 'POST':
-        form = EventEmailForm(request.POST)
         if form.is_valid():
             subject = form.cleaned_data['subject']
             body = form.cleaned_data['body']
-            e.email_participants(subject,body,request.user.userprofile.memberprofile)
-            request.session['success_message']='Event participants emailed successfully'
-            return redirect('event_cal:event_detail',event_id)
+            e.email_participants(
+                        subject,
+                        body,
+                        request.user.userprofile.memberprofile
+            )
+            request.session['success_message'] = ('Event participants emailed '
+                                                  'successfully')
+            return redirect('event_cal:event_detail', event_id)
         else:
-            request.session['error_message']='You need to include a subject and a body.'
-    else:
-        form = EventEmailForm()
+            request.session['error_message'] = ('You need to include a '
+                                                'subject and a body.')
     template = loader.get_template('generic_form.html')
     context_dict = {
-        'form':form,
-        'subnav':'list',
-        'has_files':False,
-        'submit_name':'Email Participants',
-        'form_title':'Specify Subject/Body for Emailing Participants',
-        'help_text':'Use this form to email all current event participants. Event leaders will be cc\'ed and you will be the reply-to address.',
-        'base':'event_cal/base_event_cal.html',
-        'back_button':{'link':reverse('event_cal:event_detail',args=[event_id]),'text':'To  %s Page'%(e.name)},
-        }
+        'form': form,
+        'subnav': 'list',
+        'has_files': False,
+        'submit_name': 'Email Participants',
+        'form_title': 'Specify Subject/Body for Emailing Participants',
+        'help_text': ('Use this form to email all current event participants. '
+                      'Event leaders will be cc\'ed and you will be the '
+                      'reply-to address.'),
+        'base': 'event_cal/base_event_cal.html',
+        'back_button': {
+                    'link': reverse('event_cal:event_detail', args=[event_id]),
+                    'text': 'To  %s Page' % (e.name)
+        },
+    }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
+
 def edit_event(request, event_id):
-    e= get_object_or_404(CalendarEvent,id=event_id)
-    if not Permissions.can_edit_event(e,request.user):
-        request.session['error_message']='You are not authorized to edit this event'
-        return get_previous_page(request,alternate='event_cal:list')
-    request.session['current_page']=request.path
-    EventForm = modelform_factory(CalendarEvent,form=BaseEventForm,exclude=('completed','google_event_id','project_report'))
-    EventForm.base_fields['assoc_officer'].queryset=OfficerPosition.objects.filter(enabled=True)
+    e = get_object_or_404(CalendarEvent, id=event_id)
+    if not Permissions.can_edit_event(e, request.user):
+        request.session['error_message'] = ('You are not authorized to edit '
+                                            'this event')
+        return get_previous_page(request, alternate='event_cal:list')
+    request.session['current_page'] = request.path
+    active_officers = OfficerPosition.objects.filter(enabled=True)
+    EventForm = modelform_factory(
+                    CalendarEvent,
+                    form=BaseEventForm,
+                    exclude=('completed', 'google_event_id', 'project_report')
+    )
+    EventForm.base_fields['assoc_officer'].queryset = active_officers
     EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
     needed_flyer = e.needs_flyer
-    needed_facebook =e.needs_facebook_event
+    needed_facebook = e.needs_facebook_event
     needed_COE_event = e.needs_COE_event
     previous_cal = e.google_cal
+    prefix_ev = 'event'
+    prefix_shift = 'shift'
+    form = EventForm(request.POST or None, prefix=prefix_ev, instance=e)
+    formset = EventShiftEditFormset(
+                        request.POST or None,
+                        prefix=prefix_shift,
+                        instance=e
+    )
     if request.method == 'POST':
-        form = EventForm(request.POST,prefix='event',instance=e)
-        formset = EventShiftEditFormset(request.POST,prefix='shift',instance=e)
         if form.is_valid():
             event = form.save(commit=False)
-            formset = EventShiftEditFormset(request.POST,prefix='shift',instance=event)
-            formset[0].empty_permitted=False
+            formset = EventShiftEditFormset(request.POST,
+                                            prefix=prefix_shift,
+                                            instance=event)
+            formset[0].empty_permitted = False
             if formset.is_valid():
                 event.save()
                 if not event.event_class:
                     s = event.name.split()
-                    if re.match('(^(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$)|^[0-9]+.?[0-9]*$',s[-1]):
-                        s=s[0:-1]
+                    if re.match(NUMBER_OR_NUMERAL, s[-1]):
+                        s = s[0:-1]
                     n = ' '.join(s).title()
                     ec = EventClass.objects.filter(name=n)
                     if ec.exists():
-                        ec=ec[0]
+                        ec = ec[0]
                     else:
                         ec = EventClass(name=n)
                         ec.save()
-                    event.event_class=ec
+                    event.event_class = ec
                     event.save()
                 form.save_m2m()
-                shifts=formset.save()
+                shifts = formset.save()
                 event.add_event_to_gcal(previous_cal=previous_cal)
-                tweet_option = form.cleaned_data.pop('tweet_option','N')
-                if tweet_option=='T':
+                tweet_option = form.cleaned_data.pop('tweet_option', 'N')
+                if tweet_option == 'T':
                     event.tweet_event(False)
-                elif tweet_option=='H':
+                elif tweet_option == 'H':
                     event.tweet_event(True)
                 event.notify_publicity(needed_flyer=needed_flyer,
                                        needed_facebook=needed_facebook,
                                        needed_coe_event=needed_COE_event,
                                        edited=True)
-                request.session['success_message']='Event updated successfully'
+                request.session['success_message'] = ('Event updated '
+                                                      'successfully')
                 for shift in shifts:
-                    waitlist=shift.get_ordered_waitlist()
+                    waitlist = shift.get_ordered_waitlist()
                     for w in waitlist:
                         if shift.is_full():
                             break
-                        add_user_to_shift(w.user,shift)
-                        notify_waitlist_move(event,shift,w.user)
+                        add_user_to_shift(w.user, shift)
+                        notify_waitlist_move(event, shift, w.user)
                         w.delete()
-                return redirect('event_cal:event_detail',event_id)
+                return redirect('event_cal:event_detail', event_id)
             else:
-                request.session['error_message']='Either there were errors in your shift(s) or you forgot to include one.'
+                request.session['error_message'] = messages.SHIFT_ERRORS
         else:
-            request.session['error_message']='There were errors in the submitted event, please correct the errors noted below.'
-    else:
-        form = EventForm(prefix='event',instance=e)
-        formset= EventShiftEditFormset(prefix='shift',instance=e)
-    dp_ids=['id_event-announce_start']
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
+    dp_ids = ['id_event-announce_start']
     for count in range(len(formset)):
-        dp_ids.append('id_shift-%d-start_time_0'%(count))
-        dp_ids.append('id_shift-%d-end_time_0'%(count))
+        dp_ids.append('id_shift-%d-start_time_0' % (count))
+        dp_ids.append('id_shift-%d-end_time_0' % (count))
     template = loader.get_template('event_cal/detail.html')
     context_dict = {
-        'form':form,
-        'formset':formset,
-        'edit':True,
-        'event':e,
-        'dp_ids':dp_ids,
-        'dp_ids_dyn':['start_time_0', 'end_time_0'],
-        'prefix':'shift',
-        'subnav':'list',
-        'submit_name':'Submit Changes',
-        'shift_title':'Edit Shifts',
-        'shift_help_text':'',
-        'event_photos':EventPhoto.objects.all(),
+        'form': form,
+        'formset': formset,
+        'edit': True,
+        'event': e,
+        'dp_ids': dp_ids,
+        'dp_ids_dyn': ['start_time_0', 'end_time_0'],
+        'prefix': prefix_shift,
+        'subnav': 'list',
+        'submit_name': 'Submit Changes',
+        'shift_title': 'Edit Shifts',
+        'shift_help_text': '',
+        'event_photos': EventPhoto.objects.all(),
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context_dict['edit']=True
-    context = RequestContext(request,context_dict )
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
 
 def update_completed_event(request, event_id):
     e = get_object_or_404(CalendarEvent, id=event_id)
     if not Permissions.can_edit_event(e, request.user):
-        request.session['error_message'] = 'You are not authorized to edit this event'
+        request.session['error_message'] = ('You are not authorized to '
+                                            'edit this event')
         return get_previous_page(
                         request,
                         alternate='event_cal:event_detail',
