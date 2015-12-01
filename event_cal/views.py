@@ -108,8 +108,8 @@ The TBP Website''' % {
         'start_time': start_time.strftime(
                                 "%I:%M %p on %A, %B %d, %Y"
         ),
-        'carpool': carpool_text
-        'link': reverse('event_cal:event_detail', args=(event.id,))
+        'carpool': carpool_text,
+        'link': reverse('event_cal:event_detail', args=(event.id,)),
     }
 
     send_mail(

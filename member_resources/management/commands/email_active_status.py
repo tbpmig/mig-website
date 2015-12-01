@@ -24,24 +24,43 @@ If you believe this to be in error, or especially if you are no longer on campus
 
 Thanks,
 The TBP Website'''
+        emailed_people = []
         for m in all_actives:
             print 'emailing '+m.uniqname+'...'
             sleep(1)
+            short_code = 'active'
+            status_code = ''
             if m in potential_actives:
-                status_text=' you will be considered active and eligible to vote upon attending the meeting. While your absence will not count against quorum, please be advised that voting meetings are required to achieve DA/PA status.'
+                status_text = ' you will be considered active and eligible to vote upon attending the meeting. While your absence will not count against quorum, please be advised that voting meetings are required to achieve DA/PA status.'
+                short_code = 'conditional active'
             elif m in actual_actives:
-                status_text=' you are an active member. You will be eligible to vote at the meeting and will count against quorum if you cannot or do not attend tonight.'
+                status_text = ' you are an active member. You will be eligible to vote at the meeting and will count against quorum if you cannot or do not attend tonight.'
             elif m.standing.name=='Alumni':
                 continue
             else:
                 status_text=' you are no longer active in the chapter. You are welcome to attend the meeting, but you will be unable to vote.'
+                short_code = 'not active'
                 if m in members_who_graduated:
                     status_text+=' This may be that you are listed as having graduated. Alumni may specially request active status, but may not vote on candidate election'
+                    short_code = 'non-active alum'
             if m in members_who_graduated:
                 alum_text = 'Our records additionally indicate that you have likely graduated but are not yet listed as an alumni. If this is the case, please let us know and update your website profile accordingly. If not please update your expected graduation date accordingly. Those listed as alumni will be ineligible to vote on candidate election.'
+                status_code = 'graduated'
             elif m.standing.name=='Alumni':
                 alum_text = ' Our records have you noted as an alumni. Note that regardless of active status, alumni may not vote on candidate election or changes to the initiation fee.'
+                status_code = 'alum'
             else:
                 alum_text=''
             body=body_template%{'member':m.first_name,'status':status_text,'alumni':alum_text}
-            send_mail('[TBP] Voting meeting active status update.',body,'tbp.mi.g@gmail.com',[m.get_email(),'tbp-website@umich.edu'] ,fail_silently=False)
+            emailed_people.append([m.uniqname, short_code, status_code])
+            send_mail('[TBP] Voting meeting active status update.',body,'tbp.mi.g@gmail.com',[m.get_email()],fail_silently=False)
+        web_summary_body = 'The following members were emailed:\n\n'
+        web_summary_body += '\n'.join(['\t\t'.join(sub_list) for sub_list in emailed_people])
+        send_mail(
+            '[TBP] Voting meeting active status update - summary.',
+            web_summary_body,
+            'tbp.mi.g@gmail.com',
+            ['tbp-website@umich.edu'],
+            fail_silently=False
+        )
+            
