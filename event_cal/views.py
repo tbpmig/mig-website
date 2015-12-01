@@ -393,21 +393,30 @@ def meeting_sign_in(request, shift_id):
                             question_text=sign_in_sheet.quick_question
                 )
             if form.is_valid():
-                if not sign_in_sheet or form.cleaned_data['secret_code'] == sign_in_sheet.code_phrase:
-                    if profile.is_member() and (profile.memberprofile not in event.get_attendees_with_progress()):
+                submitted_code = form.cleaned_data['secret_code']
+                if (not sign_in_sheet or
+                   submitted_code == sign_in_sheet.code_phrase):
+                    is_member = profile.is_member()
+                    event_attendees = event.get_attendees_with_progress()
+                    if (is_member and
+                       profile.memberprofile not in event_attendees):
                         if sign_in_sheet:
-                            user_data = MeetingSignInUserData()
-                            user_data.meeting_data = sign_in_sheet
-                            user_data.question_response = ''
+                            user_data = MeetingSignInUserData(
+                                            meeting_data=sign_in_sheet,
+                                            quick_question_response='',
+                                            free_response='',
+                            )
                             if 'quick_question' in form.cleaned_data:
-                                user_data.question_response = form.cleaned_data['quick_question']
-                            user_data.free_response = ''
+                                q_resp = form.cleaned_data['quick_question']
+                                user_data.question_response = q_resp
                             if 'free_response' in form.cleaned_data:
-                                user_data.free_response = form.cleaned_data['free_response']
+                                free_resp = form.cleaned_data['free_response']
+                                user_data.free_response = free_resp
                                 if not user_data.free_response:
-                                    user_data.free_response = 'no response given'
+                                    user_data.free_response = 'no response'
                             user_data.save()
-                        hours = (shift.end_time-shift.start_time).seconds/3600.0
+                        time_d = shift.end_time-shift.start_time
+                        hours = time_d.seconds/3600.0
                         if event.is_fixed_progress():
                             hours = 1
                         p = ProgressItem(
@@ -420,9 +429,13 @@ def meeting_sign_in(request, shift_id):
                                 name=event.name
                         )
                         p.save()
-                        request.session['success_message'] = 'You were signed in successfully'
+                        request.session['success_message'] = ('You were signed'
+                                                              ' in '
+                                                              'successfully')
                     elif profile.is_member():
-                        request.session['warning_message'] = 'You were already signed in'
+                        request.session['warning_message'] = ('You were '
+                                                              'already signed '
+                                                              'in')
                     shift.attendees.add(profile)
                     return get_previous_page(
                                 request,
@@ -584,37 +597,70 @@ def remove_from_waitlist(request,  shift_id):
         else:
             request.session['error_message'] = 'You must create a profile before unsigning up'
     if 'error_message' in request.session:
-        return {'fragments':{'#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
+        return {
+            'fragments': {
+                '#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
-    return {'fragments':{'#shift-waitlist'+shift_id:r'''<a id="shift-waitlist%s" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-waitlist%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Add self to waitlist (there
-                are currently %s users ahead of you)</a>'''%(shift_id,shift_id,reverse('event_cal:add_to_waitlist', args=[ shift_id] ),shift_id,shift.get_waitlist_length()),
-                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <strong>Error:</strong>%s</div>''' % (
+                    request.session.pop('error_message')
+                )
+            }
+        }
+    return {
+        'fragments': {
+            '#shift-waitlist'+shift_id: r'''<a id="shift-waitlist%s" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-waitlist%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Add self to waitlist (there
+            are currently %s users ahead of you)</a>''' % (
+                        shift_id,
+                        shift_id,
+                        reverse(
+                            'event_cal:add_to_waitlist',
+                            args=[shift_id]
+                        ),
+                        shift_id,
+                        shift.get_waitlist_length()
+            ),
+            '#ajax-message': r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}} 
+    <strong>Success:</strong>%s</div>''' % (
+                request.session.pop('success_message')
+            )
+        }
+    } 
 
 
 @ajax
 @login_required
 def add_shift_to_gcal(request,  shift_id):
-    shift = get_object_or_404(EventShift,id=shift_id)
+    shift = get_object_or_404(EventShift, id=shift_id)
     event = shift.event
-    if hasattr(request.user,'userprofile'):
+    if hasattr(request.user, 'userprofile'):
         profile = request.user.userprofile
         if profile not in shift.attendees.all():
-            request.session['error_message']='You can only add events you have signed up for to your google calendar'
+            request.session['error_message'] = ('You can only add events you '
+                                                'have signed up for to your '
+                                                'google calendar')
         else:  
-            email_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_account')
+            email_pref = UserPreference.objects.filter(
+                                user=profile,
+                                preference_type='google_calendar_account'
+            )
             if email_pref.exists():
                 cal_email_pref = email_pref[0].preference_value
             else:
                 cal_email_pref = GCAL_ACCT_PREF['default']
-            if cal_email_pref =='umich' or not profile.is_member() or not profile.memberprofile.alt_email:
+            if (cal_email_pref =='umich' or
+               not profile.is_member() or 
+               not profile.memberprofile.alt_email):
                 email_to_use = profile.uniqname+'@umich.edu'
             else:
                 email_to_use = profile.memberprofile.alt_email
-            shift.add_attendee_to_gcal(profile.get_firstlast_name(),email_to_use)
-            request.session['success_message']='You have successfully added the event to your gcal'
+            shift.add_attendee_to_gcal(
+                    profile.get_firstlast_name(),
+                    email_to_use
+            )
+            request.session['success_message'] = ('You have successfully '
+                                                  'added the event to '
+                                                  'your gcal')
     else:
         request.session['error_message']='You must create a profile before adding the event to your google calendar' 
     if 'error_message' in request.session:
