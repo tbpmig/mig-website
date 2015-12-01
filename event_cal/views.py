@@ -2090,8 +2090,8 @@ def submit_tutoring_form(request):
                     term=AcademicTerm.get_current_term()
     ).distinct()
     if current_chair.exists():
-        tutoring_chair = current_chair[0].user
-        tutoring_chair_name = tutoring_chair.get_firstlast_name()+'\n'
+        current_tutoring_chair = current_chair[0].user
+        tutoring_chair_name = current_tutoring_chair.get_firstlast_name()+'\n'
     else:
         tutoring_chair_name = ''
     if tutoring_chair.exists():
