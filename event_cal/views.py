@@ -403,7 +403,7 @@ def meeting_sign_in(request, shift_id):
                         if sign_in_sheet:
                             user_data = MeetingSignInUserData(
                                             meeting_data=sign_in_sheet,
-                                            quick_question_response='',
+                                            question_response='',
                                             free_response='',
                             )
                             if 'quick_question' in form.cleaned_data:
