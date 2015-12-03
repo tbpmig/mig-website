@@ -8,7 +8,7 @@
 var map;
 var markers = [];
 {% for member in members %}
-markers.push(['{{member.get_firstlast_name}}',{lat:{{member.location.latitude}}, lng:{{member.location.longitude}}}]);
+markers.push(['{{member.get_firstlast_name|escapejs}}',{lat:{{member.location.latitude}}, lng:{{member.location.longitude}}}]);
 {%endfor %}
 var infowindow;
 function initialize() {
