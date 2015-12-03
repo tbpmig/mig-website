@@ -615,7 +615,7 @@ https://tbp.engin.umich.edu%(link)s'''
         else:
             public_bit = ''
             public_take_down = ''
-        body = PRAISE_BODY % {
+        body = self.PRAISE_BODY % {
                     'name': persons_name,
                     'public_bit': public_bit,
                     'sender': sender,
