@@ -2594,7 +2594,7 @@ def interview_view_electees(request, event_id):
         has_profile = True
         user_is_member = request.user.userprofile.is_member()
     if not user_is_member:
-        request.session['error_message'] = INTERVIEW_NOT_MEMBER
+        request.session['error_message'] = messages.INTERVIEW_NOT_MEMBER
         return get_previous_page(request, alternate='event_cal:index')
 
     template = loader.get_template('event_cal/interview_view.html')

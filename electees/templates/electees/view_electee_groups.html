@@ -3,6 +3,8 @@
 {% block content %}
 <div class="row">
     <div class="col-md-4">
+        <div class="row">
+        <div class="col-md-12">
         {% if can_edit_resources or can_edit_surveys %}
         <div class="btn-group">
         {% endif %}
@@ -57,6 +59,47 @@
         <p><a href="{{resource.resource_file.url}}">{{resource}}{% if resource_type.list|length > 1 %} -{{ forloop.counter }}{% endif %}</a></p>
         {% endfor %}
     {% endfor %}
+    <hr>
+    </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+        <div clas="panel-group" id="past-resources-accordion" role="tablist">
+            <div class="panel panel-default">
+                <div class="panel-heading" role="tab" id="headingOne">
+                    <h4 class="panel-title">
+                        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne" class="collapsed">
+                        Past Electee Resources
+                        </a>
+                    </h4>
+                </div>
+                <div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+                    <div class="panel-body">
+                        <h4>Full Packets</h4>
+    {% regroup old_packets|dictsort:"resource_type.id" by resource_type as packets_by_type %}
+    {% for resource_type in packets_by_type %}
+        <h5>{{resource_type.grouper}}</h5>
+        {% for resource in resource_type.list|dictsort:"id"  %}
+        <p><a href="{{resource.resource_file.url}}">{{resource}}{% if resource_type.list|length > 1 %} -{{ forloop.counter }}{% endif %}</a></p>
+        {% endfor %}
+        {% endfor %}
+        <hr>
+        <h4>Packet Items</h4>
+    {% regroup old_resources|dictsort:"resource_type.id" by resource_type as resources_by_type %}
+    {% for resource_type in resources_by_type %}
+        <h5>{{resource_type.grouper}}</h5>
+        {% for resource in resource_type.list|dictsort:"id"  %}
+        <p><a href="{{resource.resource_file.url}}">{{resource}}{% if resource_type.list|length > 1 %} -{{ forloop.counter }}{% endif %}</a></p>
+        {% endfor %}
+    {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        </div>
+    </div>
     </div>
     {% if groups|length > 0 %}
     <div class="col-md-4">
