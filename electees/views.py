@@ -96,10 +96,10 @@ def view_electee_groups(request):
     resources = ElecteeResource.objects.filter(term=AcademicTerm.get_current_term(),resource_type__is_packet=False).order_by('resource_type')
     old_packets = ElecteeResource.objects.exclude(
                         term=AcademicTerm.get_current_term()
-        ).filter(resource_type__is_packet=True).order_by('resource_type','term')
+        ).filter(resource_type__is_packet=True).order_by('resource_type','-term')
     old_resources = ElecteeResource.objects.exclude(
                         term=AcademicTerm.get_current_term()
-        ).filter(resource_type__is_packet=False).order_by('resource_type','term')
+        ).filter(resource_type__is_packet=False).order_by('resource_type','-term')
     template = loader.get_template('electees/view_electee_groups.html')
     context_dict = {
         'groups':e_groups,
