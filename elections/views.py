@@ -51,7 +51,7 @@ def index(request):
 def list(request,election_id):
     request.session['current_page']=request.path
     e=get_object_or_404(Election,id=election_id)
-    nominees = e.nomination_set.exclude(accepted=False)
+    nominees = e.nomination_set.filter(accepted=True)
     context_dict = {
             'nominees':nominees,
             'election':e,
