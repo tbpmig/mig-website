@@ -520,12 +520,23 @@ def add_to_waitlist(request, shift_id):
         existing_waitlist = WaitlistSlot.objects.filter(shift=shift, user=profile).exists()
         if existing_waitlist:
             request.session['error_message'] = 'You are already on the waitlist'
-        elif event.requires_AAPS_background_check and not BackgroundCheck.user_can_mindset(profile):
-            request.session['error_message'] = 'You must pass an AAPS background check and complete training to sign up for this event'
-        elif event.requires_UM_background_check and not BackgroundCheck.user_can_work_w_minors(profile):
-            request.session['error_message'] = 'You must pass a UM background check and complete training to sign up for this event'
-        elif event.mutually_exclusive_shifts and profile in event.get_event_attendees():
-            request.session['error_message'] = 'You may only sign up for one shift for this event. Unsign up for the other before continuing'
+        elif (event.requires_AAPS_background_check and
+              not BackgroundCheck.user_can_mindset(profile)):
+            request.session['error_message'] = ('You must pass an AAPS '
+                                                'background check and complete'
+                                                ' training to sign up for this'
+                                                'event')
+        elif (event.requires_UM_background_check and
+              not BackgroundCheck.user_can_work_w_minors(profile)):
+            request.session['error_message'] = ('You must pass a UM background'
+                                                ' check and complete training '
+                                                'to sign up for this event')
+        elif (event.mutually_exclusive_shifts and
+              profile in event.get_event_attendees()):
+            request.session['error_message'] = ('You may only sign up for one '
+                                                'shift for this event. Unsign '
+                                                'up for the other before '
+                                                'continuing')
         elif profile.is_member or not event.members_only:
             if shift.ugrads_only and not profile.is_ugrad():
                 request.session['error_message'] = 'Shift is for undergrads only'
@@ -625,7 +636,7 @@ def remove_from_waitlist(request,  shift_id):
                 request.session.pop('success_message')
             )
         }
-    } 
+    }
 
 
 @ajax
@@ -639,7 +650,7 @@ def add_shift_to_gcal(request,  shift_id):
             request.session['error_message'] = ('You can only add events you '
                                                 'have signed up for to your '
                                                 'google calendar')
-        else:  
+        else:
             email_pref = UserPreference.objects.filter(
                                 user=profile,
                                 preference_type='google_calendar_account'
@@ -648,8 +659,8 @@ def add_shift_to_gcal(request,  shift_id):
                 cal_email_pref = email_pref[0].preference_value
             else:
                 cal_email_pref = GCAL_ACCT_PREF['default']
-            if (cal_email_pref =='umich' or
-               not profile.is_member() or 
+            if (cal_email_pref == 'umich' or
+               not profile.is_member() or
                not profile.memberprofile.alt_email):
                 email_to_use = profile.uniqname+'@umich.edu'
             else:
@@ -662,114 +673,185 @@ def add_shift_to_gcal(request,  shift_id):
                                                   'added the event to '
                                                   'your gcal')
     else:
-        request.session['error_message']='You must create a profile before adding the event to your google calendar' 
+        request.session['error_message'] = ('You must create a profile before '
+                                            'adding the event to your google '
+                                            'calendar')
     if 'error_message' in request.session:
-        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+        return {
+            'fragments': {
+                '#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
-    return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <strong>Error:</strong>%s</div>''' % (request.session.pop('error_message'))
+            }
+        }
+    return {
+        'fragments': {
+            '#ajax-message': r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}    
+    <strong>Success:</strong>%s
+    </div>''' % (request.session.pop('success_message'))
+        }
+    }
 
 
 @ajax
 @login_required
 def add_shift_to_gcal_paired(request,  shift_id):
-    shift = get_object_or_404(InterviewPairing,id=shift_id)
+    shift = get_object_or_404(InterviewPairing, id=shift_id)
     event = shift.first_shift.event
-    if hasattr(request.user,'userprofile'):
+    if hasattr(request.user, 'userprofile'):
         profile = request.user.userprofile
         if profile not in shift.first_shift.attendees.all():
-            request.session['error_message']='You can only add events you have signed up for to your google calendar'
-        else:  
-            email_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_account')
+            request.session['error_message'] = ('You can only add events you '
+                                                'have signed up for to your '
+                                                'google calendar')
+        else:
+            email_pref = UserPreference.objects.filter(
+                                user=profile,
+                                preference_type='google_calendar_account'
+            )
             if email_pref.exists():
                 cal_email_pref = email_pref[0].preference_value
             else:
                 cal_email_pref = GCAL_ACCT_PREF['default']
-            if cal_email_pref =='umich' or not profile.is_member() or not profile.memberprofile.alt_email:
+            if (cal_email_pref == 'umich' or
+               not profile.is_member() or
+               not profile.memberprofile.alt_email):
                 email_to_use = profile.uniqname+'@umich.edu'
             else:
                 email_to_use = profile.memberprofile.alt_email
-            shift.first_shift.add_attendee_to_gcal(profile.get_firstlast_name(),email_to_use)
-            shift.second_shift.add_attendee_to_gcal(profile.get_firstlast_name(),email_to_use)
-            request.session['success_message']='You have successfully added the event to your gcal'
+            shift.first_shift.add_attendee_to_gcal(
+                                        profile.get_firstlast_name(),
+                                        email_to_use
+            )
+            shift.second_shift.add_attendee_to_gcal(
+                                        profile.get_firstlast_name(),
+                                        email_to_use
+            )
+            request.session['success_message'] = ('You have successfully added'
+                                                  ' the event to your gcal')
     else:
-        request.session['error_message']='You must create a profile before adding the event to your google calendar' 
+        request.session['error_message'] = ('You must create a profile before '
+                                            'adding the event to your google '
+                                            'calendar')
     if 'error_message' in request.session:
-        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+        return {
+            'fragments': {
+                '#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
-    return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <strong>Error:</strong>%s</div>''' % (request.session.pop('error_message'))
+            }
+        }
+    return {
+        'fragments': {
+            '#ajax-message': r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}} 
+    <strong>Success:</strong>%s
+    </div>''' % (request.session.pop('success_message'))
+        }
+    }
 
 
 @ajax
 @login_required
 def sign_up(request,  shift_id):
-    shift = get_object_or_404(EventShift,id=shift_id)
+    shift = get_object_or_404(EventShift, id=shift_id)
     event = shift.event
     if shift.start_time < timezone.now():
-        request.session['error_message']='You cannot sign up for an event in the past'
-    elif shift.start_time-timedelta(hours=event.min_sign_up_notice)<timezone.now():
-        request.session['error_message']='This event blocks sign-up %s hours before start'%(event.min_sign_up_notice)
+        request.session['error_message'] = ('You cannot sign up for an event '
+                                            'in the past')
+    elif shift.start_time-timedelta(hours=event.min_sign_up_notice) < timezone.now():
+        request.session['error_message'] = 'This event blocks sign-up %s hours before start' % (event.min_sign_up_notice)
     elif shift.max_attendance and (shift.attendees.count() >= shift.max_attendance):
-        request.session['error_message']='Shift is full'
+        request.session['error_message'] = 'Shift is full'
     else:
-        if hasattr(request.user,'userprofile'):
+        if hasattr(request.user, 'userprofile'):
             profile = request.user.userprofile
             if event.requires_AAPS_background_check and not BackgroundCheck.user_can_mindset(profile):
-                request.session['error_message']='You must pass an AAPS background check and complete training to sign up for this event'
+                request.session['error_message'] = 'You must pass an AAPS background check and complete training to sign up for this event'
             elif event.requires_UM_background_check and not BackgroundCheck.user_can_work_w_minors(profile):
-                request.session['error_message']='You must pass a UM background check and complete training to sign up for this event'    
+                request.session['error_message'] = 'You must pass a UM background check and complete training to sign up for this event'
             elif event.mutually_exclusive_shifts and profile in event.get_event_attendees():
-                request.session['error_message']='You may only sign up for one shift for this event. Unsign up for the other before continuing'
+                request.session['error_message'] = 'You may only sign up for one shift for this event. Unsign up for the other before continuing'
             elif profile.is_member or not event.members_only:
                 if shift.ugrads_only and not profile.is_ugrad():
-                    request.session['error_message']='Shift is for undergrads only'
+                    request.session['error_message'] = 'Shift is for undergrads only'
                 elif shift.grads_only and not profile.is_grad():
-                    request.session['error_message']='Shift is for grads only'
+                    request.session['error_message'] = 'Shift is for grads only'
                 elif shift.electees_only and not profile.is_electee():
-                    request.session['error_message']='Shift is for electees only'
+                    request.session['error_message'] = 'Shift is for electees only'
                 elif shift.actives_only and not profile.is_active():
-                    request.session['error_message']='Shift is for actives only'
-                elif not event.allow_overlapping_sign_ups and event.does_shift_overlap_with_users_other_shifts(shift,request.user.userprofile):
-                    request.session['error_message']='You are signed up for a shift that overlaps with this one.'
+                    request.session['error_message'] = 'Shift is for actives only'
+                elif not event.allow_overlapping_sign_ups and event.does_shift_overlap_with_users_other_shifts(shift, request.user.userprofile):
+                    request.session['error_message'] = 'You are signed up for a shift that overlaps with this one.'
                 else:
-                    add_user_to_shift(request.user.userprofile,shift)
-                    request.session['success_message']='You have successfully signed up for the event'
+                    add_user_to_shift(request.user.userprofile, shift)
+                    request.session['success_message'] = 'You have successfully signed up for the event'
                     if event.preferred_items and event.preferred_items.lstrip() and not event.usercanbringpreferreditem_set.filter(user=profile).exists():
-                        request.session['info_message']='Please indicate if you can bring items to the event.'
-                        return redirect('event_cal:preferred_items_request',shift.event.id)
+                        request.session['info_message'] = 'Please indicate if you can bring items to the event.'
+                        return redirect('event_cal:preferred_items_request', shift.event.id)
                     elif event.needs_carpool and not event.carpoolperson_set.filter(person=profile).exists():
-                        request.session['info_message']='If you need or can give a ride, please also sign up for the carpool'
-                        return redirect('event_cal:carpool_sign_up',shift.event.id)
+                        request.session['info_message'] = 'If you need or can give a ride, please also sign up for the carpool'
+                        return redirect('event_cal:carpool_sign_up', shift.event.id)
             else:
-                request.session['error_message']='This event is members-only'
+                request.session['error_message'] = 'This event is members-only'
         else:
-            request.session['error_message']='You must create a profile before signing up to events' 
+            request.session['error_message'] = ('You must create a profile '
+                                                'before signing up to events')
     if 'error_message' in request.session:
-        return {'fragments':{'#ajax-message':r'''<div id="ajax-message" class="alert alert-danger">
+        return {
+            'fragments': {
+                '#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Error:</strong>%s</div>'''%(request.session.pop('error_message'))}}
-    return_dict =  {'fragments':{'#shift-signup'+shift_id:r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>'''%(shift_id,shift_id,reverse('event_cal:unsign_up', args=[ shift_id] ),shift_id),
-                        '#ajax-message':r'''<div id="ajax-message" class="alert alert-success">
+    <strong>Error:</strong>%s
+    </div>''' % (request.session.pop('error_message'))
+            }
+        }
+    return_dict = {
+        'fragments': {
+            '#shift-signup'+shift_id: r'''
+            <a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Unsign-up</a>
+            ''' % (
+                shift_id,
+                shift_id,
+                reverse(
+                    'event_cal:unsign_up',
+                    args=[shift_id]
+                ),
+                shift_id
+            ),
+            '#ajax-message': r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Success:</strong>%s</div>'''%(request.session.pop('success_message'))}}
-    if hasattr(request.user,'userprofile'):
+    <strong>Success:</strong>%s
+    </div>''' % (request.session.pop('success_message'))
+        }
+    }
+    if hasattr(request.user, 'userprofile'):
         profile = request.user.userprofile
-        gcal_pref = UserPreference.objects.filter(user=profile,preference_type='google_calendar_add')
+        gcal_pref = UserPreference.objects.filter(
+                            user=profile,
+                            preference_type='google_calendar_add'
+        )
         if gcal_pref.exists():
             use_cal_pref = gcal_pref[0].preference_value
         else:
             use_cal_pref = GCAL_USE_PREF['default']
-        show_manual_add_gcal_button=(use_cal_pref!='always')
+        show_manual_add_gcal_button = (use_cal_pref != 'always')
     else:
-        show_manual_add_gcal_button=False
+        show_manual_add_gcal_button = False
     if show_manual_add_gcal_button:
-        return_dict['fragments']['#shift-gcal'+shift_id]=r'''<a id="shift-gcal%s" class="btn btn-primary btn-sm" onclick="$('#shift-gcal%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-gcal%s').attr('disabled',false);})"><i class="glyphicon glyphicon-calendar"></i> Add event to gcal</a>'''%(shift_id,shift_id,reverse('event_cal:add_shift_to_gcal', args=[ shift_id] ),shift_id)
-    return return_dict    
+        return_dict['fragments']['#shift-gcal'+shift_id] = r'''
+        <a id="shift-gcal%s" class="btn btn-primary btn-sm" onclick="$('#shift-gcal%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-gcal%s').attr('disabled',false);})"><i class="glyphicon glyphicon-calendar"></i> Add event to gcal</a>
+        ''' % (
+            shift_id,
+            shift_id,
+            reverse(
+                'event_cal:add_shift_to_gcal',
+                args=[shift_id]
+            ),
+            shift_id
+        )
+    return return_dict
 
 
 def unsign_up_user(shift, profile):
@@ -780,7 +862,7 @@ def unsign_up_user(shift, profile):
         add_user_to_shift(w.user, shift)
         notify_waitlist_move(shift.event, shift, w.user)
         w.delete()
-    if not profile in shift.event.get_event_attendees():
+    if profile not in shift.event.get_event_attendees():
         CarpoolPerson.objects.filter(
                 event=shift.event,
                 person=profile
@@ -807,13 +889,25 @@ def manual_remove_user_from_shift(request, shift_id, username):
         return {'fragments': {'#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <strong>Error:</strong>%s</div>''' % (request.session.pop('error_message'))}}
-    return_dict= {'fragments':{'#shift-'+shift_id+'-attendee-'+username:'',
-                        '#ajax-message': r'''<div id="ajax-message" class="alert alert-success">
+    return_dict = {
+        'fragments': {
+            '#shift-'+shift_id+'-attendee-'+username: '',
+            '#ajax-message': r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Success:</strong>%s</div>''' % (request.session.pop('success_message'))}}
+    <strong>Success:</strong>%s
+    </div>''' % (request.session.pop('success_message'))
+        }
+    }
     if username == request.user.username:
-        return_dict['fragments']['#shift-signup'+shift_id] = r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up', args=[ shift_id] ),shift_id)
-    return return_dict                   
+        return_dict['fragments']['#shift-signup'+shift_id] = r'''
+        <a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>
+        ''' % (
+            shift_id,
+            shift_id,
+            reverse('event_cal:sign_up', args=[shift_id]),
+            shift_id
+        )
+    return return_dict
 
 
 @ajax
@@ -822,28 +916,48 @@ def unsign_up(request, shift_id):
     shift = get_object_or_404(EventShift, id=shift_id)
     event = shift.event
     if shift.start_time < timezone.now():
-        request.session['error_message'] = 'You cannot unsign-up for an event that has started'
+        request.session['error_message'] = ('You cannot unsign-up for an '
+                                            'event that has started')
     elif shift.start_time-timedelta(hours=event.min_unsign_up_notice) < timezone.now():
-        request.session['error_message'] = 'This event blocks unsign-up %s hours before start'%(event.min_unsign_up_notice)
+        request.session['error_message'] = 'This event blocks unsign-up %s hours before start' % (event.min_unsign_up_notice)
     else:
-        if hasattr(request.user,'userprofile'):
+        if hasattr(request.user, 'userprofile'):
             unsign_up_user(shift, request.user.userprofile)
 
-            request.session['success_message'] = 'You have successfully unsigned up from the event.'
+            request.session['success_message'] = ('You have successfully '
+                                                  'unsigned up from the '
+                                                  'event.')
         else:
-            request.session['error_message'] = 'You must create a profile before unsigning up'
+            request.session['error_message'] = ('You must create a profile '
+                                                'before unsigning up')
     if 'error_message' in request.session:
-        return {'fragments': {'#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
+        return {
+            'fragments': {
+                '#ajax-message': r'''<div id="ajax-message" class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Error:</strong>%s</div>''' % (request.session.pop('error_message'))}}
+    <strong>Error:</strong>%s</div>''' % (request.session.pop('error_message'))
+            }
+        }
 
-    return {'fragments': {
-                '#shift-'+shift_id+'-attendee-'+request.user.username: '',
-                '#shift-signup'+shift_id: r'''<a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>'''%(shift_id,shift_id,reverse('event_cal:sign_up', args=[ shift_id] ),shift_id),
-                '#shift-gcal'+shift_id: r'''<a id="shift-gcal%s" class="hidden"></a>'''%(shift_id),
-                '#ajax-message': r'''<div id="ajax-message" class="alert alert-success">
+    return {
+        'fragments': {
+            '#shift-'+shift_id+'-attendee-'+request.user.username: '',
+            '#shift-signup'+shift_id: r'''
+    <a id="shift-signup%s" class="btn btn-primary btn-sm" onclick="$('#shift-signup%s').attr('disabled',true);ajaxGet('%s',function(){$('#shift-signup%s').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Sign-up</a>
+    ''' % (
+                shift_id,
+                shift_id,
+                reverse('event_cal:sign_up', args=[shift_id]),
+                shift_id
+            ),
+            '#shift-gcal'+shift_id: r'''
+    <a id="shift-gcal%s" class="hidden"></a>''' % (shift_id),
+            '#ajax-message': r'''<div id="ajax-message" class="alert alert-success">
     <button type="button" class="close" data-dismiss="alert">&times</button>
-    <strong>Success:</strong>%s</div>''' % (request.session.pop('success_message'))}}
+    <strong>Success:</strong>%s
+    </div>''' % (request.session.pop('success_message'))
+        }
+    }
 
 
 @login_required
@@ -867,7 +981,8 @@ def carpool_sign_up(request, event_id):
                         args=(event_id,)
         )
     if event.carpoolperson_set.filter(person=profile).exists():
-        request.session['warning_message'] = 'You are already signed up for the carpool.'
+        request.session['warning_message'] = ('You are already signed up for '
+                                              'the carpool.')
         return get_previous_page(
                         request,
                         alternate='event_cal:event_detail',
@@ -943,7 +1058,7 @@ def preferred_items_request(request, event_id):
                     exclude=('user', 'event')
     )
     form = ItemForm(request.POST or None)
-    if request.method =='POST':
+    if request.method == 'POST':
         if form.is_valid():
             instance = form.save(commit=False)
             instance.user = profile
@@ -956,7 +1071,7 @@ def preferred_items_request(request, event_id):
                 request.session['info_message'] = ('If you need or can give a '
                                                    'ride, please also sign up '
                                                    'for the carpool')
-                return redirect('event_cal:carpool_sign_up',event_id)
+                return redirect('event_cal:carpool_sign_up', event_id)
             return get_previous_page(
                             request,
                             alternate='event_cal:event_detail',
@@ -971,8 +1086,8 @@ def preferred_items_request(request, event_id):
         'has_files': False,
         'submit_name': 'Submit',
         'form_title': 'Can you bring the needed/preferred items?',
-        'help_text': ('This event needs the following items:\n' + 
-                      event.preferred_items + 
+        'help_text': ('This event needs the following items:\n' +
+                      event.preferred_items +
                       '\nWhile it is not required that you bring them, it is '
                       'helpful. Please indicate if you can bring them.'),
         'base': 'event_cal/base_event_cal.html',
@@ -985,34 +1100,41 @@ def preferred_items_request(request, event_id):
 
 @login_required
 def add_event_photo(request):
-    if not hasattr(request.user,'userprofile') and request.user.userprofile.is_member():
-        request.session['error_message']='You must create  profile before adding photos'
-        return get_previous_page(request,alternate='event_cal:index')
-    if Permissions.can_create_events(request.user):# and not request.user.is_superuser:
+    if (not hasattr(request.user, 'userprofile') and
+       request.user.userprofile.is_member()):
+        request.session['error_message'] = ('You must create  profile before '
+                                            'adding photos')
+        return get_previous_page(request, alternate='event_cal:index')
+    if Permissions.can_create_events(request.user):
         EventPhotoForm = modelform_factory(
                             EventPhoto,
                             form=BaseEventPhotoForm
         )
-        has_pr=True
+        has_pr = True
     else:
-        EventPhotoForm = modelform_factory(EventPhoto,form=BaseEventPhotoFormAlt)
-        has_pr=False
-    if request.method =='POST':
-        form = EventPhotoForm(request.POST,request.FILES)
-        form.fields['event'].queryset = CalendarEvent.get_current_term_events_alph()
+        EventPhotoForm = modelform_factory(
+                            EventPhoto,
+                            form=BaseEventPhotoFormAlt
+        )
+        has_pr = False
+    prs = Permissions.project_reports_you_can_view(request.user)
+    events = CalendarEvent.get_current_term_events_alph()
+    if request.method == 'POST':
+        form = EventPhotoForm(request.POST, request.FILES)
+        form.fields['event'].queryset = events
         if has_pr:
-            form.fields['project_report'].queryset = Permissions.project_reports_you_can_view(request.user)
+            form.fields['project_report'].queryset = prs
         if form.is_valid():
             form.save()
-            request.session['success_message']='Photo successfully submitted'
-            return get_previous_page(request,alternate='event_cal:index')
+            request.session['success_message'] = 'Photo successfully submitted'
+            return get_previous_page(request, alternate='event_cal:index')
         else:
-            request.session['warning_message']='There were errors in your submission'
+            request.session['warning_message'] = messages.GENERIC_SUBMIT_ERROR
     else:
         form = EventPhotoForm()
-        form.fields['event'].queryset = CalendarEvent.get_current_term_events_alph()
+        form.fields['event'].queryset = events
         if has_pr:
-            form.fields['project_report'].queryset = Permissions.project_reports_you_can_view(request.user)
+            form.fields['project_report'].queryset = prs
     template = loader.get_template('generic_form.html')
     context_dict = {
         'form': form,
@@ -1031,58 +1153,84 @@ def add_event_photo(request):
 
 
 def list(request):
-    request.session['current_page']=request.path
+    request.session['current_page'] = request.path
     user_is_member = False
     has_profile = False
-    query_members = Q(members_only=False) 
-    query_event_type=Q()
-    query_location=Q()
-    query_can_attend=Q()
+    query_members = Q(members_only=False)
+    query_event_type = Q()
+    query_location = Q()
+    q_can_attend = Q()
     selected_boxes = []
-    if hasattr(request.user,'userprofile'):  
+    if hasattr(request.user, 'userprofile'):
         has_profile = True
         if request.user.userprofile.is_member():
             user_is_member = True
             query_members = Q()
-    if request.method=='POST':
+    if request.method == 'POST':
         form = EventFilterForm(request.POST)
-        query_date=Q()
+        query_date = Q()
         if form.is_valid():
             after_date = form.cleaned_data['after_date']
             if after_date:
-                after_datetime = timezone.make_aware(datetime.combine(after_date,datetime.min.time()),timezone.get_default_timezone())
-                query_date=query_date & Q(eventshift__end_time__gte=after_datetime)
+                after_datetime = timezone.make_aware(
+                                    datetime.combine(
+                                                after_date,
+                                                datetime.min.time()
+                                    ),
+                                    timezone.get_default_timezone()
+                )
+                query_date = (query_date &
+                              Q(eventshift__end_time__gte=after_datetime))
             before_date = form.cleaned_data['before_date']
             if before_date:
-                before_datetime = datetime.combine(before_date,datetime.max.time())
-                query_date=query_date & Q(eventshift__start_time__lte=before_datetime)
+                before_datetime = datetime.combine(
+                                            before_date,
+                                            datetime.max.time()
+                )
+                query_date = (query_date &
+                              Q(eventshift__start_time__lte=before_datetime))
             on_campus = form.cleaned_data['on_campus']
             if on_campus:
-                query_location=Q(eventshift__on_campus=True)
+                query_location = Q(eventshift__on_campus=True)
             can_attend = form.cleaned_data['can_attend']
             if can_attend and user_is_member:
                 profile = request.user.userprofile
-                query_can_attend=Q(eventshift__ugrads_only=profile.is_ugrad)|Q(eventshift__ugrads_only=False)
-                query_can_attend&=Q(eventshift__grads_only=profile.is_grad)|Q(eventshift__grads_only=False)
-                query_can_attend&=Q(eventshift__actives_only=profile.is_active)|Q(eventshift__actives_only=False)
-                query_can_attend&=Q(eventshift__electees_only=profile.is_electee)|Q(eventshift__electees_only=False)
+                q_can_attend = (Q(eventshift__ugrads_only=profile.is_ugrad) |
+                                Q(eventshift__ugrads_only=False))
+                q_can_attend &= (Q(eventshift__grads_only=profile.is_grad) |
+                                 Q(eventshift__grads_only=False))
+                q_can_attend &= (Q(eventshift__actives_only=profile.is_active) |
+                                 Q(eventshift__actives_only=False))
+                q_can_attend &= (Q(eventshift__electees_only=profile.is_electee) |
+                                 Q(eventshift__electees_only=False))
             event_categories = form.cleaned_data['event_reqs']
             for category in event_categories:
                 selected_boxes.append(category.id)
-                query_event_type=category.get_children(query_event_type)
+                query_event_type = category.get_children(query_event_type)
     else:
         now = timezone.localtime(timezone.now())
-        starting_after_text=date.today().isoformat()
-        query_date=Q(eventshift__end_time__gte=now)  
+        starting_after_text = date.today().isoformat()
+        query_date = Q(eventshift__end_time__gte=now)
         if not Permissions.view_officer_meetings_by_default(request.user):
             query_event_type = ~Q(event_type__name='Officer Meetings')
-        initial={'after_date':starting_after_text}
+        initial = {'after_date': starting_after_text}
         form = EventFilterForm(initial=initial)
-    events = CalendarEvent.objects.filter(query_members&query_date&query_event_type&query_location&query_can_attend).distinct()
+    events = CalendarEvent.objects.filter(
+                    query_members &
+                    query_date &
+                    query_event_type &
+                    query_location &
+                    q_can_attend
+    ).distinct()
     template = loader.get_template('event_cal/list.html')
     packed_events = []
     for event in events.order_by('earliest_start'):
-        packed_events.append({'event':event,'can_edit':Permissions.can_edit_event(event,request.user)})
+        packed_events.append(
+                {
+                    'event': event,
+                    'can_edit': Permissions.can_edit_event(event, request.user)
+                }
+        )
     context_dict = {
         'events': packed_events,
         'user_is_member': user_is_member,
@@ -1100,46 +1248,71 @@ def list(request):
 
 
 @ajax
-def get_event_ajax(request,event_id):
-    event_html = cache.get('EVENT_AJAX'+event_id,None)
+def get_event_ajax(request, event_id):
+    event_html = cache.get('EVENT_AJAX'+event_id, None)
     if not event_html:
-        event = get_object_or_404(CalendarEvent,id=event_id)
-        can_edit = Permissions.can_edit_event(event,request.user)
-        has_profile=False
-        if hasattr(request.user,'userprofile'):  
+        event = get_object_or_404(CalendarEvent, id=event_id)
+        can_edit = Permissions.can_edit_event(event, request.user)
+        has_profile = False
+        if hasattr(request.user, 'userprofile'):
             has_profile = True
         context_dict = {
             'event': event,
             'can_edit_event': can_edit,
             'has_profile': has_profile,
             'user': request.user,
-            'show_shifts': not (event.event_type.name=='Attended Interviews' or event.event_type.name=='Conducted Interviews'), 
+            'show_shifts': not (
+                            event.event_type.name == 'Attended Interviews' or
+                            event.event_type.name == 'Conducted Interviews'
+                        ),
             }
         context_dict.update(get_permissions(request.user))
         context_dict.update(get_common_context(request))
-        event_html = loader.render_to_string('event_cal/event.html',context_dict)
+        event_html = loader.render_to_string(
+                        'event_cal/event.html',
+                        context_dict
+        )
         if event.eventshift_set.exclude(max_attendance=None).exists():
-            cache.set('EVENT_AJAX'+event_id,event_html,60*10)
+            cache.set('EVENT_AJAX'+event_id, event_html, 60*10)
         else:
-            cache.set('EVENT_AJAX'+event_id,event_html,60*60*2)
+            cache.set('EVENT_AJAX'+event_id, event_html, 60*60*2)
 
-                
-    return {'fragments': {'#event'+event_id: event_html}}
+    return {
+        'fragments': {
+            '#event'+event_id: event_html
+        }
+    }
 
 
 def my_events(request):
-    request.session['current_page']=request.path
+    request.session['current_page'] = request.path
     my_events = []
     has_profile = False
-    if hasattr(request.user,'userprofile'):
+    if hasattr(request.user, 'userprofile'):
         has_profile = True
-        query = Q(term=AcademicTerm.get_current_term(),eventshift__attendees__uniqname=request.user.userprofile.uniqname)|Q(term=AcademicTerm.get_current_term(),leaders__uniqname=request.user.userprofile.uniqname)
+        is_attendee = Q(
+            term=AcademicTerm.get_current_term(),
+            eventshift__attendees__uniqname=request.user.userprofile.uniqname
+        )
+        is_leader = Q(
+            term=AcademicTerm.get_current_term(),
+            leaders__uniqname=request.user.userprofile.uniqname
+        )
+        query = is_attendee | is_leader
         my_events = CalendarEvent.objects.filter(query).distinct().order_by('earliest_start')
-        
+
     template = loader.get_template('event_cal/my_events.html')
-    packed_events=[]
+    packed_events = []
     for event in my_events:
-        packed_events.append({'event':event,'can_edit':Permissions.can_edit_event(event,request.user)})
+        packed_events.append(
+            {
+                'event': event,
+                'can_edit': Permissions.can_edit_event(
+                                event,
+                                request.user
+                )
+            }
+        )
     context_dict = {
         'my_events': packed_events,
         'has_profile': has_profile,
@@ -1153,11 +1326,20 @@ def my_events(request):
 
 def create_multishift_event(request):
     if not Permissions.can_create_events(request.user):
-        request.session['error_message']='You are not authorized to create events'
-        return get_previous_page(request,alternate='event_cal:list')
-    request.session['current_page']=request.path
-    EventForm = modelform_factory(CalendarEvent,form=BaseEventForm,exclude=('completed','google_event_id','project_report','use_sign_in'))
-    EventForm.base_fields['assoc_officer'].queryset=OfficerPosition.objects.filter(enabled=True)
+        request.session['error_message'] = 'You are not authorized to create events'
+        return get_previous_page(request, alternate='event_cal:list')
+    request.session['current_page'] = request.path
+    EventForm = modelform_factory(
+                    CalendarEvent,
+                    form=BaseEventForm,
+                    exclude=(
+                        'completed',
+                        'google_event_id',
+                        'project_report',
+                        'use_sign_in'
+                    )
+    )
+    EventForm.base_fields['assoc_officer'].queryset = OfficerPosition.objects.filter(enabled=True)
     EventForm.base_fields['assoc_officer'].label = 'Associated Officer'
     form = EventForm(request.POST or None, prefix='event')
     formset = MultiShiftFormset(request.POST or None, prefix='shift')
@@ -1184,7 +1366,7 @@ def create_multishift_event(request):
                 shift_date = cleaned_data['date']
                 shifts_start = cleaned_data['start_time']
                 mid_time = datetime.combine(shift_date, shifts_start)
-                end_time = datetime.combine(shift_date, shift_form.cleaned_data['end_time']) 
+                end_time = datetime.combine(shift_date, shift_form.cleaned_data['end_time'])
                 while mid_time < end_time:
                     start_time = mid_time
                     mid_time += timedelta(minutes=shift_form.cleaned_data['duration'])
@@ -1197,9 +1379,9 @@ def create_multishift_event(request):
                     event_shift.max_attendance = shift_form.cleaned_data['max_attendance']
                     event_shift.electees_only = shift_form.cleaned_data['electees_only']
                     event_shift.actives_only = shift_form.cleaned_data['actives_only']
-                    event_shift.event = event    
+                    event_shift.event = event
                     event_shift.save()
-            request.session['success_message']='Event created successfully'
+            request.session['success_message'] = 'Event created successfully'
             event.add_event_to_gcal()
             event.notify_publicity()
             event.save()
@@ -1245,13 +1427,13 @@ def create_multishift_event(request):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request,context_dict)
+    context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
 
 def create_event(request):
     if not Permissions.can_create_events(request.user):
-        request.session['error_message']='You are not authorized to create events'
+        request.session['error_message'] = 'You are not authorized to create events'
         return get_previous_page(request, alternate='event_cal:list')
     request.session['current_page'] = request.path
     EventForm = modelform_factory(
@@ -1293,7 +1475,7 @@ def create_event(request):
                     event.save()
                 form.save_m2m()
                 formset.save()
-                request.session['success_message']='Event created successfully'
+                request.session['success_message'] = 'Event created successfully'
                 event.add_event_to_gcal()
                 event.notify_publicity()
                 event.save()
@@ -1404,20 +1586,19 @@ def delete_event(request, event_id):
 
 @ajax
 def delete_shift(request, shift_id):
-    s = get_object_or_404(EventShift,id=shift_id)
+    s = get_object_or_404(EventShift, id=shift_id)
     e = s.event
-    if Permissions.can_edit_event(e,request.user):
-        if not e.completed  and e.eventshift_set.all().count() > 1:
+    if Permissions.can_edit_event(e, request.user):
+        if not e.completed and e.eventshift_set.all().count() > 1:
             s.delete_gcal_event_shift()
             s.delete()
             e.save()
             call_command('reset_upcoming_events')
-            request.session['success_message']='Event shift deleted successfully'
+            request.session['success_message'] = 'Event shift deleted successfully'
         else:
             request.session['error_message'] = ('Shifts can only be deleted '
                                                 'for open events with more '
                                                 'than one shift.')
-    
     else:
         request.session['error_message'] = ('You do not have sufficient '
                                             'permissions to delete this '
