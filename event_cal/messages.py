@@ -27,7 +27,8 @@ SHIFT_ACTIVES_ONLY = 'Shift is for actives only'
 SHIFT_ELECTEES_ONLY = 'Shift is for electees only'
 SHIFT_GRADS_ONLY = 'Shift is for grads only'
 SHIFT_UGRADS_ONLY = 'Shift is for undergrads only'
-SHIFT_ERRORS = 'Either there were errors in your shift(s) or you forgot to include one.'
+SHIFT_ERRORS = ('Either there were errors in your shift(s) or you forgot '
+                'to include one.')
 
 CARPOOL = 'If you need or can give a ride, please also sign up for the carpool'
 
@@ -39,7 +40,7 @@ INTERVIEW_NOT_MEMBER = ('You must be logged in, have a profile, and be a '
                         'member to view the interview sign-up.')
 INTERVIEW_NOT_ACTIVE = ('You must be an active member to view the interview '
                         'sign-up (actives page).')
-                        
+
 INTERVIEW_CANNOT_CREATE = 'You are not authorized to create electee interviews'
 
 GENERIC_SUBMIT_ERROR = ('There were errors in your submission. The changes '
@@ -48,6 +49,6 @@ GENERIC_SUBMIT_ERROR = ('There were errors in your submission. The changes '
 GCAL_STILL_GOOD = ('Current Credentials still valid, re-authentication '
                    'unnecessary.')
 PROJ_REP_NO_PERMISSIONS = ('You are not authorized to create '
-                                 'project reports.')
+                           'project reports.')
 TUTOR_NOT_MEMBER = ('You must be logged in, have a profile, and be a member '
                     'to submit a tutoring form.')
