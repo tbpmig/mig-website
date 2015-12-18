@@ -655,6 +655,10 @@ def view_interview_follow_up(request,follow_up_id):
     if not Permissions.can_see_follow_up(request.user):
         request.session['error_message']='You are not authorized to view this followup'
         return get_previous_page(request,alternate='electees:view_electee_groups')
+    if not follow_up.interview.interviewee_shift.attendees.all()[0].is_electee():
+        request.session['error_message']='You are not authorized to view this followup'
+        return get_previous_page(request,alternate='electees:view_electee_groups')
+    
     template = loader.get_template('electees/interview_followup.html')
     
     context_dict = {
