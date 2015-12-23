@@ -1493,7 +1493,7 @@ def create_event(request):
             else:
                 request.session['error_message'] = messages.SHIFT_ERRORS
         else:
-            request.session['error_message'] = messags.GENERIC_SUBMIT_ERROR
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
     dp_ids = ['id_event-announce_start']
     for count in range(len(formset)):
         dp_ids.append('id_shift-%d-start_time_0' % (count))
