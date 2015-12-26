@@ -75,6 +75,14 @@ class BookSwapPerson(models.Model):
     """ Extends user profile information to include data needed for Book Swap.
     """
     user_profile = models.OneToOneField('mig_main.UserProfile')
+    UMID = models.CharField(
+            max_length=8,
+            validators=[RegexValidator(
+                            regex=r'^[0-9]{8}$',
+                            message="Your UMID must be 8 numbers."
+                        )
+                        ]
+    )
     address1 = models.CharField(max_length=128, blank=True, null=True)
     address2 = models.CharField(max_length=128, blank=True, null=True)
     city = models.CharField(max_length=128, blank=True, null=True)

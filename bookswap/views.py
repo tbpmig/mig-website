@@ -1,13 +1,69 @@
-from django.shortcuts import render
+from django.shortcuts import redirect
+from django.http import HttpResponse
+
+from mig_main.utility import get_previous_page, Permissions, get_message_dict
+
+def get_permissions(user):
+    return {}
+
+
+def get_common_context(request):
+    context_dict = get_message_dict(request)
+    context_dict.update({
+        'main_nav': 'bookswap',
+    })
+    return context_dict
+
 
 # Create your views here.
+# These are for the admin site part
+def admin_index(request):
+    pass
+
 
 def start_transaction(request):
-    # Check permissions to process
+    """ Just a simple form to receive the barcode, uniqname, or UMID
+    Looks up the buyer or seller, redirects to form to confirm information
+    """
+    if not Permissions.can_process_bookswap(event, request.user): # TODO: create permission logic
+        request.session['error_message'] = messages.BOOKSWAP_NO_PERM # TODO: Add message
+        return get_previous_page(request, alternate='bookswap:admin_index')
+    form = StartTransactionForm(request.POST or None)
+    if request.method == 'POST':
+        if form.is_valid():
+            user = form.get_user()
+            uniqname = ''
+            if user:
+                request.session['success_message'] = ('User found, please '
+                                                      'confirm details.')
+                uniqname = user.user_profile.uniqname
+            else:
+                request.session['error_message'] = ('User not found, please '
+                                                    'create now.')
+                request.session['UMID'] = form.cleaned_data['user_UMID']
+                request.session['uniqname'] = form.cleaned_data['user_uniqname']
+                request.session['barcode'] = form.cleaned_data['user_barcode']
+                
+            return redirect('bookswap:update_person', uniqname=uniqname)
+        else:
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
+    template = loader.get_template('generic_form.html')
+    context_dict = {
+        'form': form,
+        'subnav': 'admin',
+        'has_files': False,
+        'submit_name': 'Search for user',
+        'form_title': 'Search for a user in the system',
+        'help_text': ('You can search for a user by UMID, uniqname, or the '
+                      'barcode on their MCard.'),
+        'base': 'bookswap/base_bookswap.html', # TODO: make this
+        }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
     
-    # Just a simple form to receive the barcode, uniqname, or UMID
-    # Looks up the buyer or seller, redirects to form to confirm information
-    pass
+
 
 
 def update_person(request, uniqname):
@@ -64,6 +120,19 @@ def manage_bookswap_settings(request):
     # Check appropriate permissions
     pass
 
-    
-    
 
+# These are for the public front end
+def view_faq(request):
+    pass
+
+
+def view_inventory(request):
+    pass
+
+
+def view_location(request):
+    pass
+
+
+def view_resources(request):
+    pass
