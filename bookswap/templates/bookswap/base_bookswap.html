@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load my_markdown %}
+{% block subnav %}
+{% for link in mig_dropdowns.bookswap %}
+<li {%if subnav and subnav == link.subnav %}class="active"{% endif %}><a href="{{link.link}}">{{link.link_name}}</a></li>
+{% endfor %}
+{% endblock %}
+
+{% block content%}
+<div class="row" style="min-width:88em;">
+	<div class="col-md-9">
+		{% block bookswap_content %}
+		{% endblock bookswap_content %}
+	</div> 
+	<div class="col-md-3">
+		<aside>
+			{% if book_swap_dates  %}
+				<h1>Book Swap Hours</h1>
+                <h2>Drop Off Your Books:</h2>
+                {% for date in book_swap_dates.sell %}
+                    <p>{{ date.start|date:"l, d N P" }}&ndash;{{date.end|date:"P"}}</p>
+                {% endfor %}
+                <h2>Buy Books:</h2>
+                {% for date in book_swap_dates.buy %}
+                    <p>{{date.start|date:"l, d N P"}}&ndash;{{date.end|date:"P"}}</p>
+                {% endfor %}
+                <h2>Pick Up Money/Unsold Books:</h2>
+                {% for date in book_swap_dates.pickup %}
+                    <p>{{date.start|date:"l, d N P"}}&ndash;{{date.end|date:"P"}}</p>
+                {% endfor %}
+			{% endif %}
+		</aside>
+	</div>
+</div>
+
+
+
+{% endblock content %}

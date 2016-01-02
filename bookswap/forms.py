@@ -1,10 +1,12 @@
 from django import forms
+from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.forms import ModelForm, Form, ValidationError
+from django.forms.models import modelform_factory
 from django.utils.translation import ugettext as _
 
-from bookswap.models import BookSwapPerson
-
+from bookswap.models import BookSwapPerson, BookType, Book
+from mig_main.models import MemberProfile, UserProfile
 
 class StartTransactionForm(Form):
     user_UMID = forms.CharField(required=False)
@@ -47,6 +49,13 @@ class StartTransactionForm(Form):
                 return bsp[0]
         return None
 
+class BookSearchForm(Form):
+    book_barcode = forms.CharField()
+
+    def clean(self):
+        cleaned_data = super(BookSearchForm, self).clean()
+        return cleaned_data
+
 
 class BookSwapPersonForm(ModelForm):
     """ This version is for updating or if they already have a UserProfile."""
@@ -75,19 +84,21 @@ class BookSwapPersonFormNoProfile(ModelForm):
         cleaned_data = super(BookSwapPersonFormNoProfile, self).clean()
         m = MemberProfile.objects.filter(uniqname=cleaned_data.get('uniqname'))
         if m.exists():
+            m = m[0]
             UMID = cleaned_data.get('UMID')
             if m.UMID != UMID:
                 raise ValidationError(_('UMID does not match that in system'))
         return cleaned_data
         
     def save(self, commit=True):
-        bsp = super(BookSwapPersonFormNoProfile,self).save(commit=False)
-        uniqname = self.cleaned_data.get('uniqname')
+        uniqname = self.cleaned_data.pop('uniqname', '')
+        first_name = self.cleaned_data.pop('first_name', '')
+        last_name = self.cleaned_data.pop('last_name', '')
+    
+        bsp = super(BookSwapPersonFormNoProfile, self).save(commit=False)
         user_profile = UserProfile.objects.filter(uniqname=uniqname)
         if not user_profile.exists():
             users_w_name = User.objects.filter(username=uniqname)
-            first_name = self.cleaned_data.get('first_name')
-            last_name = self.cleaned_data.get('last_name')
             if not users_w_name.exists():
                 user = User.objects.create_user(user_name, user_name+'@umich.edu', '')
             else:
@@ -98,5 +109,14 @@ class BookSwapPersonFormNoProfile(ModelForm):
             user_profile.uniqname = uniqname
             user_profile.first_name = first_name
             user_profile.last_name = last_name
-            
-        
+            user_profile.user = user
+            user_profile.save()
+        else:
+            user_profile = user_profile[0]
+        bsp.user_profile = user_profile
+        if commit:
+            bsp.save()
+        return bsp
+
+BookTypeForm = modelform_factory(BookType, exclude=[])
+ReceiveBookForm = modelform_factory(Book, fields=['price'])

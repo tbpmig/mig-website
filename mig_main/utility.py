@@ -219,6 +219,8 @@ def get_dropdowns(user):
     if hasattr(user,'userprofile') and user.userprofile.is_member():
         dropdowns['publications'].append({'subnav':'project_reports','link_name':'Chapter Project Reports','link':reverse('history:get_project_reports')})
     
+    # bookswap
+    # currently none
     return dropdowns
             
 def get_quick_links(user):
@@ -888,6 +890,16 @@ class Permissions:
         if current_positions.exists():
             return True  
         return False
+    @classmethod
+    def can_process_bookswap(cls,user):
+        if user.is_superuser:
+            return True  
+        # current_positions = cls.get_current_officer_positions(user) 
+        # if current_positions.exists():
+            # return True  
+        return False
+
+
 class UnicodeWriter:
     def __init__(self, f, dialect=csv.excel, encoding="utf-8-sig", **kwds):
         self.queue = cStringIO.StringIO()

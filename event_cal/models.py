@@ -82,7 +82,7 @@ def default_term():
     Fixes a serialization issue that results from circular references in
     migrations.
     """
-    return AcademicTerm.get_current_term()
+    return AcademicTerm.get_current_term().id
 
 
 class GoogleCalendar(models.Model):

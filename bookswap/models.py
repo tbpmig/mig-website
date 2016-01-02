@@ -1,12 +1,19 @@
 from django.db import models
+from django.core.validators import RegexValidator
 
 from stdimage import StdImageField
 from localflavor.us.models import USStateField, USZipCodeField
 
 from mig_main.pdf_field import ContentTypeRestrictedFileField, pdf_types
 from mig_main.models import AcademicTerm
-from event_cal.models import default_term
 
+def default_term():
+    """ Returns the current term.
+
+    Fixes a serialization issue that results from circular references in
+    migrations.
+    """
+    return AcademicTerm.get_current_term().id
 
 def contract_file_name(instance, filename):
     """ Returns the filename for a contract.
@@ -28,7 +35,7 @@ class BookSwapContract(models.Model):
         ('B', 'Buyer'),
     )
     contract_file = ContentTypeRestrictedFileField(
-        upload_to=resume_file_name,
+        upload_to=contract_file_name,
         content_types=pdf_types,
         max_upload_size=104857600,
         blank=True
@@ -104,7 +111,28 @@ class BookType(models.Model):
 class Book(models.Model):
     """An individual book to be bought or sold"""
     price = models.PositiveSmallIntegerField()
-    buyer = models.ForeignKey(BookSwapPerson, null=True, blank=True)
-    seller = models.ForeignKey(BookSwapPerson)
+    buyer = models.ForeignKey(BookSwapPerson, null=True, blank=True, related_name='books_bought')
+    seller = models.ForeignKey(BookSwapPerson, related_name='books_sold')
     book_type = models.ForeignKey(BookType)
     term = models.ForeignKey('mig_main.AcademicTerm', default=default_term)
+
+
+class BookSwapStatus(models.Model):
+    selling_enabled = models.BooleanField(default=False)
+    receiving_enabled = models.BooleanField(default=False)
+    display_prices = models.BooleanField(default=False)
+    term = models.ForeignKey('mig_main.AcademicTerm', unique=True)
+    
+    @classmethod
+    def can_sell(cls, term):
+        stat = cls.objects.filter(term=term)
+        if stat.exists():
+            return stat[0].selling_enabled
+        return False
+    
+    @classmethod
+    def can_receive(cls, term):
+        stat = cls.objects.filter(term=term)
+        if stat.exists():
+            return stat[0].receiving_enabled
+        return False

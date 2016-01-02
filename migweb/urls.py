@@ -29,6 +29,8 @@ urlpatterns = patterns(
         include('electees.urls', namespace='electees')),
     url(r'^members/playground/',
         include('fora.urls', namespace='fora')),
+    url(r'^bookswap/',
+        include('bookswap.urls', namespace='bookswap')),
     url(r'^members/',
         include('member_resources.urls', namespace='member_resources')),
     #url(r'^admin/plate/', include('django_spaghetti.urls')),

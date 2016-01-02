@@ -1,3 +1,8 @@
+# Generic
+GENERIC_SUBMIT_ERROR = ('There were errors in your submission. The changes '
+                        'were not saved. Please correct the errors and try '
+                        'again.')
+# Event_cal
 ANNOUNCE_NO_PERMISSIONS = 'You are not authorized to edit announcements.'
 ANNOUNCE_NO_PERMISSIONS_ADD = 'You are not authorized to add announcements.'
 ANNOUNCE_NO_PERMISSIONS_ADD = ('You are not authorized to generate '
@@ -43,12 +48,13 @@ INTERVIEW_NOT_ACTIVE = ('You must be an active member to view the interview '
 
 INTERVIEW_CANNOT_CREATE = 'You are not authorized to create electee interviews'
 
-GENERIC_SUBMIT_ERROR = ('There were errors in your submission. The changes '
-                        'were not saved. Please correct the errors and try '
-                        'again.')
 GCAL_STILL_GOOD = ('Current Credentials still valid, re-authentication '
                    'unnecessary.')
 PROJ_REP_NO_PERMISSIONS = ('You are not authorized to create '
                            'project reports.')
 TUTOR_NOT_MEMBER = ('You must be logged in, have a profile, and be a member '
                     'to submit a tutoring form.')
+
+# Book Swap
+BOOKSWAP_NO_PERM = ('You are not authorized to work Book Swap, please check '
+                    ' with a chair to get added.')

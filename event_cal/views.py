@@ -18,7 +18,7 @@ from django.db.models import Min, Q
 
 from django_ajax.decorators import ajax
 
-from event_cal import messages
+from mig_main import messages
 from event_cal.forms import (
                 AddProjectReportForm,
                 BaseEventPhotoForm,

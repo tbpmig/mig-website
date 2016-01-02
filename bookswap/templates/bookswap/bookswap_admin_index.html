@@ -1,0 +1,12 @@
+{% extends "bookswap/base_bookswap.html" %}
+{% load staticfiles %}
+{% load my_markdown %}
+
+{% block bookswap_content %}
+<h1> Book Swap Volunteer Interface</h1>
+{% if can_process %}
+<a class="btn btn-warning btn-lg" href="{% url 'bookswap:start_transaction' %}">Start Transaction</a>
+{% else %}
+<p>You are not authorized as a Book Swap Volunteer.<br/>Talk to a chair to get this fixed.</p>
+{% endif %}
+{% endblock bookswap_content %}

@@ -263,7 +263,7 @@ class LeadershipCreditForm(forms.ModelForm):
         exclude= ('term','event_type','amount_completed','date_completed','related_event')
 
     def save(self,commit=True):
-        approved=self.cleaned_data.pop('approve',False)
+        approved=self.cleaned_data.pop('approve', False)
         if approved:
             return super(LeadershipCreditForm, self).save(commit=commit)
         else:
@@ -278,7 +278,7 @@ class AddActiveStatusForm(forms.ModelForm):
         exclude= ('term',)
 
     def save(self,commit=True):
-        approved=self.cleaned_data.pop('approve',False)
+        approved=self.cleaned_data.pop('approve', False)
         if approved:
             return super(AddActiveStatusForm, self).save(commit=commit)
         else:

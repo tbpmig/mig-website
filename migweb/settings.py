@@ -137,6 +137,7 @@ INSTALLED_APPS = (
 	'member_resources',
 	'corporate',
     'fora',
+    'bookswap',
 )+OTHER_APPS
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 
