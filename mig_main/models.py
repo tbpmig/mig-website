@@ -218,6 +218,17 @@ class OfficerPosition(models.Model):
                         choices=POSITION_TYPE_CHOICES,
                         default='O'
     )
+    is_elected = models.BooleanField(default=True)
+    TERM_LENGTH_CHOICES = (
+        ('S', 'Semester'),
+        ('A', 'Academic Year'),
+        ('C', 'Calendar year'),
+    )
+    term_length = models.CharField(
+                        max_length=1,
+                        choices=TERM_LENGTH_CHOICES,
+                        default='S',
+    )
 
     @classmethod
     def get_current(cls):

@@ -3,8 +3,8 @@
 {% block content %}
 <div class="row">
     <div class="col-md-12">
-{% if current_elections %}
-	{% for election in current_elections %}
+{% if elections %}
+	{% for election in elections %}
 		<h1>{{election.term.semester_type.name}} {{election.term.year }} Elections Nominations</h1>
 		<p><a href="{% url 'elections:list' election.id %}">List of nominees</a></p>
 		<p><a href="{% url 'elections:nominate' election.id %}">Make a nomination</a></p>

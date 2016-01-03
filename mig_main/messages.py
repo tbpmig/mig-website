@@ -11,6 +11,13 @@ ANNOUNCE_NO_PERMISSIONS_ADD = ('You are not authorized to generate '
 CAL_ADMIN_NO_PERMISSIONS = ('You are not authorized to access calendar '
                             'admin functionality.')
 
+ELECTION_NO_NOM_PERM = ('You must be logged in, have a profile, and be a '
+                        'member to view nominations.')
+ELECTION_NO_SUBMIT_NOM_PERM = ('You must be logged in, have a profile, and be '
+                               'a member to submit a nomination')
+ELECTION_NO_ACCEPT_PERM = ('You must be logged in, have a profile, and be a '
+                           'member to accept/decline a nomination.')
+
 EVT_IN_PAST = 'You cannot sign up for an event in the past'
 EVT_SIGNUP_CLOSED = 'This event blocks sign-up %s hours before start'
 EVT_NEEDS_AAPS_BACKGROUND = ('You must pass an AAPS background check and '
