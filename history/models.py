@@ -22,6 +22,116 @@ from migweb.settings import DEBUG, twitter_token, twitter_secret
 from requirements.models import ProgressItem
 
 
+RAW_TEX_STRING = r'''
+\section{%(project_name)s}
+\begin{enumerate}[I.]
+    \item \textbf{Basic Information:}
+    \begin{enumerate}[1.]
+        \item Project Date%(dates)s (Planning started: %(planning_date)s)
+        \item Project was new?: %(new_project)s
+        \item Number of participants:\\
+                %(participant_numbers)s
+        \item Names of participants:\\
+                %(participant_names)s
+    \end{enumerate}
+    \item \textbf{General Description:} %(description)s
+    \item \textbf{Target Audience:} %(audience)s
+    \item \textbf{Relationship to the Objectives of MI-G:} %(objectives)s
+    \item \textbf{Organization and Administration}
+    \begin{enumerate}[1.]
+        %(contact_string)s
+        \item Hours spent on the project:\\
+                Organizing: %(org_hours)d\hspace{.3in}
+                Participating: %(part_hours)s %(hours_string)s
+        %(other_group)s
+    \end{enumerate}
+    \item\textbf{Cost and Personnel Requirements}
+    \begin{enumerate}[1.]
+        \item General Comments: %(gen_comments)s
+        \item Items Needed: %(items)s
+        \item Total Cost: \$%(cost)s
+    \end{enumerate}
+    \item \textbf{Problems Encountered:} %(problems)s
+    \item \textbf{Recommendations:} %(recommend)s
+    \item \textbf{Overall Evaluation:}
+    \begin{enumerate}[1.]
+        \item Comments: %(eval_results)s
+        \item Overall Rating (1 is best; 5 is worst): %(rating)s
+        \item Best Part: %(best_part)s
+        \item Opportunity to improve: %(improve)s
+        \item Do you recommend continuing?: %(continue)s
+    \end{enumerate}
+    %(picture_string)s
+
+
+\end{enumerate}
+'''
+
+
+RAW_HEADER_STRING = r'''
+\documentclass{/srv/www/migweb/static/tex/ProjectReport}
+\usepackage{placeins}
+\usepackage{fontspec}
+\setmainfont[Ligatures=TeX]{Linux Libertine O}
+\graphicspath{{/srv/www/migweb/media/}}
+\begin{document}
+\newpage
+\null
+
+\thispagestyle{empty}
+\begin{center}
+    \quad\\[2 in]
+    \bf \LARGE The Michigan Gamma Chapter of Tau~Beta~Pi\\ Presents: \\[3 in]
+   \bf \huge Project Reports for the\\%(years)s\\ Annual Chapter Survey
+\end{center}
+\newoddside
+\section*{}
+\thispagestyle{empty}
+%(exec_summary)s\\
+Sincerely,\\
+%\includegraphics[width=2in]{\@sigFile}\\
+%(preparer_name)s\\
+MI-$\Gamma$ %(preparer_title)s~%(years)s
+\newoddside
+\begin{abstract}
+This section lists all of the projects performed by the
+Michigan Gamma Chapter of Tau Beta Pi for the school year
+extending from September 2011 to May 2012. The projects
+presented here were categorized into five separate groups:
+\begin{enumerate}[1.]
+    \item Professional: Projects which were performed to enhance
+    the engineering skills and job opportunities for students as
+    well as offer opportunities for students to interact with
+    company representatives.
+    \item Community: Projects which were performed primarily as a
+    service to the community and undertaken to enhance a spirit of
+    liberal culture within the chapter.
+    \item University: Projects which were performed primarily as a
+    service to the University and its students.
+    \item Chapter: Projects which were performed to aid to smooth
+    operation of the chapter, stimulate the interaction between
+    other chapters in the nation, or stimulate social interaction
+    of our members within the college, with each other, and with
+    other societies.
+    \item Honors: Projects which were performed to honor
+    outstanding achievement within our chapter and the University.
+\end{enumerate}
+Each project occupies at least one sheet, the Chapter Project
+Summary. The summary was derived from the standard Project
+Report provided by the national organization. There is one
+summary sheet for each project; however, some projects were
+repeated in different weeks or semesters. For simplicity, some
+of the sections above were split into the fall and winter
+semester for the school year. Unfortunately, for some projects
+a complete list of participants was not available due to the
+large number of members.
+\end{abstract}
+\newoddside
+\tableofcontents
+\newevenside
+'''
+
+
 def pack_officers_for_term(term):
     """
     Groups the officers into the appropriate teams for display on the
@@ -33,7 +143,8 @@ def pack_officers_for_term(term):
     term_advisors = officer_set.filter(position__name='Advisor')
 
     term_officers = []
-    team_q = Q(start_term__lte=term) & (Q(end_term__gte=term) | Q(end_term=None))
+    team_q = Q(start_term__lte=term) & (Q(end_term__gte=term) |
+                                        Q(end_term=None))
     for team in OfficerTeam.objects.filter(team_q):
         disp_order = 1
         if team.name == 'Executive Committee':
@@ -62,6 +173,11 @@ def default_term():
 
 # Create your models here.
 class Officer(models.Model):
+    """ An individual officer in a given term(s).
+
+    Used to show who the officers are and also to assign website
+    permissions appropriately.
+    """
     user = models.ForeignKey('mig_main.MemberProfile',
                              on_delete=models.PROTECT)
     term = models.ManyToManyField('mig_main.AcademicTerm')
@@ -89,6 +205,10 @@ class Officer(models.Model):
 
 
 class CommitteeMember(models.Model):
+    """ A member of a committee.
+
+    Used mostly for logging and for permisions.
+    """
     committee = models.ForeignKey('mig_main.Committee')
     term = models.ForeignKey('mig_main.AcademicTerm')
     member = models.ForeignKey('mig_main.MemberProfile')
@@ -103,6 +223,10 @@ class CommitteeMember(models.Model):
 
 
 class Distinction(models.Model):
+    """ A record of someone achieving some status (Active, DA, PA)
+
+    This is used for record keeping to determine DA terms, quorum, etc.
+    """
     member = models.ForeignKey('mig_main.MemberProfile')
     term = models.ForeignKey('mig_main.AcademicTerm')
     distinction_type = models.ForeignKey('requirements.DistinctionType')
@@ -135,6 +259,8 @@ class Distinction(models.Model):
 
 
 class WebsiteArticle(models.Model):
+    """ An article on the front page of the website.
+    """
     created_by = models.ForeignKey(
                             'mig_main.MemberProfile',
                             on_delete=models.SET_NULL,
@@ -154,7 +280,9 @@ class WebsiteArticle(models.Model):
 
     @classmethod
     def get_stories(cls):
-        return cls.objects.order_by('-date_posted').exclude(date_posted__gt=date.today()).exclude(approved=False)
+        stories = cls.objects.order_by('-date_posted')
+        posted_stories = stories.exclude(date_posted__gt=date.today())
+        return posted_stories.exclude(approved=False)
 
     def __unicode__(self):
         """Returns the unicode representation of the object"""
@@ -186,12 +314,23 @@ class WebsiteArticle(models.Model):
         name = self.title
         if len(name) > max_name_length:
             name = name[:(max_name_length-3)]+'...'
-        tweet_text = "%(name)s:\nRead more at:\n%(link)s%(hashtag)s" % {'name': name, 'link': 'https://tbp.engin.umich.edu'+reverse('history:article_view', args=(self.id,)), 'hashtag': hashtag}
+        tweet_text = '%(name)s:\nRead more at:\n%(link)s%(hashtag)s' % {
+                        'name': name,
+                        'link': 'https://tbp.engin.umich.edu' + reverse(
+                                                'history:article_view',
+                                                args=(self.id,)
+                        ),
+                        'hashtag': hashtag
+        }
 
         api.update_status(tweet_text)
 
 
 class Publication(models.Model):
+    """ A print publication, Cornerstone or Alumni Newsletter.
+
+    Each object represents an issue.
+    """
     date_published = models.DateField()
     volume_number = models.PositiveSmallIntegerField()
     edition_number = models.PositiveSmallIntegerField()
@@ -208,6 +347,13 @@ class Publication(models.Model):
         content_types=pdf_types,
         max_upload_size=104857600,
     )
+
+    @classmethod
+    def get_published(cls, document_type):
+        today = date.today()
+        return cls.objects.filter(
+                    type=document_type
+            ).order_by('date_published').exclude(date_published__gt=today)
 
     def __unicode__(self):
         """Returns the unicode representation of the object"""
@@ -242,7 +388,10 @@ class MeetingMinutes(models.Model):
 
     @classmethod
     def get_next_meeting_minutes_display_order(cls):
-        return cls.objects.filter(semester=AcademicTerm.get_current_term()).count()
+        minutes = cls.objects.filter(
+                            semester=AcademicTerm.get_current_term()
+        )
+        return minutes.count()
 
 
 class GoverningDocumentType(models.Model):
@@ -620,11 +769,15 @@ class ProjectReport(models.Model):
             return True
         if word.count('@') > 0:
             return False
-        if word.endswith('.com') or word.endswith('.edu') or word.endswith('.org'):
-            return True
-        if word.endswith('.gov') or word.endswith('.html') or word.endswith('.cfm'):
-            return True
-        if word.endswith('.htm') or word.endswith('.ca') or word.endswith('.net'):
+        if (word.endswith('.com') or
+           word.endswith('.edu') or
+           word.endswith('.org') or
+           word.endswith('.gov') or
+           word.endswith('.html') or
+           word.endswith('.cfm') or
+           word.endswith('.htm') or
+           word.endswith('.ca') or
+           word.endswith('.net')):
             return True
         return False
 
@@ -658,12 +811,16 @@ class ProjectReport(models.Model):
         has_events = self.calendarevent_set.count() > 0
         if has_events:
             events = self.calendarevent_set.all()
-            duration = sum([event.get_max_duration().total_seconds()/3600. for event in events])
+            duration = sum([event.get_max_duration().total_seconds()/3600.
+                            for event in events])
             if events.count() > 1:
-                hours_string = '(Total Duration for %d Events)' % (events.count())
+                hours_string = '(Total Duration for %d Events)' % (
+                                        events.count()
+                )
             else:
                 hours_string = '(Event Duration)'
-            leaders = MemberProfile.objects.filter(event_leader__in=events).distinct()
+            leaders = MemberProfile.objects.filter(
+                            event_leader__in=events).distinct()
             shifts = EventShift.objects.filter(event__in=events).distinct()
             desc = list(set([e.description for e in events]))
             desc_string = '\n'.join(desc)
@@ -672,7 +829,8 @@ class ProjectReport(models.Model):
                 all_dates.append(shift.start_time.date())
                 all_dates.append(shift.end_time.date())
             all_dates = sorted(list(set(all_dates)))
-            date_string = ', '.join([date.strftime('%x') for date in all_dates])
+            date_string = ', '.join([date.strftime('%x')
+                                     for date in all_dates])
             if len(all_dates) > 1:
                 date_string = 's: ' + date_string
             else:
@@ -687,7 +845,8 @@ class ProjectReport(models.Model):
             non_member_count = 0
             for item in progress_items:
                 if item.related_event.is_fixed_progress():
-                    scale = Decimal(item.related_event.get_max_duration().total_seconds()/3600.)
+                    duration = item.related_event.get_max_duration()
+                    scale = Decimal(duration.total_seconds()/3600.)
                 else:
                     scale = Decimal(1.0)
                 if item.member in attendees.keys():
@@ -698,8 +857,10 @@ class ProjectReport(models.Model):
                         active_count += 1
                     else:
                         electee_count += 1
-            all_attendees = UserProfile.objects.filter(event_attendee__event__in=events).distinct()
-            non_members = [member for member in all_attendees if not member.is_member()]
+            all_attendees = UserProfile.objects.filter(
+                                event_attendee__event__in=events).distinct()
+            non_members = [member for member in all_attendees
+                           if not member.is_member()]
             non_member_count = len(non_members)
             leader_string = r'''Project Leader(%s) (uniqname)\\
             \begin{tabular}{|l|}\hline
@@ -715,7 +876,8 @@ class ProjectReport(models.Model):
             leader_string += r'''\hline
             \end{tabular}\paraspace
             '''
-            attendee_string = r'''\begin{longtable}{|lr|c|r|}\hline Name&(uniqname)&Active/Electee/Non-Member & Number of Hours\\ \hline
+            attendee_string = r'''\begin{longtable}{|lr|c|r|}\hline
+            Name&(uniqname)&Active/Electee/Non-Member&Number of Hours\\ \hline
             \endhead
             \hline
             \endfoot
@@ -725,17 +887,24 @@ class ProjectReport(models.Model):
             )
             profiles = profiles.order_by('last_name', 'first_name').distinct()
             for member in profiles:
+                status = 'Active'
+                if member.init_term == self.term:
+                    status = 'Electee'
                 attendee_string += r'''%s&(%s)&%s&%.2f\\
                 ''' % (member.get_firstlast_name(),
                        member.uniqname,
-                       'Active' if not member.init_term == self.term else 'Electee',
+                       status,
                        attendees[member])
             for non_member in non_members:
-                hours = sum([event.get_attendee_hours_at_event(non_member) for event in events])
+                hours = sum([event.get_attendee_hours_at_event(non_member)
+                             for event in events])
                 attendee_string += r'''%s& (%s) & Non-Member & %.2f\\
-                ''' % (non_member.get_firstlast_name(), non_member.uniqname, hours)
+                ''' % (non_member.get_firstlast_name(),
+                       non_member.uniqname,
+                       hours)
             attendee_string += r'\end{longtable}'
-            num_part_string = r'''Active Members:~%d\hspace{.5in}Electees:~%d''' % (active_count, electee_count)
+            num_part_raw = r'''Active Members:~%d\hspace{.5in}Electees:~%d'''
+            num_part_string = num_part_raw % (active_count, electee_count)
             duration_s = '%d' % (duration)
         else:
             neps = self.noneventproject_set.all()
@@ -744,35 +913,36 @@ class ProjectReport(models.Model):
             if neps.count() > 1:
                 return -1
             nep = neps[0]
-            date_string = 's: %s--%s ' % (nep.start_date.strftime('%x'), nep.end_date.strftime('%x'))
+            date_string = 's: %s--%s ' % (
+                                nep.start_date.strftime('%x'),
+                                nep.end_date.strftime('%x')
+            )
             participants = nep.noneventprojectparticipant_set.all()
-            participants2 = nep.noneventparticipantalt_set.all()
             leaders = nep.leaders.all()
             attendees = {}
             active_count = 0
             electee_count = 0
             non_member_count = 0
             for item in participants:
-                if item.participant in attendees.keys():
-                    attendees[item.participant] += item.hours
+                participant = item.participant
+                if participant in attendees.keys():
+                    attendees[participant] += item.hours
                 else:
-                    attendees[item.participant] = item.hours
-                    if not item.participant.is_member():
+                    attendees[participant] = item.hours
+                    if not participant.is_member():
                         non_member_count += 1
-                    elif not item.participant.memberprofile.init_term == self.term:
+                    elif not participant.memberprofile.init_term == self.term:
                         active_count += 1
                     else:
                         electee_count += 1
-            for item in participants2:
-                if item.participant_status.name == 'Active':
-                    active_count += 1
-                elif item.participant_status.name == 'Electee':
-                    electee_count += 1
             leader_string = r'''Project Leader(%s) (uniqname)\\
             \begin{tabular}{|l|}\hline
             ''' % ('s' if leaders.count > 1 else '')
             for leader in leaders:
-                if UserProfile.objects.get(uniqname=leader.uniqname) not in attendees:
+                leader_userprofile = UserProfile.objects.get(
+                                            uniqname=leader.uniqname
+                )
+                if leader_userprofile not in attendees:
                     if not leader.init_term == self.term:
                         active_count += 1
                     else:
@@ -782,12 +952,15 @@ class ProjectReport(models.Model):
             leader_string += r'''\hline
             \end{tabular}\paraspace
             '''
-            attendee_string = r'''\begin{longtable}{|lr|c|r|}\hline Name&(uniqname)&Active/Electee/Non-Member & Number of Hours\\ \hline
+            attendee_string = r'''\begin{longtable}{|lr|c|r|}\hline
+            Name&(uniqname)&Active/Electee/Non-Member &Number of Hours\\ \hline
             \endhead
             \hline
             \endfoot
             '''
-            profiles = UserProfile.objects.filter(noneventprojectparticipant__in=participants).order_by('last_name', 'first_name')
+            profiles = UserProfile.objects.filter(
+                            noneventprojectparticipant__in=participants
+            ).order_by('last_name', 'first_name')
             for member in profiles:
                 if not member.is_member():
                     status_string = 'Non-member'
@@ -796,17 +969,18 @@ class ProjectReport(models.Model):
                 else:
                     status_string = 'Electee'
                 attendee_string += r'''%s&(%s)&%s&%.2f\\
-                ''' % (member.get_firstlast_name(), member.uniqname, status_string, attendees[member])
-            for member in participants2:
-                name_and_uniqname = member.participant_name.replace(')', '').strip().split('(')
-                attendee_string += r'''%s &(%s)& %s & %.2f\\
-                ''' % (name_and_uniqname[0], name_and_uniqname[1], member.participant_status, member.hours)
+                ''' % (
+                        member.get_firstlast_name(),
+                        member.uniqname,
+                        status_string,
+                        attendees[member]
+                )
             attendee_string += r'\end{longtable}'
-            num_part_string = r'Active Members:~%d\hspace{.5in}Electees:~%d' % (active_count, electee_count)
+            num_part_raw = r'Active Members:~%d\hspace{.5in}Electees:~%d'
+            num_part_string = num_part_raw % (active_count, electee_count)
             desc_string = nep.description
             duration_s = 'N/A'
             hours = [float(attendees[member]) for member in profiles]
-            hours += [float(member.hours) for member in participants2]
             if std(hours) < 0.5:
                 duration_s = '%.1f' % median(hours)
             if std(hours) < 0.2:
@@ -818,7 +992,11 @@ class ProjectReport(models.Model):
             new_project = r'Yes'
         else:
             new_project = r'No'
-        if self.contact_name or self.contact_email or self.contact_phone_number or self.contact_title or self.other_info:
+        if (self.contact_name or
+           self.contact_email or
+           self.contact_phone_number or
+           self.contact_title or
+           self.other_info):
             contact_string = r'''\item Contact Information\\
                     \begin{tabular}{l p{5in}}
                     '''
@@ -856,52 +1034,14 @@ class ProjectReport(models.Model):
                 \includegraphics[max width = .9\textwidth]{%(picture_name)s}
                 \caption{%(caption)s}
                 \end{figure}
-                ''' % {'picture_name': photo.photo.name, 'caption': self.fix_quotes(photo.caption)}
+                ''' % {
+                    'picture_name': photo.photo.name,
+                    'caption': self.fix_quotes(photo.caption)
+                }
         else:
             picture_string = ''
 
-        output_string = r'''\section{%(project_name)s}
-        \begin{enumerate}[I.]
-            \item \textbf{Basic Information:}
-            \begin{enumerate}[1.]
-                \item Project Date%(dates)s (Planning started: %(planning_date)s)
-                \item Project was new?: %(new_project)s
-                \item Number of participants:\\
-                        %(participant_numbers)s
-                \item Names of participants:\\
-                        %(participant_names)s
-            \end{enumerate}
-            \item \textbf{General Description:} %(description)s
-            \item \textbf{Target Audience:} %(audience)s
-            \item \textbf{Relationship to the Objectives of MI-G:} %(objectives)s
-            \item \textbf{Organization and Administration}
-            \begin{enumerate}[1.]
-                %(contact_string)s
-                \item Hours spent on the project:\\
-                        Organizing: %(org_hours)d\hspace{.3in} Participating: %(part_hours)s %(hours_string)s
-                %(other_group)s
-            \end{enumerate}
-            \item\textbf{Cost and Personnel Requirements}
-            \begin{enumerate}[1.]
-                \item General Comments: %(gen_comments)s
-                \item Items Needed: %(items)s
-                \item Total Cost: \$%(cost)s
-            \end{enumerate}
-            \item \textbf{Problems Encountered:} %(problems)s
-            \item \textbf{Recommendations:} %(recommend)s
-            \item \textbf{Overall Evaluation:}
-            \begin{enumerate}[1.]
-                \item Comments: %(eval_results)s
-                \item Overall Rating (1 is best; 5 is worst): %(rating)s
-                \item Best Part: %(best_part)s
-                \item Opportunity to improve: %(improve)s
-                \item Do you recommend continuing?: %(continue)s
-            \end{enumerate}
-            %(picture_string)s
-
-
-        \end{enumerate}
-        ''' % {
+        output_string = RAW_TEX_STRING % {
             'project_name': self.name,
             'dates': date_string,
             'planning_date': self.planning_start_date.strftime('%x'),
@@ -910,7 +1050,9 @@ class ProjectReport(models.Model):
             'participant_names': leader_string+attendee_string,
             'description': self.clean_tex_string(desc_string),
             'audience': self.get_target_audience_display(),
-            'objectives': self.clean_tex_string(self.relation_to_TBP_objectives),
+            'objectives': self.clean_tex_string(
+                                self.relation_to_TBP_objectives
+            ),
             'contact_string': contact_string,
             'org_hours': self.organizing_hours,
             'part_hours': duration_s,
@@ -921,7 +1063,9 @@ class ProjectReport(models.Model):
             'cost': self.cost,
             'problems': self.problems_encountered,
             'recommend': self.clean_tex_string(self.recommendations),
-            'eval_results': self.clean_tex_string(self.evaluations_and_results),
+            'eval_results': self.clean_tex_string(
+                                    self.evaluations_and_results
+            ),
             'rating': self.rating,
             'best_part': self.clean_tex_string(self.best_part),
             'improve': self.clean_tex_string(self.opportunity_to_improve),
@@ -933,6 +1077,11 @@ class ProjectReport(models.Model):
 
 
 class ProjectReportHeader(models.Model):
+    """ This is the meta-data object which is used to assemble the report.
+
+    It contains the information needed to compile the physical project report
+    information from the individual event summaries.
+    """
     executive_summary = models.TextField()
     preparer = models.ForeignKey('mig_main.MemberProfile')
     preparer_title = models.CharField(max_length=128)
@@ -949,69 +1098,16 @@ class ProjectReportHeader(models.Model):
     def write_tex_files(self):
         f = open('/tmp/Project_Report_Final_%d.tex' % (self.id), 'w')
         errors = []
-        years = '--'.join([str(term.year) for term in self.terms.all().order_by('year').distinct()])
+        terms = self.terms.all().order_by('year').distinct()
+        years = '--'.join([str(term.year) for term in terms])
         print years
         print self.preparer_title
-        output_string = r'''\documentclass{/srv/www/migweb/static/tex/ProjectReport}
-        \usepackage{placeins}
-        \usepackage{fontspec}
-        \setmainfont[Ligatures=TeX]{Linux Libertine O}
-        \graphicspath{{/srv/www/migweb/media/}}
-        \begin{document}
-        \newpage
-         \null
-
-         \thispagestyle{empty}
-          \begin{center}
-            \quad\\[2 in]
-              \bf \LARGE The Michigan Gamma Chapter of Tau~Beta~Pi\\ Presents: \\[3 in]
-               \bf \huge Project Reports for the\\'''+years+r'''\\ Annual Chapter Survey
-                \end{center}
-                \newoddside
-                \section*{}
-                \thispagestyle{empty}'''+self.executive_summary+r'''\\
-                Sincerely,\\
-                        %\includegraphics[width=2in]{\@sigFile}\\
-        '''+self.preparer.get_firstlast_name()+r'''
-                        \\ MI-$\Gamma$'''+self.preparer_title+r'''~'''+years+r'''
-                \newoddside
-                \begin{abstract}
-                This section lists all of the projects performed by the
-                Michigan Gamma Chapter of Tau Beta Pi for the school year
-                extending from September 2011 to May 2012. The projects
-                presented here were categorized into five separate groups:
-                \begin{enumerate}[1.]
-                \item Professional: Projects which were performed to enhance
-                the engineering skills and job opportunities for students as
-                well as offer opportunities for students to interact with
-                company representatives.
-                \item Community: Projects which were performed primarily as a
-                service to the community and undertaken to enhance a spirit of
-                liberal culture within the chapter.
-                \item University: Projects which were performed primarily as a
-                service to the University and its students.
-                \item Chapter: Projects which were performed to aid to smooth
-                operation of the chapter, stimulate the interaction between
-                other chapters in the nation, or stimulate social interaction
-                of our members within the college, with each other, and with
-                other societies.
-                \item Honors: Projects which were performed to honor
-                outstanding achievement within our chapter and the University.
-                \end{enumerate}
-                Each project occupies at least one sheet, the Chapter Project
-                Summary. The summary was derived from the standard Project
-                Report provided by the national organization. There is one
-                summary sheet for each project; however, some projects were
-                repeated in different weeks or semesters. For simplicity, some
-                of the sections above were split into the fall and winter
-                semester for the school year. Unfortunately, for some projects
-                a complete list of participants was not available due to the
-                large number of members.
-                \end{abstract}
-                \newoddside
-                \tableofcontents
-                \newevenside
-'''
+        output_string = RAW_HEADER_STRING % {
+            'exec_summary': self.executive_summary,
+            'preparer_name': self.preparer.get_firstlast_name(),
+            'preparer_title': self.preparer_title,
+            'years': years,
+        }
         previous_category = 'None'
         officer_files = {}
         officer_sheet_header = r'''
@@ -1051,14 +1147,25 @@ class ProjectReportHeader(models.Model):
             if asc_off not in officer_files:
                 officer_files[asc_off] = {}
             if project.term not in officer_files[asc_off]:
-                officer_files[asc_off][project.term] = open('/tmp/officer_proj_report_%s_%s.tex' % (project.get_associated_officer().id, project.term.id), 'w')
+                tmp_file = open(
+                        '/tmp/officer_proj_report_%s_%s.tex' % (
+                                        project.get_associated_officer().id,
+                                        project.term.id
+                        ),
+                        'w'
+                )
+                officer_files[asc_off][project.term] = tmp_file
                 header_string = officer_sheet_header % {
                             'officer': asc_off.name,
                             'term': unicode(project.term)
                 }
-                officer_files[asc_off][project.term].write(header_string.encode('utf8'))
-            officer_files[asc_off][project.term].write((r'''\input{/tmp/project_report%d.tex}%% %s
-            \FloatBarrier\newpage\clearpage''' % (project.id, project.name)).encode('utf8'))
+                officer_files[asc_off][project.term].write(
+                                            header_string.encode('utf8')
+                )
+            officer_files[asc_off][project.term].write((
+                r'''\input{/tmp/project_report%d.tex}%% %s
+                \FloatBarrier\newpage\clearpage
+                ''' % (project.id, project.name)).encode('utf8'))
 
             output_string += r'''\input{/tmp/project_report%d.tex}%% %s
             \FloatBarrier\newpage\clearpage''' % (project.id, project.name)
@@ -1068,9 +1175,15 @@ class ProjectReportHeader(models.Model):
         os.chdir('/tmp/')
         for officer in officer_files:
             for term in officer_files[officer]:
-                officer_files[officer][term].write(r'''\end{document}'''.encode('utf8'))
+                end_doc = r'''\end{document}'''.encode('utf8')
+                officer_files[officer][term].write(end_doc)
                 officer_files[officer][term].close()
-                new_cmd = cmd % {'file_name': '/tmp/officer_proj_report_%d_%d.tex' % (officer.id, term.id)}
+                new_cmd = cmd % {
+                    'file_name': '/tmp/officer_proj_report_%d_%d.tex' % (
+                                        officer.id,
+                                        term.id
+                    )
+                }
                 print 'executing: ' + new_cmd
                 p = subprocess.Popen(
                                 new_cmd.split(' '),
@@ -1117,12 +1230,15 @@ class ProjectReportHeader(models.Model):
                         'error_code': p.returncode
                     }
                     error_ind = p_data[0].find('!')
-                    ind_error['err'] = '...'+p_data[0][(error_ind-100):(error_ind+250)]+'...'
+                    err_txt = p_data[0][(error_ind-100):(error_ind+250)]
+                    ind_error['err'] = '...' + err_txt + '...'
                     errors.append(ind_error)
 
         f.write(output_string.encode('utf8'))
         f.close()
-        new_cmd = cmd % {'file_name': '/tmp/Project_Report_Final_%d.tex' % (self.id)}
+        new_cmd = cmd % {
+                    'file_name': '/tmp/Project_Report_Final_%d.tex' % (self.id)
+        }
         p = subprocess.Popen(
                         new_cmd.split(' '),
                         stdout=subprocess.PIPE,
@@ -1159,13 +1275,20 @@ class ProjectReportHeader(models.Model):
         else:
             ind_error = {'report': 'Full', 'error_code': p.returncode}
             error_ind = p_data[0].find('!')
-            ind_error['err'] = '...'+p_data[0][(error_ind-100):(error_ind+250)]+'...'
+            err_txt = p_data[0][(error_ind-100):(error_ind+250)]
+            ind_error['err'] = '...' + err_txt + '...'
             errors.append(ind_error)
         os.chdir(current_dir)
         return errors
 
 
 class OfficerPositionRelationship(models.Model):
+    """ Catalogs the evolution of different officer positions.
+
+    This is needed in order to help make sure that officers have access to
+    the appropriate reports/transition material even as the officer positions
+    change and duties move from one office to another.
+    """
     predecessor = models.ForeignKey(
                         'mig_main.OfficerPosition',
                         related_name='officer_relationship_predecessor'
@@ -1178,10 +1301,16 @@ class OfficerPositionRelationship(models.Model):
     description = models.TextField()
 
     def __unicode__(self):
-        return unicode(self.predecessor)+'->'+unicode(self.successor)+' in '+unicode(self.effective_term)
+        return (unicode(self.predecessor) + '->' +
+                unicode(self.successor) + ' in ' +
+                unicode(self.effective_term))
 
 
 class BackgroundCheck(models.Model):
+    """ Record of someone having passed a needed background check/training.
+
+    Required for working with minors on campus.
+    """
     CHECK_CHOICES = (
         ('U', 'UofM Background Check'),
         ('B', 'BSA Training'),
@@ -1193,20 +1322,28 @@ class BackgroundCheck(models.Model):
 
     @classmethod
     def get_valid_checks_for_user(cls, userprofile):
-        bu_q = Q(date_added__gte=date.today()-timedelta(days=2*365), check_type__in=['B', 'U'])
-        a_q = Q(date_added__gte=date.today()-timedelta(days=1*365), check_type='A')
+        bu_q = Q(
+                date_added__gte=date.today()-timedelta(days=2*365),
+                check_type__in=['B', 'U']
+        )
+        a_q = Q(
+                date_added__gte=date.today()-timedelta(days=1*365),
+                check_type='A'
+        )
         query = bu_q | a_q
         return cls.objects.filter(member=userprofile).filter(query)
 
     @classmethod
     def user_can_mindset(cls, userprofile):
         valid_checks = cls.get_valid_checks_for_user(userprofile)
-        return valid_checks.filter(check_type='B').exists() and valid_checks.filter(check_type='A').exists()
+        return (valid_checks.filter(check_type='B').exists() and
+                valid_checks.filter(check_type='A').exists())
 
     @classmethod
     def user_can_work_w_minors(cls, userprofile):
         valid_checks = cls.get_valid_checks_for_user(userprofile)
-        return valid_checks.filter(check_type='B').exists() and valid_checks.filter(check_type='U').exists()
+        return (valid_checks.filter(check_type='B').exists() and
+                valid_checks.filter(check_type='U').exists())
 
     def is_valid(self):
         if self.check_type == 'U':
