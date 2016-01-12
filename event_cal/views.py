@@ -2817,10 +2817,10 @@ def interview_view_actives(request, event_id):
         user_is_member = request.user.userprofile.is_member()
         user_is_active = request.user.userprofile.is_active()
     if not user_is_member:
-        request.session['error_message'] = INTERVIEW_NOT_MEMBER
+        request.session['error_message'] = messages.INTERVIEW_NOT_MEMBER
         return get_previous_page(request, alternate='event_cal:index')
     if not user_is_active:
-        request.session['error_message'] = INTERVIEW_NOT_ACTIVE
+        request.session['error_message'] = messages.INTERVIEW_NOT_ACTIVE
         return get_previous_page(request, alternate='event_cal:index')
 
     template = loader.get_template('event_cal/interview_view_actives.html')
