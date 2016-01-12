@@ -2,7 +2,7 @@ from django.db import models
 from django.core.validators import RegexValidator
 
 from stdimage import StdImageField
-from localflavor.us.models import USStateField # , USZipCodeField
+from localflavor.us.models import USStateField, USZipCodeField
 
 from mig_main.pdf_field import ContentTypeRestrictedFileField, pdf_types
 from mig_main.models import AcademicTerm
@@ -94,7 +94,7 @@ class BookSwapPerson(models.Model):
     address2 = models.CharField(max_length=128, blank=True, null=True)
     city = models.CharField(max_length=128, blank=True, null=True)
     state = USStateField(blank=True, null=True)
-    # zip = USZipCodeField(blank=True, null=True)
+    zip = USZipCodeField(blank=True, null=True)
     barcode = models.CharField(max_length=256, unique=True)
 
 
