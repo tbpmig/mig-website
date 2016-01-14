@@ -20,17 +20,18 @@ from django.forms.models import modelformset_factory, modelform_factory
 from django.core.urlresolvers import reverse
 
 from corporate.views import update_resume_zips
-from electees.models import ElecteeGroup, electee_stopped_electing, EducationalBackgroundForm,ElecteeInterviewSurvey,SurveyAnswer,SurveyQuestion,SurveyPart
+from electees.models import ElecteeGroup, EducationalBackgroundForm,ElecteeInterviewSurvey,SurveyAnswer,SurveyQuestion,SurveyPart
 from event_cal.models import CalendarEvent, MeetingSignInUserData,InterviewShift, EventPhoto
 from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardForm,BaseBackgroundCheckForm,MassAddBackgroundCheckForm,MeetingMinutesForm,CommitteeMemberForm
 from history.models import Award,Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport,BackgroundCheck,CommitteeMember
-from member_resources.forms import  ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet,ExternalServiceForm
-from member_resources.forms import ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet,TBPraiseForm
+from member_resources.forms import  ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm, ExternalServiceForm
+from member_resources.forms import ManageActiveGroupMeetingsFormSet,LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet,TBPraiseForm
 
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
 from member_resources.quorum import get_quorum_list,get_quorum_list_elections
 from migweb.context_processors import profile_setup
 from mig_main.demographics import get_members_for_COE
+from mig_main import messages
 from mig_main.forms import (
                 MemberProfileForm,
                 MemberProfileNewActiveForm,
@@ -39,6 +40,7 @@ from mig_main.forms import (
                 ElecteeProfileForm,
                 MemberProfileActiveFromNonMemberForm,
                 MemberProfileElecteeFromNonMemberForm,
+                ManageElecteeStillElectingFormSet
 )
 from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,TBPraise,PREFERENCES,Committee,OfficerPosition
 from mig_main.utility import  Permissions, get_previous_page,get_current_event_leaders,get_current_group_leaders,get_message_dict,UnicodeWriter,get_officer_positions_predecessors
@@ -1749,54 +1751,53 @@ def add_leadership_credit(request):
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
-def handle_electees_stopping_electing(request):
-    if not Permissions.can_manage_electee_progress(request.user):
-        request.session['error_message']='You are not authorized to remove electees.'
-        return redirect('member_resources:index')
-    if request.method ==  'POST':
-        formset = ManageElecteeStillElecting(request.POST)
-        if formset.is_valid():
-            for form in formset:
-                if not 'uniqname' in form.cleaned_data.keys():
-                    continue
-                uniqname = form.cleaned_data['uniqname']
-                profile = MemberProfile.objects.get(uniqname=uniqname)
-                if not profile:
-                    continue
-                still_electing = form.cleaned_data['still_electing']
-                if still_electing and not profile.still_electing:
-                    profile.still_electing=True
-                    profile.save()
-                elif not still_electing and profile.still_electing:
-                    electee_stopped_electing(profile)
 
-            request.session['success_message']='Electee status successfully updated.'
+def handle_electees_stopping_electing(request):
+    """ When electees stop electing, we want to remove them from the website
+    without removing them from the history. This allows someone to mark an
+    electee as no longer electing. This will remove them from the list of
+    electees, their group, and all future events they've signed up for. They
+    will retain their profile and their ability to sign up for events.
+    """
+    if not Permissions.can_manage_electee_progress(request.user):
+        request.session['error_message'] = 'You are not authorized to remove electees.'
+        return redirect('member_resources:index')
+    formset = ManageElecteeStillElectingFormSet(request.POST or None)
+    if request.method == 'POST':
+        if formset.is_valid():
+            formset.save()
+
+            request.session['success_message'] = 'Electee status updated.'
             return redirect('member_resources:view_misc_reqs')
         else:
-            request.session['error_message']=INVALID_FORM_MESSAGE
-    else:
-        initial_data = []
-        electee_profiles = MemberProfile.objects.filter(status__name='Electee').order_by('standing','last_name')
-        for electee in electee_profiles:
-            initial_data.append({'electee':electee.get_full_name(),'uniqname':electee.uniqname,'still_electing':electee.still_electing})
-        formset = ManageElecteeStillElecting(initial=initial_data)
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
     
     template = loader.get_template('generic_formset.html')
     context_dict = {
-        'formset':formset,
-        'subnav':'misc_reqs',
-        'can_add_row':False,
-        'has_files':False,
-        'base':'member_resources/base_member_resources.html',
-        'submit_name':'Update Electees Still Electing',
-        'form_title':'Manage Electees Still Electing',
-        'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Membership Management'},
-        'help_text':'To note that an electee is no longer electing, uncheck the \'Still Electing\' Box next to their name/uniqname. This will unsign them up from any future events and will remove them from electee teams. It will also cause them to generally not show up in the list of members on the website. It will not remove them from events that have already been completed or prevent them from signing up in the future.',
-        }
+        'formset': formset,
+        'subnav': 'misc_reqs',
+        'can_add_row': False,
+        'has_files': False,
+        'base': 'member_resources/base_member_resources.html',
+        'submit_name': 'Update Electees Still Electing',
+        'form_title': 'Manage Electees Still Electing',
+        'back_button': {
+                    'link': reverse('member_resources:view_misc_reqs'),
+                    'text': 'To Membership Management'},
+        'help_text': ('To note that an electee is no longer electing, '
+                      'uncheck the \'Still Electing\' Box next to their '
+                      'name/uniqname. This will unsign them up from any '
+                      'future events and will remove them from electee teams. '
+                      'It will also cause them to generally not show up in '
+                      'the list of members on the website. It will not remove '
+                      'them from events that have already been completed or '
+                      'prevent them from signing up in the future.'),
+    }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
 
 def move_electees_to_active(request):
     if not Permissions.can_manage_electee_progress(request.user):

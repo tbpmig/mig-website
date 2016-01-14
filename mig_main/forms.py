@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
-from django.forms import ModelForm
+from django import forms
+from django.forms import ModelForm, BaseModelFormSet
+from django.forms.models import modelformset_factory
 from django.db import IntegrityError
 
 from django_select2 import (
@@ -9,6 +11,7 @@ from django_select2 import (
             Select2Widget,
 )
 
+from electees.models import electee_stopped_electing
 from mig_main.models import (
             AcademicTerm,
             Major,
@@ -264,3 +267,62 @@ class MemberProfileActiveFromNonMemberForm(ConvertNonMemberToMemberForm):
                    'maiden_name', 'middle_name', 'nickname',
                    'status', 'still_electing',
                    'suffix', 'title', 'uniqname', 'user')
+
+                   
+class ManageElecteeStillElectingForm(ModelForm):
+    electee = forms.CharField(
+                        widget=forms.TextInput(
+                                attrs={
+                                    'class': 'disabled',
+                                    'readonly': 'readonly'
+                                }
+                        )
+    )
+    uniqname = forms.CharField(
+                        widget=forms.TextInput(
+                                attrs={
+                                    'class': 'disabled',
+                                    'readonly': 'readonly'
+                                }
+                        )
+    )
+
+    class Meta:
+        model = MemberProfile
+        fields = ['electee', 'uniqname', 'still_electing']
+
+    def __init__(self, *args, **kwargs):
+        super(ManageElecteeStillElectingForm, self).__init__(*args, **kwargs)
+        if not self.instance:
+            return
+        self.fields['electee'].initial = self.instance.get_firstlast_name()
+
+    def save(self, commit=True):
+        uniqname = self.cleaned_data['uniqname']
+        was_electing = MemberProfile.objects.get(
+                                uniqname=uniqname).still_electing
+        instance = super(ManageElecteeStillElectingForm, self).save(
+                                                        commit=commit)
+        if was_electing and not instance.still_electing:
+            electee_stopped_electing(instance)
+        return instance
+
+
+class BaseManageElecteeStillElectingFormSet(BaseModelFormSet):
+    def __init__(self, *args, **kwargs):
+        super(BaseManageElecteeStillElectingFormSet,
+              self).__init__(*args, **kwargs)
+
+        #create filtering here whatever that suits you needs
+        self.queryset = MemberProfile.objects.filter(
+                            status__name='Electee').order_by(
+                                                'last_name',
+                                                'first_name',
+                                                'uniqname')
+
+ManageElecteeStillElectingFormSet = modelformset_factory(
+                            MemberProfile,
+                            form=ManageElecteeStillElectingForm,
+                            formset=BaseManageElecteeStillElectingFormSet,
+                            extra=0
+)

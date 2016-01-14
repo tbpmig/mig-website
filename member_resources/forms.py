@@ -11,34 +11,29 @@ from django_select2 import ModelSelect2Field, Select2Widget
 from electees.models import ElecteeGroup
 from mig_main.models import MemberProfile, UserProfile, TBPraise
 from history.models import  Distinction
-from requirements.models import Requirement,EventCategory,ProgressItem,DistinctionType
+from requirements.models import (
+                Requirement,
+                EventCategory,
+                ProgressItem,
+                DistinctionType,
+)
+
 def max_peer_interviews_validator(value):
-    requirement = Requirement.objects.filter(event_category__name='Peer Interviews')
+    requirement = Requirement.objects.filter(
+                    event_category__name='Peer Interviews')
     if requirement:
-        if value>requirement[0].amount_required:
-            raise ValidationError(u'This value cannot exceed %s' % requirement[0].amount_required)
+        if value > requirement[0].amount_required:
+            raise ValidationError(
+                u'This value cannot exceed %s' % requirement[0].amount_required
+            )
 
 
-
-
-class ManageElecteeStillElectingForm(Form):
-    electee = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled','readonly':'readonly'}))
-    uniqname = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled','readonly':'readonly'}))
-    still_electing = forms.BooleanField(required=False)
-
-ManageElecteeStillElecting = formset_factory(ManageElecteeStillElectingForm,extra=0)
 class ManageDuesForm(Form):
     electee = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled','readonly':'readonly'}))
     uniqname = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled','readonly':'readonly'}))
     dues_paid = forms.BooleanField(required=False)
 
 ManageDuesFormSet = formset_factory(ManageDuesForm,extra=0)
-
-class ManageInterviewForm(Form):
-    member=forms.ModelChoiceField(queryset=MemberProfile.get_actives().order_by('last_name'))
-    interview_type=forms.ModelChoiceField(queryset=EventCategory.objects.filter(parent_category__name='Conducted Interviews'))
-    number_of_interviews = forms.IntegerField(min_value=0)
-ManageInterviewsFormSet = formset_factory(ManageInterviewForm,extra=1)
 
 class ManageUgradPaperWorkForm(Form):
     electee = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled','readonly':'readonly'}))
