@@ -28,7 +28,6 @@ from mig_main.utility import (
             Permissions,
             get_previous_page,
             get_message_dict,
-            get_previous_full_term,
 )
 from event_cal.models import EventPhoto
 
@@ -272,16 +271,16 @@ def process_project_report_compilation(request):
     current_term = AcademicTerm.get_current_term()
     if current_term.semester_type.name == 'Summer':
         # Likely the whole one
-        winter_term = get_previous_full_term(current_term)
+        winter_term = current_term.get_previous_full_term()
         fall_term = None
     elif current_term.semester_type.name == 'Fall':
         # either because summer term may be skipped to ease book keeping
-        winter_term = get_previous_full_term(current_term)
+        winter_term = current_term.get_previous_full_term()
         fall_term = current_term
     else:
         # could conceivably be either
         winter_term = current_term
-        fall_term = get_previous_full_term(current_term)
+        fall_term = current_term.get_previous_full_term()
 
     pr_fall = None
     pr_winter = None

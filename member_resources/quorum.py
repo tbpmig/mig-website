@@ -1,7 +1,6 @@
 from datetime import date
 from django.db.models import Q
 from django.http import HttpResponse
-from mig_main.utility import get_previous_full_term
 from history.models import Distinction,Officer
 from requirements.models import ProgressItem,DistinctionType,Requirement,EventCategory
 from mig_main.models import AcademicTerm,MemberProfile
@@ -70,11 +69,11 @@ def get_actives_with_status(distinction):
 
 def get_active_members(term):
     members = MemberProfile.get_actives()
-    terms = [term, get_previous_full_term(term)]
+    terms = [term, term.get_previous_full_term()]
     officer_terms = Officer.objects.filter(term__in=[term])
     distinctions = Distinction.objects.filter(term__in=terms)
     query_active_status = Q(distinction__in=distinctions)
-    query_initiated_last_term =Q(init_term=get_previous_full_term(term))
+    query_initiated_last_term =Q(init_term=term.get_previous_full_term())
     query_officer = Q(officer__in=officer_terms)
     query_alumni = Q(standing__name='Alumni') | Q(expect_grad_date__lt=date.today())
     query = query_officer | ((query_active_status | query_initiated_last_term ) & ~ query_alumni)
@@ -94,11 +93,11 @@ def get_active_members_who_came_to_something(term):
     
 def get_active_members_only_if_they_come(term):
     members = MemberProfile.get_actives()
-    terms = [term, get_previous_full_term(term)]
+    terms = [term, term.get_previous_full_term()]
     officer_terms = Officer.objects.filter(term__in=[term])
     distinctions = Distinction.objects.filter(term__in=terms)
     query_active_status = Q(distinction__in=distinctions)
-    query_initiated_last_term =Q(init_term=get_previous_full_term(term))
+    query_initiated_last_term =Q(init_term=term.get_previous_full_term())
     query_officer = Q(officer__in=officer_terms)
     query_alumni = Q(standing__name='Alumni') | Q(expect_grad_date__lt=date.today())
     query_all_active = query_officer | ((query_active_status | query_initiated_last_term ) & ~ query_alumni)

@@ -57,6 +57,8 @@ GENDER_CHOICES = (
 
 # homepage models
 class SlideShowPhoto(models.Model):
+    """ Photo that can be displayed on the home page.
+    """
     photo = StdImageField(
                 upload_to='home_page_photos',
                 variations={'thumbnail': (1050, 790, True)}
@@ -69,6 +71,8 @@ class SlideShowPhoto(models.Model):
 
 # general usage models
 class AcademicTerm(models.Model):
+    """ An individual term, e.g. Fall 2015.
+    """
     year = models.PositiveSmallIntegerField(
                     validators=[MinValueValidator(1960)]
     )
@@ -104,6 +108,57 @@ class AcademicTerm(models.Model):
         if current_terms.exists():
             return current_terms[0].current_term
         return None
+
+    def get_previous_full_term(self):
+        new_type = self.semester_type.get_previous_full_type()
+        if self.semester_type.name == 'Winter':
+            new_year = self.year - 1
+        else:
+            new_year = self.year
+        if self.__class__.objects.filter(
+                            year=new_year,
+                            semester_type=new_type).exists():
+            return self.__class__.objects.get(
+                        year=new_year,
+                        semester_type=new_type)
+        else:
+            a = self.__class__(year=new_year, semester_type=new_type)
+            a.save()
+            return a
+
+    def get_next_term(self):
+        new_type = self.semester_type.get_next_type()
+        if self.semester_type.name == 'Fall':
+            new_year = self.year + 1
+        else:
+            new_year = self.year
+        if self.__class__.objects.filter(
+                            year=new_year,
+                            semester_type=new_type).exists():
+            return self.__class__.objects.get(
+                        year=new_year,
+                        semester_type=new_type)
+        else:
+            a = self.__class__(year=new_year, semester_type=new_type)
+            a.save()
+            return a
+
+    def get_next_full_term(self):
+        new_type = self.semester_type.get_next_full_type()
+        if self.semester_type.name == 'Fall':
+            new_year = self.year + 1
+        else:
+            new_year = self.year
+        if self.__class__.objects.filter(
+                            year=new_year,
+                            semester_type=new_type).exists():
+            return self.__class__.objects.get(
+                        year=new_year,
+                        semester_type=new_type)
+        else:
+            a = self.__class__(year=new_year, semester_type=new_type)
+            a.save()
+            return a
 
     def get_abbreviation(self):
         return self.semester_type.name[0]+str(self.year)
@@ -154,6 +209,11 @@ class AcademicTerm(models.Model):
 
 
 class CurrentTerm(models.Model):
+    """ The current term.
+
+    There can only be one. This is slightly vestigial. An improvement was
+    attempted and it didn't work, so we stuck with this.
+    """
     current_term = models.ForeignKey(AcademicTerm)
 
     def __unicode__(self):
@@ -174,6 +234,10 @@ class CurrentTerm(models.Model):
 
 
 class TBPChapter(models.Model):
+    """ A TBP Chapter.
+
+    This will almost assuredly be incomplete, but it's unlikely to matter.
+    """
     class Meta:
         verbose_name = 'TBP Chapter'
         verbose_name_plural = 'TBP Chapters'
@@ -204,6 +268,8 @@ class TBPChapter(models.Model):
 
 
 class OfficerPosition(models.Model):
+    """ One of the officer or chair positions within the chapter.
+    """
     POSITION_TYPE_CHOICES = (
         ("O", "Officer"),
         ("C", "Chair"),
@@ -249,6 +315,13 @@ class OfficerPosition(models.Model):
 
 
 class OfficerTeam(models.Model):
+    """ An officer team is a grouping of officer positions around some
+    functional area.
+
+    This is generally not interacted with in terms of the website but is
+    documented for informational purposes: officers are displayed by team on
+    the leadership page.
+    """
     name = models.CharField(max_length=80)
     lead = models.ForeignKey(OfficerPosition, related_name='team_lead')
     members = models.ManyToManyField(OfficerPosition, related_name='members')
@@ -268,6 +341,8 @@ class OfficerTeam(models.Model):
 
 
 class Committee(models.Model):
+    """ Used to display committee members, handle permissions.
+    """
     name = models.CharField(max_length=128)
     description = models.TextField()
     is_active = models.BooleanField(default=True)
@@ -277,6 +352,8 @@ class Committee(models.Model):
 
 
 class Standing(models.Model):
+    """ Alumni, Grad, or Undergrad.
+    """
     name = models.CharField(max_length=20)
     enabled = models.BooleanField(default=True)
 
@@ -285,6 +362,8 @@ class Standing(models.Model):
 
 
 class Major(models.Model):
+    """ Major area of study.
+    """
     name = models.CharField(max_length=60)
     acronym = models.CharField(max_length=10)
     standing_type = models.ManyToManyField(Standing)
@@ -295,6 +374,8 @@ class Major(models.Model):
 
 
 class Status(models.Model):
+    """ Active or Electee.
+    """
     class Meta:
         verbose_name_plural = 'Statuses'
     name = models.CharField(max_length=20)
@@ -305,6 +386,8 @@ class Status(models.Model):
 
 
 class ShirtSize(models.Model):
+    """ Used for compiling member demographics, assisting with T-shirt orders.
+    """
     name = models.CharField(max_length=35)
     acronym = models.CharField(max_length=4)
     enabled = models.BooleanField(default=True)
@@ -314,6 +397,8 @@ class ShirtSize(models.Model):
 
 
 class UserPreference(models.Model):
+    """ An individual preference key-value pair for a user.
+    """
     user = models.ForeignKey('mig_main.UserProfile')
     preference_type = models.CharField(max_length=64)
     preference_value = models.CharField(max_length=64)
@@ -578,6 +663,9 @@ class MemberProfile(UserProfile):
 
 
 class TBPraise(models.Model):
+    """ An object used to send (potentially anonymous) praise to another
+    member for something good that they've done.
+    """
     giver = models.ForeignKey(UserProfile, related_name='praise_giver')
     recipient = models.ForeignKey(UserProfile, related_name='praise_recipient')
     description = models.TextField()

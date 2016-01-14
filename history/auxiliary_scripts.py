@@ -13,7 +13,6 @@ from history.models import ProjectReport, NonEventParticipantAlt, Distinction
 from requirements.models import ProgressItem, DistinctionType
 from mig_main.models import AcademicTerm, OfficerPosition, Status
 from mig_main.models import UserProfile, MemberProfile
-from mig_main.utility import get_previous_full_term
 
 cal_dict = {v: k for k, v in enumerate(calendar.month_name)}
 
@@ -49,7 +48,7 @@ def add_da_pa_status_manually(uniqname,
             else:
                 d.gift = 'Unknown'
             d.save()
-        term = get_previous_full_term(term)
+        term = term.get_previous_full_term()
     print 'finished %s %s' % (uniqname, unicode(distinction))
 
 

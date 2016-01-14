@@ -32,7 +32,7 @@ from member_resources.quorum import get_quorum_list,get_quorum_list_elections
 from migweb.context_processors import profile_setup
 from mig_main.demographics import get_members_for_COE
 from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,TBPraise,PREFERENCES,Committee,OfficerPosition
-from mig_main.utility import  Permissions, get_previous_page,get_next_term, get_next_full_term,get_current_event_leaders,get_current_group_leaders,get_message_dict,UnicodeWriter,get_officer_positions_predecessors
+from mig_main.utility import  Permissions, get_previous_page,get_current_event_leaders,get_current_group_leaders,get_message_dict,UnicodeWriter,get_officer_positions_predecessors
 from outreach.models import TutoringRecord
 from requirements.models import DistinctionType, Requirement, ProgressItem, EventCategory
 
@@ -1117,7 +1117,7 @@ def project_reports_list(request):
         for officer in current_positions:
             limit_term = current_positions[officer]
             if limit_term < AcademicTerm.objects.get(semester_type__name='Winter',year=2013):    #I think this is since they were only compiled yearly prior to that?                   
-                limit_term=get_next_full_term(limit_term)
+                limit_term = limit_term.get_next_full_term()
             old_reports|=CompiledProjectReport.objects.filter(is_full=False,associated_officer=officer,term__lte=limit_term)
 
     template = loader.get_template('member_resources/list_project_reports.html')
@@ -1159,8 +1159,8 @@ def view_misc_reqs(request):
     template = loader.get_template('member_resources/manage_misc_reqs.html')
     current_term = AcademicTerm.get_current_term()
     if current_term.semester_type.name=='Summer':
-        current_term = get_next_term(current_term)
-    next_term = get_next_full_term(current_term)
+        current_term = current_term.get_next_term()
+    next_term = current_term.get_next_full_term()
     context_dict = {
         'can_add_electee_members':Permissions.can_add_electee_members(request.user),
         'can_manage_project_leaders':Permissions.can_manage_project_leaders(request.user),
