@@ -13,7 +13,12 @@ from mig_main.tests.factories import AcademicTermFactory, TBPChapterFactory,\
                             ShirtSizeFactory, CurrentTermFactory, NUM_OFFICERS
 from history.tests.factories import OfficerFactory
 from history.models import Officer
-from mig_main.models import AcademicTerm, OfficerPosition, MemberProfile, Status
+from mig_main.models import (
+                    AcademicTerm,
+                    OfficerPosition,
+                    MemberProfile,
+                    Status,
+)
 from mig_main.models import ShirtSize, TBPChapter, Major, Standing
 from migweb.test_tools import MyClient
 

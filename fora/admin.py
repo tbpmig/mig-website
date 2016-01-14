@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from fora.models import Forum,ForumThread,ForumMessage,MessagePoint
+from fora.models import Forum,ForumThread, ForumMessage, MessagePoint
 
 
 # Register your models here.

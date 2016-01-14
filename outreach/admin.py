@@ -1,5 +1,15 @@
 from django.contrib import admin
-from outreach.models import OutreachPhotoType,OutreachPhoto,MindSETModule,MindSETProfileAdditions,TutoringRecord,VolunteerFile,TutoringPageSection,OutreachEventType,OutreachEvent
+from outreach.models import (
+                OutreachPhotoType,
+                OutreachPhoto,
+                MindSETModule,
+                MindSETProfileAdditions,
+                TutoringRecord,
+                VolunteerFile,
+                TutoringPageSection,
+                OutreachEventType,
+                OutreachEvent,
+)
 
 admin.site.register(OutreachPhotoType)
 admin.site.register(OutreachPhoto)
