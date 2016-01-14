@@ -207,25 +207,57 @@ class OfficerTeamFactory(factory.DjangoModelFactory):
                 self.members.add(member)
         else:
             if self.name == 'Executive Committee':
-                self.members.add(OfficerPosition.objects.get(name='President'))
-                self.members.add(OfficerPosition.objects.get(name='Vice President'))
-                self.members.add(OfficerPosition.objects.get(name='Graduate Student Vice President'))
-                self.members.add(OfficerPosition.objects.get(name='Secretary'))
-                self.members.add(OfficerPosition.objects.get(name='Treasurer'))
+                self.members.add(
+                        OfficerPosition.objects.get(name='President'))
+                self.members.add(
+                        OfficerPosition.objects.get(name='Vice President'))
+                self.members.add(
+                        OfficerPosition.objects.get(
+                                name='Graduate Student Vice President'))
+                self.members.add(
+                        OfficerPosition.objects.get(name='Secretary'))
+                self.members.add(
+                        OfficerPosition.objects.get(name='Treasurer'))
             elif self.name == 'PD':
-                self.members.add(OfficerPosition.objects.get(name='Corporate Relations Officer'))
-                self.members.add(OfficerPosition.objects.get(name='External Vice President'))
+                self.members.add(
+                        OfficerPosition.objects.get(
+                                name='Corporate Relations Officer'))
+                self.members.add(
+                        OfficerPosition.objects.get(
+                                name='External Vice President'))
             elif self.name == 'Events':
-                self.members.add(OfficerPosition.objects.get(name='Service Coordinator'))
-                self.members.add(OfficerPosition.objects.get(name='K-12 Outreach Officer'))
-                self.members.add(OfficerPosition.objects.get(name='Campus Outreach Officer'))
-                self.members.add(OfficerPosition.objects.get(name='Campus Outreach Chair'))
-                self.members.add(OfficerPosition.objects.get(name='Activities Officer'))
+                self.members.add(
+                        OfficerPosition.objects.get(
+                                name='Service Coordinator'))
+                self.members.add(
+                        OfficerPosition.objects.get(
+                                name='K-12 Outreach Officer'))
+                self.members.add(
+                        OfficerPosition.objects.get(
+                                name='Campus Outreach Officer'))
+                self.members.add(
+                        OfficerPosition.objects.get(
+                                name='Campus Outreach Chair'))
+                self.members.add(
+                        OfficerPosition.objects.get(
+                                name='Activities Officer'))
             elif self.name == 'Events':
-                self.members.add(OfficerPosition.objects.get(name='Chapter Development Officer'))
-                self.members.add(OfficerPosition.objects.get(name='Membership Officer'))
-                self.members.add(OfficerPosition.objects.get(name='Historian'))
-                self.members.add(OfficerPosition.objects.get(name='Publicity Officer'))
-                self.members.add(OfficerPosition.objects.get(name='Website Chair'))
-                self.members.add(OfficerPosition.objects.get(name='Alumni Relations Chair'))
-                self.members.add(OfficerPosition.objects.get(name='Apparel Chair'))
+                self.members.add(
+                        OfficerPosition.objects.get(
+                                name='Chapter Development Officer'))
+                self.members.add(
+                        OfficerPosition.objects.get(
+                                name='Membership Officer'))
+                self.members.add(
+                        OfficerPosition.objects.get(name='Historian'))
+                self.members.add(
+                        OfficerPosition.objects.get(
+                                name='Publicity Officer'))
+                self.members.add(
+                        OfficerPosition.objects.get(name='Website Chair'))
+                self.members.add(
+                        OfficerPosition.objects.get(
+                                name='Alumni Relations Chair'))
+                self.members.add(
+                        OfficerPosition.objects.get(
+                                name='Apparel Chair'))

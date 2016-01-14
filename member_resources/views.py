@@ -24,13 +24,22 @@ from electees.models import ElecteeGroup, electee_stopped_electing, EducationalB
 from event_cal.models import CalendarEvent, MeetingSignInUserData,InterviewShift, EventPhoto
 from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardForm,BaseBackgroundCheckForm,MassAddBackgroundCheckForm,MeetingMinutesForm,CommitteeMemberForm
 from history.models import Award,Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport,BackgroundCheck,CommitteeMember
-from member_resources.forms import MemberProfileForm, MemberProfileNewActiveForm, NonMemberProfileForm, MemberProfileNewElecteeForm, ElecteeProfileForm, ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet,ExternalServiceForm
+from member_resources.forms import  ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm,ManageInterviewsFormSet,ExternalServiceForm
 from member_resources.forms import ManageActiveGroupMeetingsFormSet,ManageElecteeStillElecting,LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet,TBPraiseForm
-from member_resources.forms import MemberProfileActiveFromNonMemberForm, MemberProfileElecteeFromNonMemberForm
+
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
 from member_resources.quorum import get_quorum_list,get_quorum_list_elections
 from migweb.context_processors import profile_setup
 from mig_main.demographics import get_members_for_COE
+from mig_main.forms import (
+                MemberProfileForm,
+                MemberProfileNewActiveForm,
+                NonMemberProfileForm,
+                MemberProfileNewElecteeForm,
+                ElecteeProfileForm,
+                MemberProfileActiveFromNonMemberForm,
+                MemberProfileElecteeFromNonMemberForm,
+)
 from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,TBPraise,PREFERENCES,Committee,OfficerPosition
 from mig_main.utility import  Permissions, get_previous_page,get_current_event_leaders,get_current_group_leaders,get_message_dict,UnicodeWriter,get_officer_positions_predecessors
 from outreach.models import TutoringRecord

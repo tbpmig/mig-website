@@ -1,5 +1,10 @@
 from django.contrib import admin
-from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList,ProjectLeaderList
+from member_resources.models import (
+                ActiveList,
+                GradElecteeList,
+                UndergradElecteeList,
+                ProjectLeaderList,
+)
 
 admin.site.register(ActiveList)
 admin.site.register(GradElecteeList)
