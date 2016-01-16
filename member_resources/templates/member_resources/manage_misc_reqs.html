@@ -43,11 +43,8 @@
         {% if can_add_external_service %}
             <li><a href="{% url 'member_resources:add_external_service' %}">Add External Service Hours</a></li>
         {% endif %}
-        {% if can_manage_ugrad_paperwork %}
-            <li><a href="{% url 'member_resources:manage_ugrad_paperwork' %}">Manage Undergrad Electee Paperwork</a></li>
-        {% endif %}
-        {% if can_manage_grad_paperwork %}
-            <li><a href="{% url 'member_resources:manage_grad_paperwork' %}">Manage Grad Electee Paperwork</a></li>
+        {% if can_manage_electee_paperwork %}
+            <li><a href="{% url 'member_resources:manage_electee_paperwork' %}">Manage Electee Paperwork</a></li>
         {% endif %}
         {% if can_manage_interviews %}
             <li><a href="{% url 'member_resources:manage_active_group_meetings' %}">Manage Active's Electee Team Meeting Attendance</a></li>

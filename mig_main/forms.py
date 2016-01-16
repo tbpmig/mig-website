@@ -301,6 +301,7 @@ class ManageElecteeStillElectingForm(ModelForm):
         uniqname = self.cleaned_data['uniqname']
         was_electing = MemberProfile.objects.get(
                                 uniqname=uniqname).still_electing
+        self.cleaned_data.pop('electee', None)
         instance = super(ManageElecteeStillElectingForm, self).save(
                                                         commit=commit)
         if was_electing and not instance.still_electing:

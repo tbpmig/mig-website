@@ -24,7 +24,7 @@ from electees.models import ElecteeGroup, EducationalBackgroundForm,ElecteeInter
 from event_cal.models import CalendarEvent, MeetingSignInUserData,InterviewShift, EventPhoto
 from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardForm,BaseBackgroundCheckForm,MassAddBackgroundCheckForm,MeetingMinutesForm,CommitteeMemberForm
 from history.models import Award,Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport,BackgroundCheck,CommitteeMember
-from member_resources.forms import  ManageDuesFormSet, ManageUgradPaperWorkFormSet, ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm, ExternalServiceForm
+from member_resources.forms import ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm, ExternalServiceForm
 from member_resources.forms import ManageActiveGroupMeetingsFormSet,LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet,TBPraiseForm
 
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
@@ -46,7 +46,7 @@ from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPCha
 from mig_main.utility import  Permissions, get_previous_page,get_current_event_leaders,get_current_group_leaders,get_message_dict,UnicodeWriter,get_officer_positions_predecessors
 from outreach.models import TutoringRecord
 from requirements.models import DistinctionType, Requirement, ProgressItem, EventCategory
-
+from requirements.forms import ManageDuesFormSet, ManageUgradPaperWorkFormSet
 from mig_main.templatetags.my_markdown import my_markdown
 INVALID_FORM_MESSAGE='The form is invalid. Please correct the noted errors.'
 
@@ -1184,8 +1184,7 @@ def view_misc_reqs(request):
         'can_manage_electees':Permissions.can_manage_electee_progress(request.user),
         'can_manage_finances':Permissions.can_manage_finances(request.user),
         'can_approve_tutoring':Permissions.can_approve_tutoring(request.user),
-        'can_manage_ugrad_paperwork':Permissions.can_manage_ugrad_paperwork(request.user),
-        'can_manage_grad_paperwork':Permissions.can_manage_grad_paperwork(request.user),
+        'can_manage_electee_paperwork':Permissions.can_manage_electee_paperwork(request.user),
         'can_change_requirements':Permissions.can_change_requirements(request.user),
         'can_manage_misc_reqs':Permissions.can_manage_misc_reqs(request.user),
         'can_add_leadership_credit':Permissions.can_add_leadership_credit(request.user),
@@ -1970,51 +1969,33 @@ def manage_dues(request):
     if not Permissions.can_manage_finances(request.user):
         request.session['error_message']='You are not authorized to manage payment of dues.'
         return redirect('member_resources:index')
-    if request.method ==  'POST':
-        formset = ManageDuesFormSet(request.POST)
+    electees = MemberProfile.get_electees()
+    for electee in electees:
+        if not ProgressItem.objects.filter(
+                                member=electee,
+                                event_type__name='Dues').exists():
+            p = ProgressItem(
+                        amount_completed=0,
+                        member=electee, 
+                        term=AcademicTerm.get_current_term(),
+                        date_completed=date.today(),
+                        name='Dues Paid',
+                        event_type=EventCategory.objects.get(name='Dues'),
+            )
+            p.save()
+    formset = ManageDuesFormSet(request.POST or None)
+    if request.method == 'POST':
         if formset.is_valid():
-            for form in formset:
-                if not 'uniqname' in form.cleaned_data.keys():
-                    continue
-                uniqname = form.cleaned_data['uniqname']
-                profile = MemberProfile.objects.get(uniqname=uniqname)
-                if not profile:
-                    continue
-                dues_paid = form.cleaned_data['dues_paid']
-                existing_progress = ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term(),event_type__name='Dues')
-                if not existing_progress:
-                    if not dues_paid:
-                        continue
-                    p = ProgressItem()
-                    p.member = profile
-                    p.term = AcademicTerm.get_current_term()
-                    p.amount_completed = 1
-                    p.date_completed = date.today()
-                    p.name = 'Dues Paid'
-                    p.event_type = EventCategory.objects.get(name = 'Dues')
-                    p.save()
-                else:
-                    if dues_paid:
-                        continue
-                    for e in existing_progress:
-                        e.delete()
-            request.session['success_message']='Dues successfully updated.'
+            formset.save()
+            request.session['success_message'] = 'Dues successfully updated.'
             return redirect('member_resources:view_misc_reqs')
         else:
-            request.session['error_message']=INVALID_FORM_MESSAGE
-    else:
-        initial_data = []
-        electee_profiles = MemberProfile.get_electees()
-        dues_progress = ProgressItem.objects.filter(event_type__name='Dues',term=AcademicTerm.get_current_term())
-        for electee in electee_profiles:
-            has_paid_dues = dues_progress.filter(member=electee).exists()
-            initial_data.append({'electee':electee.get_full_name(),'uniqname':electee.uniqname,'dues_paid':has_paid_dues})
-        formset = ManageDuesFormSet(initial=initial_data)
-    
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
+     
     template = loader.get_template('generic_formset.html')
     context_dict = {
-        'formset':formset,
-        'subnav':'misc_reqs',
+        'formset': formset,
+        'subnav': 'misc_reqs',
         'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Miscellaneous Requirements'},
         'submit_name':'Update Dues Payment',
         'has_files':False,
@@ -2023,6 +2004,7 @@ def manage_dues(request):
         'help_text':'When electees pay their initition dues click the checkbox and click submit.',
         'can_add_row':False,
         }
+
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
@@ -2109,180 +2091,53 @@ def manage_active_group_meetings(request):
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
-def manage_ugrad_paperwork(request):
-    if not Permissions.can_manage_ugrad_paperwork(request.user):
+def manage_electee_paperwork(request):
+    if not Permissions.can_manage_electee_paperwork(request.user):
         request.session['error_message']='You are not authorized to manage completion of paperwork.'
         return redirect('member_resources:index')
     current_term=AcademicTerm.get_current_term()
-    if request.method ==  'POST':
-        formset = ManageUgradPaperWorkFormSet(request.POST)
+    formset = ManageUgradPaperWorkFormSet(
+                            request.POST or None,
+                          profiles=MemberProfile.get_electees().order_by(
+                                                            '-standing__name',
+                                                            'last_name',
+                                                            'first_name',
+                                                            'uniqname'
+                          ),
+                          exam_name='Electee Exam',
+                          interview_name='Peer Interviews',
+                          group_meetings_name=['Team Meetings', 'Extra Team Meetings'],
+                          advisor_form_name='Advisor Form'
+    )
+    if request.method == 'POST':
         if formset.is_valid():
-            for form in formset:
-                if not 'uniqname' in form.cleaned_data.keys():
-                    continue
-                uniqname = form.cleaned_data['uniqname']
-                profile = MemberProfile.objects.get(uniqname=uniqname)
-                if not profile:
-                    continue
-                exam = form.cleaned_data['electee_exam_completed']
-                existing_progress_exam = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Electee Exam')
-                interviews = form.cleaned_data['peer_interviews_completed']
-                existing_progress_interviews = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Peer Interviews')
-                group_meetings = form.cleaned_data['group_meetings']
-                existing_group_meetings = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Team Meetings')
-                existing_extra_group_meetings = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Extra Team Meetings')
-                essays = form.cleaned_data['character_essays_completed']
-                existing_progress_essays = ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Interview Survey')
-                if existing_progress_exam and not exam:
-                    for e in existing_progress_exam:
-                        e.delete()
-                if not existing_progress_exam and exam:
-                    p = ProgressItem(member=profile,term=current_term,amount_completed=1,date_completed=date.today(),name='Electee Exam Completed')
-                    p.event_type = EventCategory.objects.get(name='Electee Exam')
-                    p.save()
-                if existing_progress_interviews:
-                    #for now assume only 1
-                    existing_progress_interviews[0].amount_completed=interviews
-                    existing_progress_interviews[0].save()
-                else:
-                    p = ProgressItem(member=profile,term=current_term,amount_completed=interviews,date_completed=date.today(),name='Peer Interviews Completed')
-                    p.event_type = EventCategory.objects.get(name='Peer Interviews')
-                    p.save()
-                if existing_progress_essays and not essays:
-                    for e in existing_progress_essays:
-                        e.delete()
-                if not existing_progress_essays and essays:
-                    p = ProgressItem(member=profile,term=current_term,amount_completed=interviews,date_completed=date.today(),name='Character Survey Completed')
-                    p.event_type = EventCategory.objects.get(name='Interview Survey')
-                    p.save()
-                dist=DistinctionType.objects.filter(status_type__name='Electee',standing_type__name='Undergraduate')
-                group_meeting_req = Requirement.objects.filter(distinction_type=dist,event_category__name='Team Meetings',term=current_term.semester_type)
-                if group_meeting_req:
-                    amount_group_req = group_meeting_req[0].amount_required
-                else:
-                    amount_group_req = 0
-                if existing_group_meetings:
-                    if group_meetings > amount_group_req:
-                        if existing_extra_group_meetings:
-                            existing_extra_group_meetings[0].amount_completed=(group_meetings-amount_group_req)
-                            existing_extra_group_meetings[0].save()
-                        else:
-                            p = ProgressItem(member=profile,term=current_term,amount_completed=(group_meetings-amount_group_req),date_completed=date.today(),name='Extra Team Meetings')
-                            p.event_type = EventCategory.objects.get(name='Extra Team Meetings')
-                            p.save()
-                        group_meetings=amount_group_req
-                    elif existing_extra_group_meetings:
-                        existing_extra_group_meetings[0].amount_completed=0
-                        existing_extra_group_meetings[0].save()
-                    existing_group_meetings[0].amount_completed=group_meetings
-                    existing_group_meetings[0].save()
-                else:
-                    amt_group_meetings = min(group_meetings,amount_group_req)
-                    amt_extra_meetings = max(0,group_meetings-amount_group_req)
-                    p = ProgressItem(member=profile,term=current_term,amount_completed=amt_group_meetings,date_completed=date.today(),name='Team Meetings')
-                    p.event_type = EventCategory.objects.get(name='Team Meetings')
-                    p.save()
-                    p2 = ProgressItem(member=profile,term=current_term,amount_completed=amt_extra_meetings,date_completed=date.today(),name='Extra Team Meetings')
-                    p2.event_type = EventCategory.objects.get(name='Extra Team Meetings')
-                    p2.save()
-            request.session['success_message']='Electee paperwork updated successfully'
+            formset.save()
+            request.session['success_message'] = 'Electee paperwork updated'
             return redirect('member_resources:view_misc_reqs')
         else:
-            request.session['error_message']=INVALID_FORM_MESSAGE
-    else:
-        initial_data = []
-        electee_profiles = MemberProfile.get_electees().filter(standing__name='Undergraduate').order_by('last_name')
-        electee_exam_progress = ProgressItem.objects.filter(event_type__name='Electee Exam',term=current_term)
-        peer_interview_progress = ProgressItem.objects.filter(event_type__name='Peer Interviews',term=current_term)
-        essays_progress = ProgressItem.objects.filter(event_type__name='Interview Survey',term=current_term)
-        existing_group_meetings = ProgressItem.objects.filter(term=current_term,event_type__name='Team Meetings')
-        existing_extra_group_meetings = ProgressItem.objects.filter(term=current_term,event_type__name='Extra Team Meetings')
-
-        for electee in electee_profiles:
-            exam = electee_exam_progress.filter(member=electee).exists()
-            interviews = 0
-            essays = essays_progress.filter(member=electee).exists()
-            group_meetings=0
-            if existing_group_meetings.filter(member=electee).exists():
-                group_meetings+=int(existing_group_meetings.filter(member=electee)[0].amount_completed)
-            if existing_extra_group_meetings.filter(member=electee).exists():
-                group_meetings+=int(existing_extra_group_meetings.filter(member=electee)[0].amount_completed)
-            if peer_interview_progress.filter(member=electee).exists():
-                interviews = int(peer_interview_progress.filter(member=electee)[0].amount_completed)
-            initial_data.append({'electee':electee.get_full_name(),'uniqname':electee.uniqname,'electee_exam_completed':exam,'peer_interviews_completed':interviews,'character_essays_completed':essays,'group_meetings':group_meetings})
-        formset = ManageUgradPaperWorkFormSet(initial=initial_data)
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
     
     template = loader.get_template('generic_formset.html')
     context_dict = {
-        'formset':formset,
-        'subnav':'misc_reqs',
-        'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Miscellaneous Requirements'},
-        'submit_name':'Update Electee Progress',
-        'has_files':False,
-        'base':'member_resources/base_member_resources.html',
-        'form_title':'Manage Undergraduate Electee Paperwork Progress',
-        'help_text':'For managing undergraduate electee progress toward the more miscellaneous of the requirements.',
-        'can_add_row':False,
+        'formset': formset,
+        'subnav': 'misc_reqs',
+        'back_button': {
+                    'link': reverse('member_resources:view_misc_reqs'),
+                    'text': 'To Miscellaneous Requirements'
+        },
+        'submit_name': 'Update Electee Progress',
+        'has_files': False,
+        'base': 'member_resources/base_member_resources.html',
+        'form_title': 'Manage Electee Paperwork Progress',
+        'help_text': ('For managing electee progress toward the more '
+                      'miscellaneous of the requirements.'),
+        'can_add_row': False,
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
 
-def manage_grad_paperwork(request):
-    if not Permissions.can_manage_grad_paperwork(request.user):
-        request.session['error_message']='You are not authorized to manage completion of paperwork.'
-        return redirect('member_resources:index')
-    current_term = AcademicTerm.get_current_term()
-    if request.method ==  'POST':
-        formset = ManageGradPaperWorkFormSet(request.POST)
-        if formset.is_valid():
-            for form in formset:
-                if not 'uniqname' in form.cleaned_data.keys():
-                    continue
-                uniqname = form.cleaned_data['uniqname']
-                profile = MemberProfile.objects.get(uniqname=uniqname)
-                if not profile:
-                    continue
-                advisor_form = form.cleaned_data['advisor_form_completed']
-                existing_progress_advisor_form= ProgressItem.objects.filter(member=profile,term=current_term,event_type__name='Advisor Form')
-                if existing_progress_advisor_form and not advisor_form:
-                    for e in existing_progress_advisor_form:
-                        e.delete()
-                if not existing_progress_advisor_form and advisor_form:
-                    p = ProgressItem(member=profile,term=current_term,amount_completed=1,date_completed=date.today(),name='Advisor Form Completed')
-                    p.event_type = EventCategory.objects.get(name='Advisor Form')
-                    p.save()
-
-            request.session['success_message']='Electee paperwork updated sucessfully.'
-            return redirect('member_resources:view_misc_reqs')
-        else:
-            request.session['error_message']=INVALID_FORM_MESSAGE
-    else:
-        initial_data = []
-        electee_profiles = MemberProfile.get_electees().filter(standing__name='Graduate').order_by('last_name')
-        advisor_form_progress = ProgressItem.objects.filter(event_type__name='Advisor Form',term=AcademicTerm.get_current_term())
-        for electee in electee_profiles:
-            advisor_form = advisor_form_progress.filter(member=electee).exists()
-            initial_data.append({'electee':electee.get_full_name(),'uniqname':electee.uniqname,'advisor_form_completed':advisor_form})
-        formset = ManageGradPaperWorkFormSet(initial=initial_data)
-    
-    template = loader.get_template('generic_formset.html')
-    context_dict = {
-        'formset':formset,
-        'subnav':'misc_reqs',
-        'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Miscellaneous Requirements'},
-        'submit_name':'Update Electee Progress',
-        'has_files':False,
-        'base':'member_resources/base_member_resources.html',
-        'form_title':'Manage Graduate Electee Paperwork Progress',
-        'help_text':'For managing graduate electee progress toward the more miscellaneous of the requirements.',
-        'can_add_row':False,
-        }
-    context_dict.update(get_common_context(request))
-    context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
 
 def change_requirements(request,distinction_id):   
     distinction = get_object_or_404(DistinctionType,id=distinction_id)

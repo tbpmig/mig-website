@@ -1,7 +1,6 @@
 from django.forms import ModelForm, Form
 from django import forms
 from django.forms.formsets import formset_factory, BaseFormSet
-from django.core.exceptions import ValidationError
 from django.forms.models import modelformset_factory
 from django.db.models import Q
 
@@ -18,32 +17,7 @@ from requirements.models import (
                 DistinctionType,
 )
 
-def max_peer_interviews_validator(value):
-    requirement = Requirement.objects.filter(
-                    event_category__name='Peer Interviews')
-    if requirement:
-        if value > requirement[0].amount_required:
-            raise ValidationError(
-                u'This value cannot exceed %s' % requirement[0].amount_required
-            )
 
-
-class ManageDuesForm(Form):
-    electee = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled','readonly':'readonly'}))
-    uniqname = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled','readonly':'readonly'}))
-    dues_paid = forms.BooleanField(required=False)
-
-ManageDuesFormSet = formset_factory(ManageDuesForm,extra=0)
-
-class ManageUgradPaperWorkForm(Form):
-    electee = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled','readonly':'readonly'}))
-    uniqname = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled','readonly':'readonly'}))
-    electee_exam_completed = forms.BooleanField(required=False)
-    peer_interviews_completed = forms.IntegerField(min_value=0,validators=[max_peer_interviews_validator])
-    character_essays_completed = forms.BooleanField(required=False,label="Interview Survey Completed")
-    group_meetings = forms.IntegerField(min_value=0,label="Team Meetings")
-
-ManageUgradPaperWorkFormSet = formset_factory(ManageUgradPaperWorkForm,extra=0)
     
 class ManageActiveGroupMeetingsForm(Form):
     member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=ElecteeGroup.get_current_leaders())

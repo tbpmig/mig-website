@@ -941,8 +941,7 @@ class Permissions:
     def can_manage_misc_reqs(cls, user):
         return (cls.can_manage_membership(user) or
                 cls.can_manage_finances(user) or
-                cls.can_manage_ugrad_paperwork(user) or
-                cls.can_manage_grad_paperwork(user) or
+                cls.can_manage_electee_paperwork(user) or
                 cls.can_approve_tutoring(user) or
                 cls.can_add_leadership_credit(user) or
                 cls.can_view_background_forms(user))
@@ -973,19 +972,7 @@ class Permissions:
             return False
 
     @classmethod
-    def can_manage_ugrad_paperwork(cls, user):
-        if user.is_superuser:
-            return True
-        current_positions = cls.get_current_officer_positions(user)
-        query_dues = (Q(position__name='President') |
-                      Q(position__name='Vice President'))
-        if current_positions.filter(query_dues).exists():
-            return True
-        else:
-            return False
-
-    @classmethod
-    def can_manage_grad_paperwork(cls, user):
+    def can_manage_electee_paperwork(cls, user):
         if user.is_superuser:
             return True
         current_positions = cls.get_current_officer_positions(user)
