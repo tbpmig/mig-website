@@ -24,8 +24,8 @@ from electees.models import ElecteeGroup, EducationalBackgroundForm,ElecteeInter
 from event_cal.models import CalendarEvent, MeetingSignInUserData,InterviewShift, EventPhoto
 from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardForm,BaseBackgroundCheckForm,MassAddBackgroundCheckForm,MeetingMinutesForm,CommitteeMemberForm
 from history.models import Award,Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport,BackgroundCheck,CommitteeMember
-from member_resources.forms import ManageGradPaperWorkFormSet,ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm, ExternalServiceForm
-from member_resources.forms import ManageActiveGroupMeetingsFormSet,LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet,TBPraiseForm
+from member_resources.forms import ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm, ExternalServiceForm
+from member_resources.forms import LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet,TBPraiseForm
 
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
 from member_resources.quorum import get_quorum_list,get_quorum_list_elections
@@ -46,7 +46,11 @@ from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPCha
 from mig_main.utility import  Permissions, get_previous_page,get_current_event_leaders,get_current_group_leaders,get_message_dict,UnicodeWriter,get_officer_positions_predecessors
 from outreach.models import TutoringRecord
 from requirements.models import DistinctionType, Requirement, ProgressItem, EventCategory
-from requirements.forms import ManageDuesFormSet, ManageUgradPaperWorkFormSet
+from requirements.forms import (
+                ManageDuesFormSet,
+                ManageUgradPaperWorkFormSet,
+                ManageActiveGroupMeetingsFormSet,
+)
 from mig_main.templatetags.my_markdown import my_markdown
 INVALID_FORM_MESSAGE='The form is invalid. Please correct the noted errors.'
 
@@ -2011,85 +2015,51 @@ def manage_dues(request):
     return HttpResponse(template.render(context))
 
 def manage_active_group_meetings(request):
-    if not (Permissions.can_manage_electee_progress(request.user) or Permissions.can_manage_active_progress(request.user)):
-        request.session['error_message']='You are not authorized to manage actives\' completion of group_meetings'
+    if not (Permissions.can_manage_electee_progress(request.user) or
+            Permissions.can_manage_active_progress(request.user)):
+        request.session['error_message'] = ('You are not authorized to manage '
+                                            'actives\' completion of team '
+                                            'meetings')
         return redirect('member_resources:index')
+    prefix = 'active_group'
+    formset = ManageActiveGroupMeetingsFormSet(request.POST or None,
+                                               prefix=prefix)
     if request.method ==  'POST':
-        formset = ManageActiveGroupMeetingsFormSet(request.POST,prefix='active_group')
         if formset.is_valid():
-            for form in formset:
-                if not 'member' in form.cleaned_data.keys():
-                    continue
-                member = form.cleaned_data['member']
-                group_meetings = form.cleaned_data['group_meetings']
-                existing_group_meetings = ProgressItem.objects.filter(member=member,term=AcademicTerm.get_current_term(),event_type__name='Team Meetings')
-                existing_extra_group_meetings = ProgressItem.objects.filter(member=member,term=AcademicTerm.get_current_term(),event_type__name='Extra Team Meetings')
-                dist=DistinctionType.objects.filter(status_type__name='Electee',standing_type__name='Undergraduate')
-                group_meeting_req = Requirement.objects.filter(distinction_type=dist,event_category__name='Team Meetings',term=AcademicTerm.get_current_term().semester_type)
-                if group_meeting_req:
-                    amount_group_req = group_meeting_req[0].amount_required
-                else:
-                    amount_group_req = 0
-                if existing_group_meetings:
-                    if group_meetings > amount_group_req:
-                        if existing_extra_group_meetings:
-                            existing_extra_group_meetings[0].amount_completed=(group_meetings-amount_group_req)
-                            existing_extra_group_meetings[0].save()
-                        else:
-                            p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),amount_completed=(group_meetings-amount_group_req),date_completed=date.today(),name='Extra Team Meetings')
-                            p.event_type = EventCategory.objects.get(name='Extra Team Meetings')
-                            p.save()
-                        group_meetings=amount_group_req
-                    elif existing_extra_group_meetings:
-                        existing_extra_group_meetings.delete()
-                    if group_meetings:
-                        existing_group_meetings[0].amount_completed=group_meetings
-                        existing_group_meetings[0].save()
-                    else:
-                        existing_group_meetings.delete()
-                else:
-                    amt_group_meetings = min(group_meetings,amount_group_req)
-                    amt_extra_meetings = max(0,group_meetings-amount_group_req)
-                    p = ProgressItem(member=member,term=AcademicTerm.get_current_term(),amount_completed=amt_group_meetings,date_completed=date.today(),name='Team Meetings')
-                    p.event_type = EventCategory.objects.get(name='Team Meetings')
-                    p.save()
-                    p2 = ProgressItem(member=member,term=AcademicTerm.get_current_term(),amount_completed=amt_extra_meetings,date_completed=date.today(),name='Extra Team Meetings')
-                    p2.event_type = EventCategory.objects.get(name='Extra Team Meetings')
-                    p2.save()
-            request.session['success_message']='Active Team Meeting Progress updated successfully'
+            formset.save()
+            
+            request.session['success_message'] = ('Active Team Meeting '
+                                                  'Progress updated')
             return redirect('member_resources:view_misc_reqs')
         else:
-            request.session['error_message']=INVALID_FORM_MESSAGE
-    else:
-        initial_data = []
-        progress_items = ProgressItem.objects.filter(member__status__name='Active',term=AcademicTerm.get_current_term()).filter(Q(event_type__name='Team Meetings')|Q(event_type__name='Extra Team Meetings'))
-        members = list(set([p.member for p in progress_items]))
-
-        for member in members:
-            group_meetings=0
-            if progress_items.filter(member=member).exists():
-                for p in progress_items.filter(member=member):
-                    group_meetings+=int(p.amount_completed)
-            initial_data.append({'member':member,'group_meetings':group_meetings})
-        formset = ManageActiveGroupMeetingsFormSet(initial=initial_data,prefix='active_group')
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
     
     template = loader.get_template('generic_formset.html')
     context_dict = {
-        'formset':formset,
-        'prefix':'active_group',
-        'subnav':'misc_reqs',
-        'back_button':{'link':reverse('member_resources:view_misc_reqs'),'text':'To Miscellaneous Requirements'},
-        'submit_name':'Update Active\'s Team Meeting Credit',
-        'has_files':False,
-        'base':'member_resources/base_member_resources.html',
-        'form_title':'Manage Active\'s Team Meeting Credit',
-        'help_text':'Give credit for each team meeting that each group leader hosts/attends. Any above the minimum required will count as social events.',
-        'can_add_row':True,
+        'formset': formset,
+        'prefix':prefix,
+        'subnav': 'misc_reqs',
+        'back_button': {
+                    'link': reverse('member_resources:view_misc_reqs'),
+                    'text': 'To Miscellaneous Requirements'
+        },
+        'submit_name': 'Update Active\'s Team Meeting Credit',
+        'has_files': False,
+        'base': 'member_resources/base_member_resources.html',
+        'form_title': 'Manage Active\'s Team Meeting Credit',
+        'help_text': ('Give credit for each team meeting that each team '
+                      'leader hosts/attends. Make sure to include required '
+                      'meetings. Those above the minimum required will count '
+                      'as social events automatically. The amount required is '
+                      'determined based on the grad/undergrad standing of the '
+                      'electees in the leader\'s group.'),
+        'can_add_row': True,
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
 
 def manage_electee_paperwork(request):
     if not Permissions.can_manage_electee_paperwork(request.user):

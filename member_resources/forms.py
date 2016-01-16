@@ -11,27 +11,11 @@ from electees.models import ElecteeGroup
 from mig_main.models import MemberProfile, UserProfile, TBPraise
 from history.models import  Distinction
 from requirements.models import (
-                Requirement,
-                EventCategory,
                 ProgressItem,
-                DistinctionType,
 )
 
 
     
-class ManageActiveGroupMeetingsForm(Form):
-    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=ElecteeGroup.get_current_leaders())
-    group_meetings = forms.IntegerField(min_value=0,label='Team Meetings')
-
-ManageActiveGroupMeetingsFormSet = formset_factory(ManageActiveGroupMeetingsForm,extra=1)
-
-class ManageGradPaperWorkForm(Form):
-    electee = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled','readonly':'readonly'}))
-    uniqname = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled','readonly':'readonly'}))
-    advisor_form_completed = forms.BooleanField(required=False)
-    
-ManageGradPaperWorkFormSet = formset_factory(ManageGradPaperWorkForm,extra=0)
-
 class ManageProjectLeaderForm(Form):
     member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=MemberProfile.get_members())
     is_project_leader = forms.BooleanField(required=False)

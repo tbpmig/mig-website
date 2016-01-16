@@ -2,14 +2,17 @@ from datetime import date
 from decimal import Decimal
 
 from django import forms
-from django.db.models import Sum
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Sum, Q
 from django.forms import ModelForm, BaseModelFormSet, Form, BaseFormSet
 from django.core.exceptions import ValidationError
 from django.forms.models import modelformset_factory, formset_factory
 
+from django_select2 import ModelSelect2Field, Select2Widget
+
 from requirements.models import ProgressItem, EventCategory, Requirement, DistinctionType
 from mig_main.models import AcademicTerm, MemberProfile
-
+from electees.models import ElecteeGroup
 
 def max_peer_interviews_validator(value):
     requirement = Requirement.objects.filter(
@@ -72,7 +75,8 @@ class BaseManageDuesFormSet(BaseModelFormSet):
         #create filtering here whatever that suits you needs
         self.queryset = ProgressItem.objects.filter(
                                 member__status__name='Electee',
-                                event_type__name='Dues'
+                                event_type__name='Dues',
+                                term=AcademicTerm.get_current_term(),
                             ).order_by(
                                 'member__last_name',
                                 'member__first_name',
@@ -84,6 +88,122 @@ ManageDuesFormSet = modelformset_factory(
                         form=ManageDuesForm,
                         formset=BaseManageDuesFormSet,
                         extra=0
+)
+class ManageActiveGroupMeetingsForm(ModelForm):
+    member = ModelSelect2Field(
+                widget=Select2Widget(
+                        select2_options={
+                                'width': 'element',
+                                'placeholder': 'Select Member',
+                                'closeOnSelect': True
+                        }
+                ),
+                queryset=ElecteeGroup.get_current_leaders()
+    )
+    amount_completed = forms.IntegerField(min_value=0, label='Team Meetings')
+    class Meta:
+        model = ProgressItem
+        fields = ['member', 'amount_completed']
+
+    def __init__(self, *args, **kwargs):
+        extra_amt = 0
+        instance = kwargs.get('instance', None)
+        initial = kwargs.get('initial', {})
+        init_val = int(0)
+        if instance:
+            extra_meetings = ProgressItem.objects.filter(
+                                    term=AcademicTerm.get_current_term(),
+                                    member=instance.member,
+                                    event_type__name='Extra Team Meetings',
+            )
+            if extra_meetings.exists():
+                extra_amt = extra_meetings.aggregate(Sum('amount_completed'))
+                extra_amt = extra_amt['amount_completed__sum']
+            init_val = int(instance.amount_completed + extra_amt)
+
+        initial['amount_completed'] = init_val
+        kwargs['initial']=initial
+        super(ManageActiveGroupMeetingsForm, self).__init__(*args, **kwargs)
+    
+    def save(self, commit=True):
+        instance = super(ManageActiveGroupMeetingsForm, self).save(commit=False)
+        term = AcademicTerm.get_current_term()
+        instance.term = term
+        instance.date_completed=date.today()
+        instance.name='Team Meetings'
+        extra_meetings = ProgressItem.objects.filter(
+                            term=term,
+                            member=instance.member,
+                            event_type__name='Extra Team Meetings',
+        )
+        group = ElecteeGroup.objects.filter(Q(leaders=instance.member) |
+                                            Q(officers=instance.member))
+        group = group.filter(term=term)
+        dist = DistinctionType.objects.filter(
+                        status_type__name='Electee',
+                        standing_type__name='Undergraduate')
+        if group.exists():
+            print group
+            if group[0].members.exists():
+                print group[0]
+                standing=group[0].members.all()[0].standing
+                dist = DistinctionType.objects.filter(
+                        status_type__name='Electee',
+                        standing_type=standing)
+        group_meeting_req = Requirement.objects.filter(
+                distinction_type=dist,
+                event_category__name='Team Meetings',
+                term=term.semester_type)
+        if group_meeting_req:
+            amount_group_req = group_meeting_req[0].amount_required
+        else:
+            amount_group_req = 0
+        if extra_meetings.count() > 1 or instance.amount_completed <= amount_group_req:
+            extra_meetings.delete()
+        
+        if not extra_meetings.exists() and instance.amount_completed > amount_group_req:
+            extra_meeting = ProgressItem(
+                            term=term,
+                            member=instance.member,
+                            date_completed=date.today()
+            )
+            extra_meeting.event_type = EventCategory.objects.get(
+                                            name='Extra Team Meetings')
+            extra_meeting.amount_completed = instance.amount_completed - amount_group_req
+            extra_meeting.save()
+        elif instance.amount_completed > amount_group_req:
+            extra_meeting = extra_meetings[0]
+            extra_meeting.amount_completed = instance.amount_completed - amount_group_req
+            extra_meeting.save()
+        instance.event_type = EventCategory.objects.get(name='Team Meetings')
+        if instance.amount_completed > amount_group_req:
+            instance.amount_completed = amount_group_req
+        if commit:
+            instance.save()
+        return instance
+
+class BaseManageActiveGroupMeetingsFormSet(BaseModelFormSet):
+    def __init__(self, *args, **kwargs):
+        super(BaseManageActiveGroupMeetingsFormSet,
+              self).__init__(*args, **kwargs)
+
+        #create filtering here whatever that suits you needs
+        self.queryset = ProgressItem.objects.filter(
+                                member__status__name='Active',
+                                event_type__name='Team Meetings',
+                                term=AcademicTerm.get_current_term(),
+                            ).order_by(
+                                'member__last_name',
+                                'member__first_name',
+                                'member__uniqname'
+                            )
+
+
+ManageActiveGroupMeetingsFormSet = modelformset_factory(
+                        ProgressItem,
+                        form=ManageActiveGroupMeetingsForm,
+                        formset=BaseManageActiveGroupMeetingsFormSet,
+                        extra=1
 )
 
 class ManageUgradPaperWorkForm(Form):
@@ -143,9 +263,6 @@ class ManageUgradPaperWorkForm(Form):
             if is_boolean:
                 amount_completed = 1.0
             else:
-                print p_field
-                print p_field.__class__
-                print ''
                 amount_completed = Decimal(p_field)
 
             if existing_progress.count() > 1:
