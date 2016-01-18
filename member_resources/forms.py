@@ -8,43 +8,41 @@ from django.db.models import Q
 from django_select2 import ModelSelect2Field, Select2Widget
 
 from electees.models import ElecteeGroup
+from member_resources.models import ProjectLeaderList
 from mig_main.models import MemberProfile, UserProfile, TBPraise
 from history.models import  Distinction
 from requirements.models import (
                 ProgressItem,
+                DistinctionType,
 )
 
-
-    
-class ManageProjectLeaderForm(Form):
-    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=MemberProfile.get_members())
-    is_project_leader = forms.BooleanField(required=False)
-ManageProjectLeadersFormSet = formset_factory(ManageProjectLeaderForm,extra=3)
-
-class MassAddProjectLeadersForm(Form):
+class MassAddForm(Form):
     uniqnames = forms.CharField(widget=forms.Textarea)
 
-class PreferenceForm(Form):
-    def __init__(self,prefs,*args,**kwargs):
-        super(PreferenceForm,self).__init__(*args,**kwargs)
-        for pref in prefs:
-            self.fields[pref['name']]=forms.ChoiceField(choices=[(pref['values'].index(d),d) for d in pref['values']])
-            self.fields[pref['name']].label = pref['verbose']
 
-class LeadershipCreditForm(forms.ModelForm):
-    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=MemberProfile.get_members())
-    approve= forms.BooleanField(required=False)
-
+class ManageProjectLeaderForm(ModelForm):
+    member_profile = ModelSelect2Field(
+                        widget=Select2Widget(
+                            select2_options={
+                                    'width': 'element',
+                                    'placeholder': 'Select Member',
+                                    'closeOnSelect': True
+                            }
+                        ),
+                        queryset=MemberProfile.get_members()
+    )
     class Meta:
-        model = ProgressItem
-        exclude= ('term','event_type','amount_completed','date_completed','related_event')
+        model = ProjectLeaderList
+        fields = ['member_profile']
 
-    def save(self,commit=True):
-        approved=self.cleaned_data.pop('approve', False)
-        if approved:
-            return super(LeadershipCreditForm, self).save(commit=commit)
-        else:
-            return None
+
+ManageProjectLeadersFormSet = modelformset_factory(
+                                    ProjectLeaderList,
+                                    form=ManageProjectLeaderForm,
+                                    extra=3,
+                                    can_delete=True
+)
+
 
 class AddActiveStatusForm(forms.ModelForm):
     member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=MemberProfile.get_actives())

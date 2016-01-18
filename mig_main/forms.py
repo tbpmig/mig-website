@@ -18,6 +18,7 @@ from mig_main.models import (
             MemberProfile,
             UserProfile,
             TBPChapter,
+            UserPreference,
 )
 
 
@@ -327,3 +328,42 @@ ManageElecteeStillElectingFormSet = modelformset_factory(
                             formset=BaseManageElecteeStillElectingFormSet,
                             extra=0
 )
+
+
+class PreferenceForm(forms.Form):
+
+    def __init__(self, *args, **kwargs):
+        prefs = kwargs.pop('prefs', None)
+        user = kwargs.pop('user', None)
+        users_prefs = UserPreference.objects.filter(user=user)
+        super(PreferenceForm, self).__init__(*args, **kwargs)
+        for pref in prefs:
+            this_pref = users_prefs.filter(preference_type=pref['name'])
+            self.fields[pref['name']] = forms.ChoiceField(
+                                            choices=[
+                                                (pref['values'].index(d), d)
+                                                for d in pref['values']
+                                            ]
+            )
+            self.fields[pref['name']].label = pref['verbose']
+            if this_pref.exists():
+                init_val = pref['values'].index(
+                                            this_pref[0].preference_value
+                )
+            else:
+                init_val = pref['values'].index(pref['default'])
+            self.fields[pref['name']].initial = init_val
+
+    def save(self, user, prefs):
+        UserPreference.objects.filter(user=user).delete()
+        for key, value in self.cleaned_data.items():
+            value_name = [d['values'][int(value)]
+                          for d in prefs
+                          if d['name'] == key][0]
+            up = UserPreference(
+                    user=user,
+                    preference_type=key,
+                    preference_value=value_name,
+            )
+            up.save()
+

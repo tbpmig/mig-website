@@ -23,11 +23,28 @@ from corporate.views import update_resume_zips
 from electees.models import ElecteeGroup, EducationalBackgroundForm,ElecteeInterviewSurvey,SurveyAnswer,SurveyQuestion,SurveyPart
 from event_cal.models import CalendarEvent, MeetingSignInUserData,InterviewShift, EventPhoto
 from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardForm,BaseBackgroundCheckForm,MassAddBackgroundCheckForm,MeetingMinutesForm,CommitteeMemberForm
-from history.models import Award,Officer, MeetingMinutes,Distinction,NonEventProject,NonEventProjectParticipant,CompiledProjectReport,BackgroundCheck,CommitteeMember
-from member_resources.forms import ManageProjectLeadersFormSet, MassAddProjectLeadersForm, PreferenceForm, ExternalServiceForm
-from member_resources.forms import LeadershipCreditForm,ManageActiveCurrentStatusFormSet,ManageElecteeDAPAFormSet,ElecteeToActiveFormSet,TBPraiseForm
+from history.models import (
+                    Award,
+                    Officer,
+                    MeetingMinutes,
+                    Distinction,
+                    NonEventProject,
+                    NonEventProjectParticipant,
+                    CompiledProjectReport,
+                    BackgroundCheck,
+                    CommitteeMember,
+)
+from member_resources.forms import (
+                    ManageActiveCurrentStatusFormSet,
+                    ManageElecteeDAPAFormSet,
+                    ElecteeToActiveFormSet,
+                    TBPraiseForm,
+                    MassAddForm,
+                    ManageProjectLeadersFormSet,
+                    ExternalServiceForm,
+)
 
-from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList, ProjectLeaderList
+from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList
 from member_resources.quorum import get_quorum_list,get_quorum_list_elections
 from migweb.context_processors import profile_setup
 from mig_main.demographics import get_members_for_COE
@@ -40,9 +57,24 @@ from mig_main.forms import (
                 ElecteeProfileForm,
                 MemberProfileActiveFromNonMemberForm,
                 MemberProfileElecteeFromNonMemberForm,
-                ManageElecteeStillElectingFormSet
+                ManageElecteeStillElectingFormSet,
+                PreferenceForm
 )
-from mig_main.models import MemberProfile, Status, Standing, UserProfile, TBPChapter,AcademicTerm, CurrentTerm, SlideShowPhoto,UserPreference,TBPraise,PREFERENCES,Committee,OfficerPosition
+from mig_main.models import (
+                    MemberProfile,
+                    Status,
+                    Standing,
+                    UserProfile,
+                    TBPChapter,
+                    AcademicTerm,
+                    CurrentTerm,
+                    SlideShowPhoto,
+                    UserPreference,
+                    TBPraise,
+                    PREFERENCES,
+                    Committee,
+                    OfficerPosition,
+)
 from mig_main.utility import  Permissions, get_previous_page,get_current_event_leaders,get_current_group_leaders,get_message_dict,UnicodeWriter,get_officer_positions_predecessors
 from outreach.models import TutoringRecord
 from requirements.models import DistinctionType, Requirement, ProgressItem, EventCategory
@@ -50,6 +82,7 @@ from requirements.forms import (
                 ManageDuesFormSet,
                 ManageUgradPaperWorkFormSet,
                 ManageActiveGroupMeetingsFormSet,
+                LeadershipCreditFormSet,
 )
 from mig_main.templatetags.my_markdown import my_markdown
 INVALID_FORM_MESSAGE='The form is invalid. Please correct the noted errors.'
@@ -1550,7 +1583,7 @@ def add_to_list(request,type_of_list):
     current_electees_ugrad = UndergradElecteeList.objects.all()
     current_electees_grad = GradElecteeList.objects.all()
     if request.method == 'POST':
-        form = MassAddProjectLeadersForm(request.POST,prefix='mass-add')
+        form = MassAddForm(request.POST,prefix='mass-add')
         if form.is_valid():
             uniqnames=form.cleaned_data['uniqnames'].split('\n')
             expr=re.compile('^[a-z]{3,8}$')
@@ -1577,9 +1610,9 @@ def add_to_list(request,type_of_list):
                 return redirect('member_resources:view_misc_reqs')
             else:
                 request.session['warning_message']='Some uniqnames were not added'
-                form=MassAddProjectLeadersForm(initial={'uniqnames':'\n'.join(error_lists['bad_uniqnames']+error_lists['current_actives']+error_lists['current_electees'])},prefix='mass-add')
+                form=MassAddForm(initial={'uniqnames':'\n'.join(error_lists['bad_uniqnames']+error_lists['current_actives']+error_lists['current_electees'])},prefix='mass-add')
     else:
-        form = MassAddProjectLeadersForm(prefix='mass-add')
+        form = MassAddForm(prefix='mass-add')
 
     if type_of_list == 'Actives':
         current_list = current_actives
@@ -1637,7 +1670,7 @@ def edit_list(request):
     current_electees_ugrad = UndergradElecteeList.objects.all()
     current_electees_grad = GradElecteeList.objects.all()
     if request.method == 'POST':
-        form = MassAddProjectLeadersForm(request.POST,prefix='mass-add')
+        form = MassAddForm(request.POST,prefix='mass-add')
         if form.is_valid():
             uniqnames=form.cleaned_data['uniqnames'].split('\n')
             expr=re.compile('^[a-z]{3,8}$')
@@ -1658,9 +1691,9 @@ def edit_list(request):
                 return redirect('member_resources:view_misc_reqs')
             else:
                 request.session['warning_message']='Some uniqnames were not added'
-                form=MassAddProjectLeadersForm(initial={'uniqnames':'\n'.join(error_lists['bad_uniqnames']+error_lists['missing_uniqnames'])},prefix='mass-add')
+                form=MassAddForm(initial={'uniqnames':'\n'.join(error_lists['bad_uniqnames']+error_lists['missing_uniqnames'])},prefix='mass-add')
     else:
-        form = MassAddProjectLeadersForm(prefix='mass-add')
+        form = MassAddForm(prefix='mass-add')
 
     link = reverse('member_resources:edit_list')
     template = loader.get_template('member_resources/edit_member_lists.html')
@@ -1673,6 +1706,48 @@ def edit_list(request):
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+    
+# Held here mostly as a just-in-case, likely obsolete
+def bulk_add_leadership_credit(request):
+    if not Permissions.can_add_leadership_credit(request.user):
+        request.session['error_message']='You are not authorized to manage leadership credit.'
+        return redirect('member_resources:index')
+    error_list=[]
+    term = AcademicTerm.get_current_term()
+    leadership_category = EventCategory.objects.get(name='Leadership')
+    form = MassAddForm(request.POST or None, prefix='mass-add')
+    if request.method == 'POST':
+        if form.is_valid():
+            uniqnames=form.cleaned_data['uniqnames'].split('\n')
+            for uniqname in uniqnames:
+                members = MemberProfile.objects.filter(uniqname=uniqname.strip())
+                if members:
+                    if ProgressItem.objects.filter(member=members[0],term=term,event_type=leadership_category).exists():
+                        continue
+                    leadership_credit = ProgressItem(member=members[0],event_type=leadership_category,date_completed=date.today(),amount_completed=1,term=AcademicTerm.get_current_term(),name='Leadership Credit')
+                    leadership_credit.save()
+                else:
+                    error_list.append(uniqname)
+            if not error_list:
+                request.session['success_message']='Leadership credit added for all uniqnames'
+                return redirect('member_resources:view_misc_reqs')
+            else:
+                request.session['warning_message']='Not all leadership credits added.'
+                form=MassAddForm(initial={'uniqnames':'\n'.join(error_list)},prefix='mass-add')
+    template = loader.get_template('member_resources/add_leadership_credit.html')
+    context_dict = {
+        'formset': None,
+        'mass_form': form,
+        'error_list': error_list,
+        'prefix': 'leadership',
+        'subnav': 'misc_reqs',
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    context = RequestContext(request, context_dict)
+    return HttpResponse(template.render(context))
+
+
 def add_leadership_credit(request):
     if not Permissions.can_add_leadership_credit(request.user):
         request.session['error_message']='You are not authorized to manage leadership credit.'
@@ -1680,74 +1755,34 @@ def add_leadership_credit(request):
     error_list=[]
     term = AcademicTerm.get_current_term()
     leadership_category = EventCategory.objects.get(name='Leadership')
-    LeadershipCreditFormSet = modelformset_factory(ProgressItem,form=LeadershipCreditForm)
+    formset = LeadershipCreditFormSet(request.POST or None, prefix='leadership')
     if request.method == 'POST':
-        if 'submit' in request.POST:
-            formset = LeadershipCreditFormSet(request.POST,queryset=ProgressItem.objects.none(),prefix='leadership')
-            form = MassAddProjectLeadersForm(request.POST,prefix='mass-add')
-            if formset.is_valid():
-                formset.save(commit=False)
-                for obj in formset.deleted_objects:
-                    obj.delete()
-                for instance in formset.new_objects:
-                    if not instance or ProgressItem.objects.filter(member=instance.member,term=term,event_type=leadership_category).exists():
-                        continue
-                    instance.term = term
-                    instance.event_type=leadership_category
-                    instance.amount_completed = 1
-                    instance.date_completed = date.today() 
-                    instance.save()
-                request.session['success_message']='Leadership credits added successfully'
-                return redirect('member_resources:view_misc_reqs')
-            else:
-                request.session['error_message']=INVALID_FORM_MESSAGE
-        elif 'mass-add' in request.POST:
-            form = MassAddProjectLeadersForm(request.POST,prefix='mass-add')
-            formset = LeadershipCreditFormSet(request.POST,prefix='leadership')
-            if form.is_valid():
-                uniqnames=form.cleaned_data['uniqnames'].split('\n')
-                for uniqname in uniqnames:
-                    members = MemberProfile.objects.filter(uniqname=uniqname.strip())
-                    if members:
-                        if ProgressItem.objects.filter(member=members[0],term=term,event_type=leadership_category).exists():
-                            continue
-                        leadership_credit = ProgressItem(member=members[0],event_type=leadership_category,date_completed=date.today(),amount_completed=1,term=AcademicTerm.get_current_term(),name='Leadership Credit')
-                        leadership_credit.save()
-                    else:
-                        error_list.append(uniqname)
-                if not error_list:
-                    request.session['success_message']='Leadership credit added for all uniqnames'
-                    return redirect('member_resources:view_misc_reqs')
-                else:
-                    request.session['warning_message']='Not all leadership credits added.'
-                    form=MassAddProjectLeadersForm(initial={'uniqnames':'\n'.join(error_list)},prefix='mass-add')
-                    formset = LeadershipCreditFormSet(request.POST,prefix='leadership')
-    else:
-        initial=[]
-        group_leaders = get_current_group_leaders()
-        event_leaders = get_current_event_leaders()
-        officers = Officer.get_current_members()
-        leader_list = group_leaders |event_leaders |officers
-        for leader in leader_list:
-            if ProgressItem.objects.filter(member=leader,term=term,event_type=leadership_category).exists():
-                continue
-            if leader in officers:
-                name_str = 'Was an officer'
-            elif leader in group_leaders:
-                name_str = 'Was a group leader'
-            else:
-                name_str = 'Led a project'
-            initial.append({'member':leader,'name':name_str})
-        LeadershipCreditFormSet.extra = len(initial)+1
-        formset = LeadershipCreditFormSet(queryset=ProgressItem.objects.none(),initial=initial,prefix='leadership')
-        form = MassAddProjectLeadersForm(prefix='mass-add')
-    template = loader.get_template('member_resources/add_leadership_credit.html')
+        if formset.is_valid():
+            formset.save()
+
+            request.session['success_message']='Leadership credits added successfully'
+            return redirect('member_resources:view_misc_reqs')
+        else:
+            request.session['error_message']=INVALID_FORM_MESSAGE
+
+    template = loader.get_template('generic_formset.html')
     context_dict = {
-        'formset':formset,
-        'mass_form':form,
-        'error_list':error_list,
-        'prefix':'leadership',
-        'subnav':'misc_reqs',
+        'formset': formset,
+        'prefix': 'leadership',
+        'subnav': 'misc_reqs',
+        'can_add_row': True,
+        'has_files': False,
+        'base': 'member_resources/base_member_resources.html',
+        'submit_name': 'Update Leadership Credits',
+        'form_title': 'Add Leadership Credit',
+        'back_button': {
+                    'link': reverse('member_resources:view_misc_reqs'),
+                    'text': 'To Membership Management'},
+        'help_text': ('Add Leadership Credits for the current term. If someone'
+                      ' has already received one this semester they will be '
+                      'excluded from the auto-generated list below. Only '
+                      'project leaders whose events are on the website are '
+                      'included below.'),
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
@@ -1854,69 +1889,41 @@ def manage_project_leaders(request):
     if not Permissions.can_manage_project_leaders(request.user):
         request.session['error_message']='You are not authorized to manage project leaders.'
         return redirect('member_resources:index')
-    error_list=[]
-    initial=[]
-    project_leader_list = ProjectLeaderList.objects.all()
-    for leader in project_leader_list:
-        initial.append({'member':leader.member_profile,'is_project_leader':True})
+    formset = ManageProjectLeadersFormSet(request.POST or None, prefix='project_leaders')
+
     if request.method == 'POST':
-        if 'submit' in request.POST:
-            formset = ManageProjectLeadersFormSet(request.POST,prefix='project_leaders')
-            form = MassAddProjectLeadersForm()
-            if formset.is_valid():
-                for form in formset:
-                    if not 'member' in form.cleaned_data.keys():
-                        continue
-                    member = form.cleaned_data['member']
-                    keep = form.cleaned_data['is_project_leader']
-                    existing_list = ProjectLeaderList.objects.filter(member_profile=member)
-                    if keep and not existing_list:
-                        p=ProjectLeaderList(member_profile=member)
-                        p.save()
-                    if not keep and existing_list:
-                        for e in existing_list:
-                            e.delete()
-                request.session['success_message']='Project leaders successfully added.'
-                return redirect('member_resources:view_misc_reqs')
-            else:
-                request.session['error_message']=INVALID_FORM_MESSAGE
-        elif 'mass-add' in request.POST:
-            form = MassAddProjectLeadersForm(request.POST)
-            formset = ManageProjectLeadersFormSet(initial=initial,prefix='project_leaders')
-            if form.is_valid():
-                uniqnames=form.cleaned_data['uniqnames'].split('\n')
-                for uniqname in uniqnames:
-                    members = MemberProfile.objects.filter(uniqname=uniqname.strip())
-                    if members:
-                        existing_list = ProjectLeaderList.objects.filter(member_profile=members[0])
-                        if not existing_list:
-                            initial.append({'member':members[0],'is_project_leader':True})
-                            p=ProjectLeaderList(member_profile=members[0])
-                            p.save()
-                    else:
-                        error_list.append(uniqname)
-                if not error_list:
-                    request.session['success_message']='All project leaders added successfully.'
-                    return redirect('member_resources:view_misc_reqs')
-                else:
-                    request.session['warning_message']='Not all project leaders added.'
-                    form=MassAddProjectLeadersForm(initial={'uniqnames':'\n'.join(error_list)})
-                    formset = ManageProjectLeadersFormSet(initial=initial,prefix='project_leaders')
-    else:
-        formset = ManageProjectLeadersFormSet(initial=initial,prefix='project_leaders')
-        form = MassAddProjectLeadersForm()
-    template = loader.get_template('member_resources/manage_project_leaders.html')
+        if formset.is_valid():
+            formset.save()
+            request.session['success_message']='Project leaders successfully added.'
+            return redirect('member_resources:view_misc_reqs')
+        else:
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
+
+    template = loader.get_template('generic_formset.html')
     context_dict = {
-        'formset':formset,
-        'mass_form':form,
-        'error_list':error_list,
-        'prefix':'project_leaders',
-        'subnav':'misc_reqs',
+        'formset': formset,
+        'prefix': 'project_leaders',
+        'subnav': 'misc_reqs',
+        'can_add_row':True,
+        'has_files':False,
+        'base':'member_resources/base_member_resources.html',
+        'submit_name': 'Update Project Leaders',
+        'form_title': 'Manage Project Leaders',
+        'back_button': {
+                    'link': reverse('member_resources:view_misc_reqs'),
+                    'text': 'To Membership Management'
+        },
+        'help_text': ('Use this page to update the list of project leaders '
+                      'each semester. Anyone listed here will have the '
+                      'ability to add events to the website. Make sure to '
+                      'remove those who should not have these permissions.'),
+
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
 
 def add_external_service(request):
     if not Permissions.can_add_external_service(request.user):
@@ -2268,47 +2275,47 @@ def approve_tutoring_forms(request):
 
 
 def update_preferences(request):  
-    if not hasattr(request.user,'userprofile'):
-        request.session['error_message']='You must be logged in and have created a profile to update preferences.'
+    if not hasattr(request.user, 'userprofile'):
+        request.session['error_message'] = ('You must be logged in and have '
+                                            'created a profile to update '
+                                            'preferences.')
         return redirect('member_resources:index')
+    form = PreferenceForm(
+                request.POST or None,
+                prefs=PREFERENCES,
+                user=request.user.userprofile
+    )
     if request.method =='POST':
-        form = PreferenceForm(PREFERENCES,request.POST)
         if form.is_valid():
-            UserPreference.objects.filter(user=request.user.userprofile).delete()
-            for key,value in form.cleaned_data.items():
-                value_name = [d['values'][int(value)] for d in PREFERENCES if d['name']==key][0]
-                up = UserPreference(user=request.user.userprofile,preference_type=key,preference_value=value_name)
-                up.save()
-            request.session['success_message']='Preferences successfully updated'
-            return redirect('member_resources:profile',request.user.userprofile.uniqname)
+            form.save(request.user.userprofile, PREFERENCES)
+            request.session['success_message'] = 'Preferences updated'
+            return redirect(
+                        'member_resources:profile',
+                        request.user.userprofile.uniqname)
         else:
-            request.session['error_message']=INVALID_FORM_MESSAGE
-    else:
-        initial={}
-        users_prefs = UserPreference.objects.filter(user=request.user.userprofile)
-        for preference in PREFERENCES:
-            this_pref = users_prefs.filter(preference_type=preference['name'])
-            if this_pref.exists():
-                initial[preference['name']]=preference['values'].index(this_pref[0].preference_value)
-            else:
-                initial[preference['name']]=preference['values'].index(preference['default'])
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
 
-        form = PreferenceForm(PREFERENCES,initial=initial)
     template = loader.get_template('generic_form.html')
     context_dict = {
-        'form':form,
-        'subnav':'member_profiles',
-        'back_button':{'link':reverse('member_resources:profile',args=[request.user.username]),'text':'To Your Profile'},
-        'submit_name':'Update Preferences',
-        'has_files':False,
-        'base':'member_resources/base_member_resources.html',
-        'form_title':'Update Your Account Preferences',
-        'help_text':'These preferences affect how your interactions with the website, your calendar integration and others.',
+        'form': form,
+        'subnav': 'member_profiles',
+        'back_button': {
+                    'link': reverse('member_resources:profile',
+                                    args=[request.user.username]),
+                    'text':'To Your Profile'
+        },
+        'submit_name': 'Update Preferences',
+        'has_files': False,
+        'base': 'member_resources/base_member_resources.html',
+        'form_title': 'Update Your Account Preferences',
+        'help_text': ('These preferences affect how your interactions with '
+                      'the website, your calendar integration and others.'),
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     context = RequestContext(request, context_dict)
     return HttpResponse(template.render(context))
+
 
 def view_background_forms(request):
     if not Permissions.can_view_background_forms(request.user):

@@ -10,8 +10,10 @@ from django.forms.models import modelformset_factory, formset_factory
 
 from django_select2 import ModelSelect2Field, Select2Widget
 
+from history.models import Officer
 from requirements.models import ProgressItem, EventCategory, Requirement, DistinctionType
 from mig_main.models import AcademicTerm, MemberProfile
+from mig_main.utility import get_current_group_leaders, get_current_event_leaders
 from electees.models import ElecteeGroup
 
 def max_peer_interviews_validator(value):
@@ -187,7 +189,6 @@ class BaseManageActiveGroupMeetingsFormSet(BaseModelFormSet):
         super(BaseManageActiveGroupMeetingsFormSet,
               self).__init__(*args, **kwargs)
 
-        #create filtering here whatever that suits you needs
         self.queryset = ProgressItem.objects.filter(
                                 member__status__name='Active',
                                 event_type__name='Team Meetings',
@@ -407,3 +408,77 @@ class BaseManageUgradPaperWorkFormSet(BaseFormSet):
             form.save()
 
 ManageUgradPaperWorkFormSet = formset_factory(form=ManageUgradPaperWorkForm,formset=BaseManageUgradPaperWorkFormSet,extra=0)
+
+
+class LeadershipCreditForm(forms.ModelForm):
+    member = ModelSelect2Field(
+                widget=Select2Widget(
+                select2_options={
+                        'width': 'element',
+                        'placeholder': 'Select Member',
+                        'closeOnSelect': True
+                }),
+                queryset=MemberProfile.get_members()
+    )
+    approve = forms.BooleanField(required=False)
+
+    class Meta:
+        model = ProgressItem
+        exclude= (
+                'term',
+                'event_type',
+                'amount_completed',
+                'date_completed',
+                'related_event'
+        )
+    
+    def save(self, commit=True):
+        approved = self.cleaned_data.pop('approve', False)
+        if approved:
+            instance = super(LeadershipCreditForm, self).save(commit=False)
+            instance.term = AcademicTerm.get_current_term()
+            instance.event_type = EventCategory.objects.get(name='Leadership')
+            instance.amount_completed = 1
+            instance.date_completed = date.today() 
+            if commit:
+                instance.save()
+            return instance
+        else:
+            return None
+
+
+class BaseLeadershipCreditFormSet(BaseModelFormSet):
+    def __init__(self, *args, **kwargs):
+        initial=[]
+        group_leaders = get_current_group_leaders()
+        event_leaders = get_current_event_leaders()
+        officers = Officer.get_current_members()
+        leader_list = group_leaders |event_leaders |officers
+        for leader in leader_list:
+            if ProgressItem.objects.filter(
+                                member=leader,
+                                term=AcademicTerm.get_current_term(),
+                                event_type=EventCategory.objects.get(
+                                                        name='Leadership')
+                    ).exists():
+                continue
+            if leader in officers:
+                name_str = 'Was an officer'
+            elif leader in group_leaders:
+                name_str = 'Was a group leader'
+            else:
+                name_str = 'Led a project'
+            initial.append({'member':leader, 'name':name_str})
+        kwargs['initial'] = initial
+        super(BaseLeadershipCreditFormSet,
+              self).__init__(*args, **kwargs)
+
+        self.queryset = ProgressItem.objects.none()
+        self.extra = len(initial) + 1
+
+
+LeadershipCreditFormSet = modelformset_factory(
+                                    ProgressItem,
+                                    form=LeadershipCreditForm,
+                                    formset=BaseLeadershipCreditFormSet
+)
