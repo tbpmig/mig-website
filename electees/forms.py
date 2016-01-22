@@ -299,6 +299,7 @@ class ElecteeSurveyForm(forms.Form):
                 output += "<li><p for=\"id_custom_%d\">%s %s</p>" % (
                                     question.id,
                                     my_markdown(question.text),
+                                    lim_text,
                 )
                 output += unicode(self["custom_%s" % question.id].errors)
                 output += unicode(self["custom_%s" % question.id])
