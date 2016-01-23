@@ -38,9 +38,7 @@ def get_officer_position_predecessor_helper(officer, term, officer_set):
     for link in active_links:
         officer_set |= get_officer_position_predecessor_helper(
                             link.predecessor,
-                            get_previous_full_term(
-                                    link.effective_term
-                            ),
+                            link.effective_term.get_previous_full_term(),
                             officer_set
         )
     return officer_set
@@ -486,7 +484,7 @@ class Permissions:
         profile = cls.get_profile(user)
         if not profile:
             return Officer.objects.none()
-        term = get_previous_full_term(AcademicTerm.get_current_term())
+        term = AcademicTerm.get_current_term().get_previous_full_term()
         positions = Officer.objects.filter(
                         user=profile,
                         term=term,
