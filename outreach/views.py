@@ -390,11 +390,13 @@ def manage_outreach_events(request, url_stem):
     prefix = 'outreach'
     formset = OutreachFormSet(
                     request.POST or None,
+                    request.FILES or None,
                     prefix=prefix,
                     queryset=OutreachEvent.objects.filter(
                                 outreach_event=outreach_event
                     )
     )
+
     if request.method == 'POST':
         if formset.is_valid():
             instances = formset.save(commit=False)
