@@ -9,6 +9,11 @@
     <button type="button" class="close" data-dismiss="alert">&times</button>
     <div class="text-center"><a href="{% url 'event_cal:event_detail' current_meeting.id %}"><strong>{{current_meeting.name}}</strong></a> is going on. {% if user.is_authenticated %}{% if user.userprofile and user.userprofile.is_member %}{% for shift in current_meeting.eventshift_set.all %}Click <a href="{% url 'event_cal:meeting_sign_in' shift.id %}">here</a> to sign in.{%endfor%} {% else %}You must make a profile to sign in.{% endif %}{% else %}You
         must <a href="{% url 'login_view' %}?next={{request.path}}">log in</a> to sign-in{% endif %}</div>
+    {% if current_meeting.agenda %}
+    <div class="text-center">
+        <a href="{{ current_meeting.agenda.pdf_file.url }}"><strong>Click here for the agenda.</strong></a>
+    </div>
+    {% endif %}
 </div>
 {% endfor %}
 {% endif %}

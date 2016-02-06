@@ -13,8 +13,8 @@ from django_select2 import ModelSelect2Field, Select2Widget
 from requirements.models import EventCategory, ProgressItem
 from event_cal.models import CalendarEvent, EventShift
 from event_cal.models import AnnouncementBlurb, EventPhoto
-from mig_main.models import UserProfile, MemberProfile
-from history.models import ProjectReport
+from mig_main.models import UserProfile, MemberProfile, AcademicTerm
+from history.models import ProjectReport, MeetingMinutes
 
 
 class BaseEventPhotoForm(ModelForm):
@@ -127,7 +127,20 @@ class BaseEventForm(ModelForm):
                     choices=TWEET_CHOICES,
                     initial='N'
     )
-
+    agenda = ModelSelect2Field(
+                widget=Select2Widget(
+                        select2_options={
+                            'width': 'element',
+                            'placeholder': 'Select agenda',
+                            'closeOnSelect': True
+                        }
+                ),
+                queryset=MeetingMinutes.objects.filter(
+                                semester=AcademicTerm.get_current_term(),
+                                meeting_type__in=['NI','MM']
+                ),
+                required=False,
+    )
     class Meta:
         model = CalendarEvent
         fields = [
@@ -136,6 +149,7 @@ class BaseEventForm(ModelForm):
                 'event_type',
                 'event_class',
                 'description',
+                'agenda',
                 'google_cal',
                 'leaders',
                 'assoc_officer',

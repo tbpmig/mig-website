@@ -384,7 +384,7 @@ class MeetingMinutes(models.Model):
 
     def __unicode__(self):
         """Returns the unicode representation of the object"""
-        return self.meeting_name+' minutes'
+        return self.meeting_name+' minutes for '+unicode(self.semester)
 
     @classmethod
     def get_next_meeting_minutes_display_order(cls):

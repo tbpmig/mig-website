@@ -34,6 +34,9 @@
 <p><b>Project Leaders: </b>
 {% for leader in event.leaders.all %}
 <a href="{% url 'member_resources:profile' leader.uniqname %}">{{ leader }}</a>{% if event.leaders.all|length > 2 and not forloop.last %}, {% endif %}{% if event.leaders.all|length > 1 and forloop.revcounter == 2 %} and {% endif %}{% endfor %}</p>
+{% if event.agenda %}
+<p><strong>Agenda: </strong><a href="{{event.agenda.pdf_file.url}}"> Link</a></p>
+{% endif %}
 {% if show_shifts %}
 {% if event.eventshift_set.all|length < 2 %}
 {% for shift in event.eventshift_set.all|dictsort:"start_time" %}

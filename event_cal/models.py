@@ -123,6 +123,7 @@ class CalendarEvent(models.Model):
     publicize it, what term it is during, whether to restrict to members only,
     and more as detailed by the fairly clearly named fields.
     """
+    agenda = models.ForeignKey('history.MeetingMinutes', null=True, blank=True)
     allow_advance_sign_up = models.BooleanField(default=True)
     allow_overlapping_sign_ups = models.BooleanField(default=False)
     announce_start = models.DateField(

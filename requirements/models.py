@@ -3,6 +3,10 @@ from django.core.validators import RegexValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
 
+from mig_main.models import MemberProfile
+
+def saturate_hours(value):
+    return min(value, 15)
 
 # Create your models here.
 class DistinctionType(models.Model):
@@ -34,6 +38,43 @@ class DistinctionType(models.Model):
                 'PROGRESS_TABLE_UGRADEL_DIST',
                 'PROGRESS_TABLE_GRADEL_DIST'
         ])
+
+    def get_actives_with_status(self, term):
+        query =  Q(distinction_type=self) & Q(term=term.semester_type)
+        requirements = Requirement.objects.filter(query)
+        unflattened_reqs = Requirement.package_requirements(requirements)
+        active_profiles = MemberProfile.get_actives() 
+        actives_with_status = []
+        for profile in active_profiles:
+            packaged_progress = ProgressItem.package_progress(ProgressItem.objects.filter(member=profile,term=term))
+            amount_req = 0;
+            amount_has = 0;
+            has_dist = self.has_distinction_met(packaged_progress,unflattened_reqs)
+            if has_dist:
+                actives_with_status.append(profile)
+        return actives_with_status
+
+    def has_distinction_met(self, progress, sorted_reqs):
+        has_dist = True
+        for event_category,data in sorted_reqs.items():
+            if event_category in progress:
+                if self.name=="Prestigious Active":
+                    amount = progress[event_category]['sat']
+                else:
+                    amount = progress[event_category]['full']
+
+            else:
+                amount = 0
+            req = data["requirements"].filter(distinction_type=self)
+            amount_req = 0
+            if req:
+                amount_req = req[0].amount_required
+            if amount_req>amount:
+                return False
+            has_dist = has_dist and self.has_distinction_met(progress, data["children"])
+            if not has_dist:
+                return False
+        return has_dist
 
 
 class SemesterType(models.Model):
@@ -164,7 +205,7 @@ class EventCategory(models.Model):
         for parentless_category in cls.objects.filter(parent_category=None):
             category_array += parentless_category.flatten_tree(1)
         return category_array
-
+    
     def flatten_tree(category, depth):
         """ Helper function for flatten_category_tree. """
         category_array = [{'category': category, 'depth': depth}]
@@ -190,6 +231,20 @@ class Requirement(models.Model):
                                 default=0.00
     )
     event_category = models.ForeignKey(EventCategory)
+
+    @classmethod
+    def package_requirements(cls, requirements):
+        sorted_reqs = {}
+        return cls.add_child_reqs(sorted_reqs, requirements, None)
+    
+    @classmethod
+    def add_child_reqs(cls, sorted_reqs, requirements, parent):
+        event_categories = EventCategory.objects.filter(parent_category=parent)
+        for event_category in event_categories:
+            reqs = requirements.filter(event_category=event_category)
+            if reqs:
+                sorted_reqs[event_category]={"children":cls.add_child_reqs({},requirements,event_category),"requirements":reqs}
+        return sorted_reqs
 
     def __unicode__(self):
         terms = ', '.join([unicode(term) for term in self.term.all()])
@@ -256,3 +311,26 @@ class ProgressItem(models.Model):
         else:
             cache.delete('PROGRESS_TABLE_GRADEL_ROWS')
         super(ProgressItem, self).delete(*args, **kwargs)
+
+    @classmethod
+    def package_progress(cls, progress_items):
+        packaged_progress={}
+        for progress_item in progress_items:
+            associated_event_type =progress_item.event_type
+            if associated_event_type in packaged_progress.keys():
+                packaged_progress[associated_event_type]['full']+=progress_item.amount_completed
+                packaged_progress[associated_event_type]['sat']+=saturate_hours(progress_item.amount_completed)
+            else:
+                packaged_progress[associated_event_type]={'full':0,'sat':0}
+                packaged_progress[associated_event_type]['full']=progress_item.amount_completed
+                packaged_progress[associated_event_type]['sat']=saturate_hours(progress_item.amount_completed)
+            while associated_event_type.parent_category!=None:
+                associated_event_type = associated_event_type.parent_category
+                if associated_event_type in packaged_progress.keys():
+                    packaged_progress[associated_event_type]['full']+=progress_item.amount_completed
+                    packaged_progress[associated_event_type]['sat']+=saturate_hours(progress_item.amount_completed)
+                else:
+                    packaged_progress[associated_event_type]={'full':0,'sat':0}
+                    packaged_progress[associated_event_type]['full']=progress_item.amount_completed
+                    packaged_progress[associated_event_type]['sat']=saturate_hours(progress_item.amount_completed)
+        return packaged_progress
