@@ -39,7 +39,7 @@ class DistinctionType(models.Model):
                 'PROGRESS_TABLE_GRADEL_DIST'
         ])
 
-    def get_actives_with_status(self, term):
+    def get_actives_with_status(self, term, temp_active_ok=False):
         query =  Q(distinction_type=self) & Q(term=term.semester_type)
         requirements = Requirement.objects.filter(query)
         unflattened_reqs = Requirement.package_requirements(requirements)
@@ -49,12 +49,12 @@ class DistinctionType(models.Model):
             packaged_progress = ProgressItem.package_progress(ProgressItem.objects.filter(member=profile,term=term))
             amount_req = 0;
             amount_has = 0;
-            has_dist = self.has_distinction_met(packaged_progress,unflattened_reqs)
+            has_dist = self.has_distinction_met(packaged_progress, unflattened_reqs, temp_active_ok)
             if has_dist:
                 actives_with_status.append(profile)
         return actives_with_status
 
-    def has_distinction_met(self, progress, sorted_reqs):
+    def has_distinction_met(self, progress, sorted_reqs, temp_active_ok=False):
         has_dist = True
         for event_category,data in sorted_reqs.items():
             if event_category in progress:
@@ -69,9 +69,13 @@ class DistinctionType(models.Model):
             amount_req = 0
             if req:
                 amount_req = req[0].amount_required
-            if amount_req>amount:
+                if temp_active_ok and event_category.name == 'Meeting Attendance':
+                    amount_req-=1
+                if temp_active_ok and event_category.name == 'Voting Meeting Attendance':
+                    amount_req=0
+            if amount_req > amount:
                 return False
-            has_dist = has_dist and self.has_distinction_met(progress, data["children"])
+            has_dist = has_dist and self.has_distinction_met(progress, data["children"], temp_active_ok)
             if not has_dist:
                 return False
         return has_dist
