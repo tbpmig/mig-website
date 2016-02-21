@@ -497,6 +497,7 @@ def event_detail(request, event_id):
         'can_complete': (event.can_complete_event() and Permissions.can_edit_event(event, request.user)),
         'subnav': 'list',
         'show_shifts': True,
+        'needs_social_media': True,
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -1180,7 +1181,7 @@ def list(request):
                                     timezone.get_default_timezone()
                 )
                 query_date = (query_date &
-                              Q(eventshift__end_time__gte=after_datetime))
+                              Q(end_time__gte=after_datetime))
             before_date = form.cleaned_data['before_date']
             if before_date:
                 before_datetime = datetime.combine(
@@ -1188,21 +1189,21 @@ def list(request):
                                             datetime.max.time()
                 )
                 query_date = (query_date &
-                              Q(eventshift__start_time__lte=before_datetime))
+                              Q(start_time__lte=before_datetime))
             on_campus = form.cleaned_data['on_campus']
             if on_campus:
-                query_location = Q(eventshift__on_campus=True)
+                query_location = Q(on_campus=True)
             can_attend = form.cleaned_data['can_attend']
             if can_attend and user_is_member:
                 profile = request.user.userprofile
-                q_can_attend = (Q(eventshift__ugrads_only=profile.is_ugrad) |
-                                Q(eventshift__ugrads_only=False))
-                q_can_attend &= (Q(eventshift__grads_only=profile.is_grad) |
-                                 Q(eventshift__grads_only=False))
-                q_can_attend &= (Q(eventshift__actives_only=profile.is_active) |
-                                 Q(eventshift__actives_only=False))
-                q_can_attend &= (Q(eventshift__electees_only=profile.is_electee) |
-                                 Q(eventshift__electees_only=False))
+                q_can_attend = (Q(ugrads_only=profile.is_ugrad) |
+                                Q(ugrads_only=False))
+                q_can_attend &= (Q(grads_only=profile.is_grad) |
+                                 Q(grads_only=False))
+                q_can_attend &= (Q(actives_only=profile.is_active) |
+                                 Q(actives_only=False))
+                q_can_attend &= (Q(electees_only=profile.is_electee) |
+                                 Q(electees_only=False))
             event_categories = form.cleaned_data['event_reqs']
             for category in event_categories:
                 selected_boxes.append(category.id)
@@ -1210,18 +1211,18 @@ def list(request):
     else:
         now = timezone.localtime(timezone.now())
         starting_after_text = date.today().isoformat()
-        query_date = Q(eventshift__end_time__gte=now)
+        query_date = Q(end_time__gte=now)
         if not Permissions.view_officer_meetings_by_default(request.user):
             query_event_type = ~Q(event_type__name='Officer Meetings')
         initial = {'after_date': starting_after_text}
         form = EventFilterForm(initial=initial)
+    shifts = EventShift.objects.filter(query_date)
+    shifts = shifts.filter(query_location & q_can_attend)
     events = CalendarEvent.objects.filter(
-                    query_members &
-                    query_date &
-                    query_event_type &
-                    query_location &
-                    q_can_attend
+                    query_members
     ).distinct()
+    events = events.filter(eventshift__in=shifts).distinct()
+    events = events.filter(query_event_type)
     template = loader.get_template('event_cal/list.html')
     packed_events = []
     for event in events.order_by('earliest_start'):
@@ -1240,6 +1241,7 @@ def list(request):
         'sorted_event_categories': EventCategory.flatten_category_tree(),
         'selected_boxes': selected_boxes,
         'subnav': 'list',
+        'needs_social_media': True,
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
@@ -2553,6 +2555,7 @@ def event_detail_table(request, event_id):
         'dates': dates,
         'has_profile': True,
         'subnav': 'list',
+        'needs_social_media': True,
     }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))

@@ -72,6 +72,7 @@ def home(request):
         'current_meetings': CalendarEvent.objects.filter(
                                 CalendarEvent.get_current_meeting_query()
                             ),
+        'needs_social_media': True,
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
