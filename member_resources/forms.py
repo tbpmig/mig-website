@@ -44,44 +44,8 @@ ManageProjectLeadersFormSet = modelformset_factory(
 )
 
 
-class AddActiveStatusForm(forms.ModelForm):
-    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=MemberProfile.get_actives())
-    approve= forms.BooleanField(required=False)
-
-    class Meta:
-        model = Distinction
-        exclude= ('term',)
-
-    def save(self,commit=True):
-        approved=self.cleaned_data.pop('approve', False)
-        if approved:
-            return super(AddActiveStatusForm, self).save(commit=commit)
-        else:
-            return None
-class AddElecteeStatusForm(forms.ModelForm):
-    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=MemberProfile.get_electees())
-    approve= forms.BooleanField(required=False)
-
-    class Meta:
-        model = Distinction
-        exclude= ('term',)
-
-    def save(self,commit=True):
-        approved=self.cleaned_data.pop('approve',False)
-        if approved:
-            return super(AddElecteeStatusForm, self).save(commit=commit)
-        else:
-            return None
-
-ManageElecteeDAPAFormSet = modelformset_factory(Distinction,form=AddElecteeStatusForm)
-ManageElecteeDAPAFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Electee').filter(Q(name__contains='DA')|Q(name__contains='PA'))
-
-ElecteeToActiveFormSet = modelformset_factory(Distinction,form=AddElecteeStatusForm)
-ElecteeToActiveFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Electee').exclude(Q(name__contains='DA')|Q(name__contains='PA'))
 
 
-ManageActiveCurrentStatusFormSet = modelformset_factory(Distinction,form=AddActiveStatusForm)
-ManageActiveCurrentStatusFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Active')
 class ExternalServiceForm(forms.ModelForm):
     member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select Member','closeOnSelect':True}),queryset=MemberProfile.get_electees())
 

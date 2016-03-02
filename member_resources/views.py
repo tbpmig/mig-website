@@ -22,7 +22,19 @@ from django.core.urlresolvers import reverse
 from corporate.views import update_resume_zips
 from electees.models import ElecteeGroup, EducationalBackgroundForm,ElecteeInterviewSurvey,SurveyAnswer,SurveyQuestion,SurveyPart
 from event_cal.models import CalendarEvent, MeetingSignInUserData,InterviewShift, EventPhoto
-from history.forms import BaseNEPForm,BaseNEPParticipantForm,OfficerForm,AwardForm,BaseBackgroundCheckForm,MassAddBackgroundCheckForm,MeetingMinutesForm,CommitteeMemberForm
+from history.forms import (
+                    BaseNEPForm,
+                    BaseNEPParticipantForm,
+                    OfficerForm,
+                    AwardForm,
+                    BaseBackgroundCheckForm,
+                    MassAddBackgroundCheckForm,
+                    MeetingMinutesForm,
+                    CommitteeMemberForm,
+                    ManageActiveCurrentStatusFormSet,
+                    ManageElecteeDAPAFormSet,
+                    ElecteeToActiveFormSet,
+)
 from history.models import (
                     Award,
                     Officer,
@@ -35,9 +47,6 @@ from history.models import (
                     CommitteeMember,
 )
 from member_resources.forms import (
-                    ManageActiveCurrentStatusFormSet,
-                    ManageElecteeDAPAFormSet,
-                    ElecteeToActiveFormSet,
                     TBPraiseForm,
                     MassAddForm,
                     ManageProjectLeadersFormSet,
@@ -47,7 +56,7 @@ from member_resources.forms import (
 from member_resources.models import ActiveList, GradElecteeList, UndergradElecteeList
 from member_resources.quorum import get_quorum_list,get_quorum_list_elections
 from migweb.context_processors import profile_setup
-from mig_main.demographics import get_members_for_COE
+from mig_main.demographics import get_members_for_COE, get_members_for_email
 from mig_main import messages
 from mig_main.forms import (
                 MemberProfileForm,
@@ -146,31 +155,18 @@ def get_electees_with_status(distinction):
     query =  Q(distinction_type=distinction)& Q(term=AcademicTerm.get_current_term().semester_type)
     dist_standing = distinction.standing_type.all()
     requirements = Requirement.objects.filter(query)
-    unflattened_reqs = package_requirements(requirements)
+    unflattened_reqs = Requirement.package_requirements(requirements)
     electee_profiles = MemberProfile.get_electees().filter(standing=dist_standing) 
     electees_with_status = []
     for profile in electee_profiles:
-        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
+        packaged_progress = ProgressItem.package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
         amount_req = 0;
         amount_has = 0;
-        has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
+        has_dist = distinction.has_distinction_met(packaged_progress, unflattened_reqs)
         if has_dist:
             electees_with_status.append(profile)
     return electees_with_status
-def get_actives_with_status(distinction,term):
-    query =  Q(distinction_type=distinction)& Q(term=term.semester_type)
-    requirements = Requirement.objects.filter(query)
-    unflattened_reqs = package_requirements(requirements)
-    active_profiles = MemberProfile.get_actives() 
-    actives_with_status = []
-    for profile in active_profiles:
-        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=term))
-        amount_req = 0;
-        amount_has = 0;
-        has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
-        if has_dist:
-            actives_with_status.append(profile)
-    return actives_with_status
+
 def get_electees_who_completed_reqs():
     ugrad_distinction =DistinctionType.objects.get(status_type__name="Electee",standing_type__name="Undergraduate",name='Electee (undergrad)') 
     grad_distinction =DistinctionType.objects.get(status_type__name="Electee",standing_type__name="Graduate",name='Electee (grad)') 
@@ -179,19 +175,19 @@ def get_electees_who_completed_reqs():
     
     ugrad_reqs = Requirement.objects.filter(ugrad_query)
     grad_reqs = Requirement.objects.filter(grad_query)
-    unflattened_ugrad_reqs = package_requirements(ugrad_reqs)
-    unflattened_grad_reqs = package_requirements(grad_reqs)
+    unflattened_ugrad_reqs = Requirement.package_requirements(ugrad_reqs)
+    unflattened_grad_reqs = Requirement.package_requirements(grad_reqs)
     ugrad_profiles = MemberProfile.get_electees().filter(standing__name='Undergraduate').order_by('last_name')
     grad_profiles = MemberProfile.get_electees().filter(standing__name='Graduate').order_by('last_name')
     electees_with_status = []
     for profile in ugrad_profiles:
-        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
-        has_dist = has_distinction_met(packaged_progress,ugrad_distinction,unflattened_ugrad_reqs)
+        packaged_progress = ProgressItem.package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
+        has_dist = ugrad_distinction.has_distinction_met(packaged_progress, unflattened_ugrad_reqs)
         if has_dist:
             electees_with_status.append(profile)
     for profile in grad_profiles:
-        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
-        has_dist = has_distinction_met(packaged_progress,grad_distinction,unflattened_grad_reqs)
+        packaged_progress = ProgressItem.package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
+        has_dist = grad_distinction.has_distinction_met(packaged_progress, unflattened_grad_reqs)
         if has_dist:
             electees_with_status.append(profile)
     return electees_with_status
@@ -207,15 +203,8 @@ def get_common_context(request):
     })
     return context_dict
 
-def saturate_hours(value):
-    return min(value,15)
-def add_child_reqs(sorted_reqs,requirements,parent):
-    event_categories = EventCategory.objects.filter(parent_category=parent)
-    for event_category in event_categories:
-        reqs = requirements.filter(event_category=event_category)
-        if reqs:
-            sorted_reqs[event_category]={"children":add_child_reqs({},requirements,event_category),"requirements":reqs}
-    return sorted_reqs
+
+
 
 def get_events_signed_up_hours(uniqname):
     events_attending = CalendarEvent.objects.filter(eventshift__attendees__uniqname=uniqname).filter(completed=False).distinct()
@@ -242,30 +231,8 @@ def get_events_signed_up_hours(uniqname):
         else:
             category_hours[event.event_type]+=hours
     return category_hours
-def package_requirements(requirements):
-    sorted_reqs={}
-    return add_child_reqs(sorted_reqs,requirements,None)
-def package_progress(progress_items):
-    packaged_progress={}
-    for progress_item in progress_items:
-        associated_event_type =progress_item.event_type
-        if associated_event_type in packaged_progress.keys():
-            packaged_progress[associated_event_type]['full']+=progress_item.amount_completed
-            packaged_progress[associated_event_type]['sat']+=saturate_hours(progress_item.amount_completed)
-        else:
-            packaged_progress[associated_event_type]={'full':0,'sat':0}
-            packaged_progress[associated_event_type]['full']=progress_item.amount_completed
-            packaged_progress[associated_event_type]['sat']=saturate_hours(progress_item.amount_completed)
-        while associated_event_type.parent_category!=None:
-            associated_event_type = associated_event_type.parent_category
-            if associated_event_type in packaged_progress.keys():
-                packaged_progress[associated_event_type]['full']+=progress_item.amount_completed
-                packaged_progress[associated_event_type]['sat']+=saturate_hours(progress_item.amount_completed)
-            else:
-                packaged_progress[associated_event_type]={'full':0,'sat':0}
-                packaged_progress[associated_event_type]['full']=progress_item.amount_completed
-                packaged_progress[associated_event_type]['sat']=saturate_hours(progress_item.amount_completed)
-    return packaged_progress
+
+
 
 def package_future_progress(packaged_progress,category_hours):
     ##TODO fix saturation
@@ -320,28 +287,6 @@ def sorted_reqs2html_recursive(sorted_reqs,progress_items,distinctions,padding):
         html_string+='</tr>\n'
         html_string+=sorted_reqs2html_recursive(data["children"],progress_items,distinctions,padding+2)
     return html_string
-
-def has_distinction_met(progress,distinction,sorted_reqs):
-    has_dist = True
-    for event_category,data in sorted_reqs.items():
-        if event_category in progress:
-            if distinction.name=="Prestigious Active":
-                amount = progress[event_category]['sat']
-            else:
-                amount = progress[event_category]['full']
-
-        else:
-            amount = 0
-        req = data["requirements"].filter(distinction_type=distinction)
-        amount_req = 0
-        if req:
-            amount_req = req[0].amount_required
-        if amount_req>amount:
-            return False
-        has_dist = has_dist and has_distinction_met(progress,distinction,data["children"])
-        if not has_dist:
-            return False
-    return has_dist
 
 def flatten_reqs(sorted_reqs):
     flattened_reqs = []
@@ -709,7 +654,7 @@ def view_progress(request,uniqname):
         query = query | Q(distinction_type=distinction)
     query = query & Q(term=AcademicTerm.get_current_term().semester_type)
     requirements = Requirement.objects.filter(query)
-    sorted_reqs = package_requirements(requirements)
+    sorted_reqs = Requirement.package_requirements(requirements)
     progress = ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term())
     is_own_progress = False
     if request.user.username == uniqname:
@@ -745,7 +690,7 @@ def view_progress(request,uniqname):
             event_summary['end_date']=end_time
         events_signed_up_for.append(event_summary)
     template = loader.get_template('member_resources/view_progress.html')
-    packaged_current_progress=package_progress(progress)
+    packaged_current_progress=ProgressItem.package_progress(progress)
     packaged_future_progress=package_future_progress(packaged_current_progress,category_hours)
     if is_own_progress:
         subnav='view_own_progress'
@@ -753,7 +698,7 @@ def view_progress(request,uniqname):
         subnav='view_others_progress'
     context_dict = {
         'profile':profile,
-        'reqs_html':sorted_reqs2html(sorted_reqs,package_progress(progress),distinctions),
+        'reqs_html':sorted_reqs2html(sorted_reqs,ProgressItem.package_progress(progress),distinctions),
         'reqs_html_future':sorted_reqs2html(sorted_reqs,packaged_future_progress,distinctions),
         'is_own_progress':is_own_progress,
         'progress_items':progress,
@@ -798,12 +743,12 @@ def download_active_progress(request):
         query = query | Q(distinction_type=distinction)
     query = query & Q(term=AcademicTerm.get_current_term().semester_type)
     requirements = Requirement.objects.filter(query)
-    unflattened_reqs = package_requirements(requirements)
+    unflattened_reqs = Requirement.package_requirements(requirements)
     active_reqs = flatten_reqs(unflattened_reqs)
     progress_rows = []
     active_profiles = Permissions.profiles_you_can_view(request.user).filter(status__name="Active")
     for profile in active_profiles:
-        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
+        packaged_progress = ProgressItem.package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
         row ={'member':profile,'progress':flatten_progress(packaged_progress,active_reqs)}
         dist_progress = []
         include_in_sheet = False
@@ -825,7 +770,7 @@ def download_active_progress(request):
                 else:
                     amount_has = amount_has + amount_has_temp
                 amount_req=amount_req+amount_req_temp
-            has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
+            has_dist = distinction.has_distinction_met(packaged_progress,unflattened_reqs)
             close_dist = (amount_has/amount_req)>.75
             dist_progress.append(unicode(has_dist))
             dist_progress.append(unicode(close_dist))
@@ -865,12 +810,12 @@ def download_grad_el_progress(request):
         query = query | Q(distinction_type=distinction)
     query = query & Q(term=AcademicTerm.get_current_term().semester_type)
     requirements = Requirement.objects.filter(query)
-    unflattened_reqs = package_requirements(requirements)
+    unflattened_reqs = Requirement.package_requirements(requirements)
     grad_electees_reqs = flatten_reqs(unflattened_reqs)
     progress_rows_grad_el = []
     grad_el_profiles = Permissions.profiles_you_can_view(request.user).filter(status__name="Electee").filter(standing__name="Graduate")
     for profile in grad_el_profiles:
-        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
+        packaged_progress = ProgressItem.package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
         row ={'member':profile,'progress':flatten_progress(packaged_progress,grad_electees_reqs)}
         dist_progress = []
         for distinction in distinctions_grad_el.order_by('name'):
@@ -891,7 +836,7 @@ def download_grad_el_progress(request):
                 else:
                     amount_has = amount_has + amount_has_temp
                 amount_req=amount_req+amount_req_temp
-            has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
+            has_dist = distinction.has_distinction_met(packaged_progress,unflattened_reqs)
             close_dist = (amount_has/amount_req)>.75
             dist_progress.append(unicode(has_dist))
             dist_progress.append(unicode(close_dist))
@@ -927,12 +872,12 @@ def download_ugrad_el_progress(request):
         query = query | Q(distinction_type=distinction)
     query = query & Q(term=AcademicTerm.get_current_term().semester_type)
     requirements = Requirement.objects.filter(query)
-    unflattened_reqs = package_requirements(requirements)
+    unflattened_reqs = Requirement.package_requirements(requirements)
     ugrad_electees_reqs = flatten_reqs(unflattened_reqs)
     progress_rows_ugrad_el = []
     ugrad_el_profiles = Permissions.profiles_you_can_view(request.user).filter(status__name="Electee").filter(standing__name="Undergraduate")
     for profile in ugrad_el_profiles:
-        packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
+        packaged_progress = ProgressItem.package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
         row ={'member':profile,'progress':flatten_progress(packaged_progress,ugrad_electees_reqs)}
         dist_progress = []
         for distinction in distinctions_ugrad_el.order_by('name'):
@@ -953,7 +898,7 @@ def download_ugrad_el_progress(request):
                 else:
                     amount_has = amount_has + amount_has_temp
                 amount_req=amount_req+amount_req_temp
-            has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
+            has_dist = distinction.has_distinction_met(packaged_progress, unflattened_reqs)
             close_dist = (amount_has/amount_req)>.75
             dist_progress.append(unicode(has_dist))
             dist_progress.append(unicode(close_dist))
@@ -989,12 +934,12 @@ def assemble_table(user,keys,status_name,standing_names):
             query = query | Q(distinction_type=distinction)
         query = query & Q(term=AcademicTerm.get_current_term().semester_type)
         requirements = Requirement.objects.filter(query)
-        unflattened_reqs = package_requirements(requirements)
+        unflattened_reqs = Requirement.package_requirements(requirements)
         reqs = flatten_reqs(unflattened_reqs)
         progress_rows = []
         profiles = Permissions.profiles_you_can_view(user).filter(status__name=status_name).filter(standing__name__in=standing_names)
         for profile in profiles:
-            packaged_progress = package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
+            packaged_progress = ProgressItem.package_progress(ProgressItem.objects.filter(member=profile,term=AcademicTerm.get_current_term()))
             category_hours = get_events_signed_up_hours(profile.uniqname)
             packaged_future_progress=package_future_progress(packaged_progress,category_hours)
             row ={'member':profile,'progress':flatten_progress(packaged_progress,reqs),'future_progress':flatten_progress(packaged_future_progress,reqs)}
@@ -1022,7 +967,7 @@ def assemble_table(user,keys,status_name,standing_names):
                     else:
                         amount_has = amount_has + amount_has_temp
                     amount_req=amount_req+amount_req_temp
-                has_dist = has_distinction_met(packaged_progress,distinction,unflattened_reqs)
+                has_dist = distinction.has_distinction_met(packaged_progress, unflattened_reqs)
                 close_dist = (Decimal(1.0)*amount_has)/amount_req>.75
                 dist_progress.append(has_dist)
                 dist_progress.append(close_dist)
@@ -1484,37 +1429,18 @@ def add_active_statuses_for_term(request,term_id):
         request.session['error_message']='You are not authorized to manage active members.'
         return redirect('member_resources:index')
     term = get_object_or_404(AcademicTerm,id=term_id)
+    formset = ManageActiveCurrentStatusFormSet(
+                            request.POST or None,
+                            prefix='current_status',
+                            term=term
+    )
     if request.method =='POST':
-        formset = ManageActiveCurrentStatusFormSet(request.POST,prefix='current_status')
         if formset.is_valid():
-            formset.save(commit=False)
-            for obj in formset.deleted_objects:
-                obj.delete()
-            for instance in formset.new_objects:
-                if instance:
-                    instance.term = term
-                    if not Distinction.objects.filter(member=instance.member,distinction_type=instance.distinction_type,term=term).exists():
-                        instance.save()
-            request.session['success_message']='Active Statuses Updated successfully'
+            formset.save(term=term)
+            request.session['success_message'] = 'Active Statuses Updated'
             return redirect('member_resources:view_misc_reqs')
         else:
-            request.session['error_message']=INVALID_FORM_MESSAGE
-    else:
-        initial=[]
-        for distinction in DistinctionType.objects.filter(status_type__name="Active"):
-            actives_already_received_distinction = MemberProfile.objects.filter(distinction__distinction_type=distinction,distinction__term=term)
-            actives = get_actives_with_status(distinction,term)
-            for active in actives:
-                if active in actives_already_received_distinction:
-                    continue
-                if distinction.name=='Active':
-                    gift='N/A'
-                else:
-                    gift='Not specified'
-                initial.append({'member':active,'distinction_type':distinction,'gift':gift,'approve':False})
-        ManageActiveCurrentStatusFormSet.extra=len(initial)+1
-        #formset = ManageActiveCurrentStatusFormSet(queryset=Distinction.objects.none(),prefix='current_status')
-        formset = ManageActiveCurrentStatusFormSet(queryset=Distinction.objects.none(),initial=initial,prefix='current_status')
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
     template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset':formset,
@@ -2655,11 +2581,20 @@ def mass_add_background_checks(request):
     context_dict.update(get_common_context(request))
     context = RequestContext(request,context_dict )
     return HttpResponse(template.render(context))
+
+
 def download_member_data(request):
     if not Permissions.can_view_demographics(request.user):
         request.session['error_message']='You are not authorized to view member data'
         return get_previous_page(request,alternate='member_resources:index')
     return get_members_for_COE()
+
+
+def download_member_data_email(request):
+    if not Permissions.can_manage_active_progress(request.user):
+        request.session['error_message']='You are not authorized to view member data'
+        return get_previous_page(request,alternate='member_resources:index')
+    return get_members_for_email()
     
 def download_active_status(request):
     if not Permissions.can_view_demographics(request.user):

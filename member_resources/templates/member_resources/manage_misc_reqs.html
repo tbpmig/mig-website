@@ -110,12 +110,17 @@
         </div>
         {% endif %}
         </ul>
-        {% if can_view_demographics %}
+        {% if can_view_demographics or can_manage_actives %}
         <h3>Member Demographics</h3>
         <ul>
+        {% if can_view_demographics %}
              <li><a href="{% url 'member_resources:download_member_data' %}">Download COE Member Data</a></li>
              <li><a href="{% url 'member_resources:download_active_status' %}">Download Active Status Data</a></li>
              <li><a href="{% url 'member_resources:download_elections_voters' %}">Download Active/Electee Status for Elections</a></li>
+        {% endif %}
+        {% if can_manage_actives %}
+            <li><a href="{% url 'member_resources:download_member_data_email' %}">Download Member Data for Email Lists</a></li>
+        {% endif %}
         </ul>
         {% endif %}
     </div>

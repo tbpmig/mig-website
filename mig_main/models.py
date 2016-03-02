@@ -535,6 +535,10 @@ class UserProfile(models.Model):
             return False
         return self.memberprofile.standing.name == 'Graduate'
 
+    def is_alumni(self):
+        if not self.is_member():
+            return False
+        return self.memberprofile.standing.name == 'Alumni'
 
 class MemberProfile(UserProfile):
     """ A profile for a TBP member.

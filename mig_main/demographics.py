@@ -258,3 +258,50 @@ def get_members_for_COE():
                 ', '.join([major.name for major in member.major.all()])
         ])
     return response
+
+def get_members_for_email():
+    members = MemberProfile.objects.all().order_by('last_name','first_name','uniqname')
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="MemberData_forEmail.csv"'
+
+    writer = UnicodeWriter(response)
+    writer.writerow([
+                'First Name',
+                'Last Name',
+                'uniqname',
+                'Status',
+                'Standing',
+                'Email Preference',
+                'Graduation Date',
+                'Most Recent Event'
+    ])
+    for member in members:
+        current_term = AcademicTerm.get_current_term()
+        progress_terms = AcademicTerm.objects.filter(progressitem__in=member.progressitem_set.all()).distinct()
+        events = CalendarEvent.objects.filter(eventshift__in=member.event_attendee.all()).distinct()
+        event_terms = AcademicTerm.objects.filter(calendarevent__in=events).distinct()
+        if progress_terms.exists():
+            if event_terms.exists():
+                most_recent_term = max(max(progress_terms),max(event_terms)).get_abbreviation()
+            else:
+                most_recent_term = max(progress_terms).get_abbreviation()
+        else:
+            if event_terms.exists():
+                most_recent_term = max(event_terms).get_abbreviation()
+            else:
+                most_recent_term = 'None'
+        stopped_electing = member.is_electee() and not member.still_electing
+        mail_pref = member.get_alum_mail_freq_display()
+        if not member.is_alumni():
+            mail_pref = 'N/A'
+        writer.writerow([
+                member.first_name,
+                member.last_name,
+                member.uniqname,
+                unicode(member.status) if not stopped_electing else unicode(member.status)+' (stopped)',
+                unicode(member.standing),
+                mail_pref,
+                unicode(member.expect_grad_date),
+                most_recent_term,
+        ])
+    return response

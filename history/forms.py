@@ -1,6 +1,7 @@
 from django import forms
+from django.forms import ModelForm, BaseModelFormSet
 from django.forms.models import modelformset_factory
-
+from django.db.models import Q
 from django_select2 import (
             ModelSelect2Field,
             ModelSelect2MultipleField,
@@ -19,6 +20,7 @@ from history.models import (
             ProjectReportHeader,
             Publication,
             WebsiteArticle,
+            Distinction,
 )
 from event_cal.models import EventPhoto
 from mig_main.models import (
@@ -27,7 +29,7 @@ from mig_main.models import (
             OfficerPosition,
             UserProfile,
 )
-
+from requirements.models import DistinctionType
 
 class AwardForm(forms.ModelForm):
     """ Form for giving out an award."""
@@ -373,3 +375,97 @@ class MassAddBackgroundCheckForm(forms.Form):
             return no_profiles
         else:
             return None
+
+
+class AddStatusForm(forms.ModelForm):
+    member = ModelSelect2Field(
+                    widget=Select2Widget(
+                            select2_options={
+                                    'width': 'element',
+                                    'placeholder': 'Select Member',
+                                    'closeOnSelect': True
+                            }
+                    ),
+                    queryset=MemberProfile.get_actives()
+    )
+    approve = forms.BooleanField(required=False)
+
+    class Meta:
+        model = Distinction
+        exclude= ('term',)
+
+    def save(self, commit=True):
+        approved = self.cleaned_data.pop('approve', False)
+        if approved:
+            return super(AddStatusForm, self).save(commit=commit)
+        else:
+            print 'unapproved'
+            return None
+
+
+class BaseAddStatusFormSet(BaseModelFormSet):
+    def __init__(self, *args, **kwargs):
+        super(BaseAddStatusFormSet,
+              self).__init__(*args, **kwargs)
+        self.queryset = Distinction.objects.none()
+    
+    def save(self, term, commit=True):
+        instances = super(BaseAddStatusFormSet, self).save(commit=False)
+        if commit:
+            for obj in self.deleted_objects:
+                obj.delete()
+            for instance in self.new_objects:
+                if instance:
+                    instance.term = term
+                    if not Distinction.objects.filter(
+                                        member=instance.member,
+                                        distinction_type=instance.distinction_type,
+                                        term=term).exists():
+                        instance.save()
+        return instances
+
+
+class BaseAddActiveStatusFormSet(BaseAddStatusFormSet):
+    def __init__(self, *args, **kwargs):
+        term = kwargs.pop('term', AcademicTerm.get_current_term())
+        initial=[]
+        for distinction in DistinctionType.objects.filter(status_type__name='Active'):
+            actives_already_received_distinction = MemberProfile.objects.filter(
+                                distinction__distinction_type=distinction,
+                                distinction__term=term
+            )
+            actives = distinction.get_actives_with_status(term)
+            for active in actives:
+                if active in actives_already_received_distinction:
+                    continue
+                if distinction.name == 'Active':
+                    gift = 'N/A'
+                else:
+                    gift = 'Not specified'
+                initial.append(
+                    {
+                        'member': active,
+                        'distinction_type': distinction,
+                        'gift': gift,
+                        'approve': False
+                    }
+                )
+        kwargs['initial'] = initial
+        super(BaseAddActiveStatusFormSet,
+              self).__init__(*args, **kwargs)
+        self.extra = len(initial)+1
+        self.form.base_fields['distinction_type'].queryset =\
+                DistinctionType.objects.filter(status_type__name='Active')
+
+ManageElecteeDAPAFormSet = modelformset_factory(Distinction,form=AddStatusForm)
+ManageElecteeDAPAFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Electee').filter(Q(name__contains='DA')|Q(name__contains='PA'))
+
+ElecteeToActiveFormSet = modelformset_factory(Distinction,form=AddStatusForm)
+ElecteeToActiveFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Electee').exclude(Q(name__contains='DA')|Q(name__contains='PA'))
+
+
+ManageActiveCurrentStatusFormSet = modelformset_factory(
+                                                Distinction,
+                                                form=AddStatusForm,
+                                                formset=BaseAddActiveStatusFormSet
+)
