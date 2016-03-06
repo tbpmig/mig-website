@@ -294,7 +294,7 @@ class ManageUgradPaperWorkForm(Form):
                             profile,
                             secondary_amount,
                             term,
-                            seconary_type,
+                            secondary_type,
                             secondary_type + ' Completed',
                 )
                     
