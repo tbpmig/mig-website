@@ -272,6 +272,7 @@ def get_members_for_email():
                 'Status',
                 'Standing',
                 'Email Preference',
+                'Corporate Email Preference',
                 'Graduation Date',
                 'Most Recent Event'
     ])
@@ -301,6 +302,7 @@ def get_members_for_email():
                 unicode(member.status) if not stopped_electing else unicode(member.status)+' (stopped)',
                 unicode(member.standing),
                 mail_pref,
+                'TRUE' if member.jobs_email else 'FALSE',
                 unicode(member.expect_grad_date),
                 most_recent_term,
         ])
