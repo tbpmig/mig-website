@@ -33,7 +33,7 @@ def get_active_members_who_came_to_something(term):
     )
     return members.filter(progressitem__in=progress_items).distinct()
     
-def get_active_members_only_if_they_come(term):
+def get_active_members_only_if_they_come(term, is_last_voting_meeting=False):
     members = MemberProfile.get_actives()
     terms = [term, term.get_previous_full_term()]
     officer_terms = Officer.objects.filter(term__in=[term])
@@ -54,7 +54,8 @@ def get_active_members_only_if_they_come(term):
     query = (query_all_active & query_actives_absent_now) 
     set1=set(members.filter(query).distinct()[:])
     active_dist = DistinctionType.objects.get(name='Active')
-    set2=set(members.filter(query_inactives_need_meeting).distinct()[:]).intersection(set(active_dist.get_actives_with_status(term, temp_active_ok=True)))
+    temp_active_ok = not is_last_voting_meeting
+    set2=set(members.filter(query_inactives_need_meeting).distinct()[:]).intersection(set(active_dist.get_actives_with_status(term, temp_active_ok=temp_active_ok)))
     
     return list(set1.union(set2))
 

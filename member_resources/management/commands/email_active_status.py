@@ -1,4 +1,6 @@
 from time import sleep
+from optparse import make_option
+
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
 from member_resources.quorum import (
@@ -12,6 +14,13 @@ from mig_main.models import MemberProfile, AcademicTerm
 
 
 class Command(BaseCommand):
+    option_list = BaseCommand.option_list + (
+        make_option('--elections',
+                action='store_true',
+                dest='is_elections',
+                default=False,
+                help='Specify that the email is for the elections meeting.'),
+    )
 
     def handle(self, *args, **options):
         term = AcademicTerm.get_current_term()
@@ -19,7 +28,7 @@ class Command(BaseCommand):
         active_actives = get_active_members(term)
         members_who_graduated = get_members_who_graduated()
         actual_actives = get_active_members_who_came_to_something(term)
-        potential_actives = get_active_members_only_if_they_come(term)
+        potential_actives = get_active_members_only_if_they_come(term,is_last_voting_meeting=options['is_elections'])
         body_template = r'''Hi %(member)s,
 This is a friendly reminder that we have a critical voting meeting tomorrow
 (Tuesday) at 6:30pm in 1013 Dow and we need to have a quorum of active members
