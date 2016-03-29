@@ -97,7 +97,7 @@ def get_quorum_list_elections():
     active_actives = get_active_members(term)
     members_who_graduated = get_members_who_graduated()
     actual_actives = get_active_members_who_came_to_something(term)
-    potential_actives = get_active_members_only_if_they_come(term)
+    potential_actives = get_active_members_only_if_they_come(term, is_last_voting_meeting=True)
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition']='attachment; filename="MemberStatus.csv"'
 
