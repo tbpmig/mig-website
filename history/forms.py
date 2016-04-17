@@ -459,10 +459,11 @@ class BaseAddActiveStatusFormSet(BaseAddStatusFormSet):
 
 ManageElecteeDAPAFormSet = modelformset_factory(Distinction,form=AddStatusForm)
 ManageElecteeDAPAFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Electee').filter(Q(name__contains='DA')|Q(name__contains='PA'))
+ManageElecteeDAPAFormSet.form.base_fields['member'].queryset = MemberProfile.get_electees()
 
 ElecteeToActiveFormSet = modelformset_factory(Distinction,form=AddStatusForm)
 ElecteeToActiveFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Electee').exclude(Q(name__contains='DA')|Q(name__contains='PA'))
-
+ElecteeToActiveFormSet.form.base_fields['member'].queryset = MemberProfile.get_electees()
 
 ManageActiveCurrentStatusFormSet = modelformset_factory(
                                                 Distinction,
