@@ -381,16 +381,19 @@ def process_project_reports(request, prh_id, pr_id):
                         request.POST or None,
                         initial={'description': pr.get_descriptions()},
     )
+    for index, item in enumerate(reports):
+        # This needs to be outside the if statement because next_index is
+        # is needed by the help text
+        if item == pr:
+            next_index = index+1
+            break
     if request.method == 'POST':
         if form.is_valid():
             request.session['success_message'] = 'Descriptions updated'
             pr.set_description(form.cleaned_data['description'])
             # determine which report would be the next one to process
             # (for redirection sake)
-            for index, item in enumerate(reports):
-                if item == pr:
-                    next_index = index+1
-                    break
+
             if next_index < reports.count():
                 pr_header.last_processed = reports[next_index].id
                 pr_header.save()
