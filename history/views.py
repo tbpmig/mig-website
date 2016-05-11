@@ -377,16 +377,17 @@ def process_project_reports(request, prh_id, pr_id):
     else:
         # process the current report
         pr = get_object_or_404(ProjectReport, id=pr_id)
+        for index, item in enumerate(reports):
+            # Do not move this; next_index is
+            # needed by the help text
+            if item == pr:
+                next_index = index+1
+                break
     form = ProjectDescriptionForm(
                         request.POST or None,
                         initial={'description': pr.get_descriptions()},
     )
-    for index, item in enumerate(reports):
-        # This needs to be outside the if statement because next_index is
-        # is needed by the help text
-        if item == pr:
-            next_index = index+1
-            break
+    
     if request.method == 'POST':
         if form.is_valid():
             request.session['success_message'] = 'Descriptions updated'
