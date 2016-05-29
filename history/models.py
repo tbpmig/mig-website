@@ -67,7 +67,7 @@ RAW_TEX_STRING = r'''
 \end{enumerate}
 '''
 
-
+# %\includegraphics[width=2in]{\@sigFile}\\
 RAW_HEADER_STRING = r'''
 \documentclass{/srv/www/migweb/static/tex/ProjectReport}
 \usepackage{placeins}
@@ -89,7 +89,6 @@ RAW_HEADER_STRING = r'''
 \thispagestyle{empty}
 %(exec_summary)s\\
 Sincerely,\\
-%\includegraphics[width=2in]{\@sigFile}\\
 %(preparer_name)s\\
 MI-$\Gamma$ %(preparer_title)s~%(years)s
 \newoddside
