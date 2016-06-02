@@ -846,6 +846,7 @@ class ProjectReport(models.Model):
                 if item.related_event.is_fixed_progress():
                     duration = item.related_event.get_max_duration()
                     scale = Decimal(duration.total_seconds()/3600.)
+                    duration = scale
                 else:
                     scale = Decimal(1.0)
                 if item.member in attendees.keys():
@@ -904,7 +905,7 @@ class ProjectReport(models.Model):
             attendee_string += r'\end{longtable}'
             num_part_raw = r'''Active Members:~%d\hspace{.5in}Electees:~%d'''
             num_part_string = num_part_raw % (active_count, electee_count)
-            duration_s = '%d' % (duration)
+            duration_s = '%.1f' % (duration)
         else:
             neps = self.noneventproject_set.all()
             if neps.count() < 1:
