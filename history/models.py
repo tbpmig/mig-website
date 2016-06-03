@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import subprocess
 from datetime import date, timedelta
 from decimal import Decimal
@@ -731,7 +732,11 @@ class ProjectReport(models.Model):
         Writes the project report to a .tex file.
         """
         f = open('/tmp/project_report%d.tex' % (self.id), 'w')
-        f.write(self.print_to_tex().encode('utf8'))
+        tex_code = self.print_to_tex()
+        if tex_code == 0 or tex_code == -1:
+            sys.stderr.write('Error printing project report: %d (Error %d)'% (self.id, tex_code))
+            return -1
+        f.write(tex_code.encode('utf8'))
         f.close()
 
     def fix_quotes(self, string):
