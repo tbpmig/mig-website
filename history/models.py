@@ -721,11 +721,14 @@ class ProjectReport(models.Model):
         This is done by looking at the event or the NonEventProject
         information and the associated officer thereof.
         """
-        has_events = self.calendarevent_set.count() > 0
+        has_events = self.calendarevent_set.exists()
+        has_nep = self.noneventproject_set.exists()
         if has_events:
             return self.calendarevent_set.all()[0].assoc_officer
-        else:
+        elif has_nep:
             return self.noneventproject_set.all()[0].assoc_officer
+        else:
+            return None
 
     def write_tex_file(self):
         """
@@ -1143,6 +1146,10 @@ class ProjectReportHeader(models.Model):
                                                 'planning_start_date'
         )
         for project in projects.distinct():
+            has_events = project.calendarevent_set.exists()
+            has_nep = project.noneventproject_set.exists()
+            if not has_events or not has_nep:
+                continue
             if not previous_category == project.get_target_audience_display():
                 previous_category = project.get_target_audience_display()
                 output_string += r'''\part{%s}
