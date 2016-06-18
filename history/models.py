@@ -1148,7 +1148,7 @@ class ProjectReportHeader(models.Model):
         for project in projects.distinct():
             has_events = project.calendarevent_set.exists()
             has_nep = project.noneventproject_set.exists()
-            if not has_events or not has_nep:
+            if not has_events and not has_nep:
                 continue
             if not previous_category == project.get_target_audience_display():
                 previous_category = project.get_target_audience_display()
