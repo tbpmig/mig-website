@@ -1196,7 +1196,7 @@ def manage_website(request):
 
     template = loader.get_template('member_resources/manage_website.html')
     term = AcademicTerm.get_current_term()
-    next_term = get_next_term(term)
+    next_term = term.get_next_term()
     today = date.today() 
     should_warn = True
     HomePageSlideShowFormSet = modelformset_factory(SlideShowPhoto,can_delete=True)
@@ -1242,7 +1242,7 @@ def advance_term(request):
     if current_terms.count()!=1:
         raise IntegrityError('There must be one and only one current term, inspect the database as there are %d current terms'%(current_terms.count()))
     term = AcademicTerm.get_current_term()
-    next_term = get_next_term(term)
+    next_term = term.get_next_term()
     c=current_terms[0]
     c.current_term = next_term
     c.save()
