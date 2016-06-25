@@ -77,12 +77,21 @@ def get_project_report_term():
     this_winter = Q(year=today.year, semester_type__name='Winter')
     this_summer = Q(year=today.year, semester_type__name='Summer')
     last_summer = Q(year=today.year-1, semester_type__name='Summer')
-    if today.month >= 6:
+    if today.month >= 9:
         # the project reports were already turned in, only care about the fall
         return AcademicTerm.objects.filter(
                                     this_fall |
                                     next_winter |
                                     this_summer)
+    elif today.month >=5:
+        # the project reports might be turned in. Show all
+        return AcademicTerm.objects.filter(
+                                    this_fall |
+                                    next_winter |
+                                    this_summer |
+                                    this_winter |
+                                    last_summer |
+                                    last_fall)
     else:  # report not turned in yet
         return AcademicTerm.objects.filter(
                                     this_winter |
