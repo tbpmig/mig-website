@@ -1,8 +1,5 @@
 from django import forms
-from django_select2 import (
-        ModelSelect2Field,
-        ModelSelect2MultipleField,
-        Select2MultipleWidget,
+from django_select2.forms import (
         Select2Widget
 )
 
@@ -15,24 +12,12 @@ class NominationForm(forms.ModelForm):
     Overrides the default behavior to make it so that you can only nominate
     someone to a position that is part of the current election.
     """
-    nominee = ModelSelect2Field(
-                    widget=Select2Widget(
-                            select2_options={
-                                'width': 'element',
-                                'placeholder': 'Select Nominee',
-                                'closeOnSelect': True
-                            }
-                    ),
+    nominee = forms.ModelChoiceField(
+                    widget=Select2Widget(),
                     queryset=MemberProfile.get_members()
     )
-    position = ModelSelect2Field(
-                    widget=Select2Widget(
-                            select2_options={
-                                'width': 'element',
-                                'placeholder': 'Select Position',
-                                'closeOnSelect': True
-                            }
-                    ),
+    position = forms.ModelChoiceField(
+                    widget=Select2Widget(),
                     queryset=OfficerPosition.get_current()
     )
 

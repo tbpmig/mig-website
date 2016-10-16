@@ -54,8 +54,7 @@ def index(request):
         return redirect('elections:list', current_elections[0].id)
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def list(request, election_id):
@@ -74,9 +73,8 @@ def list(request, election_id):
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('elections/list.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def positions(request, election_id):
@@ -89,9 +87,8 @@ def positions(request, election_id):
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('elections/positions.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def my_nominations(request, election_id):
@@ -113,9 +110,8 @@ def my_nominations(request, election_id):
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('elections/my_nominations.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 @login_required
@@ -191,9 +187,8 @@ def nominate(request, election_id):
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('generic_form.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def accept_or_decline_nomination(request, nomination_id):

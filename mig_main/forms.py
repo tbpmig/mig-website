@@ -4,10 +4,8 @@ from django.forms import ModelForm, BaseModelFormSet
 from django.forms.models import modelformset_factory
 from django.db import IntegrityError
 
-from django_select2 import (
-            ModelSelect2MultipleField,
+from django_select2.forms import (
             Select2MultipleWidget,
-            ModelSelect2Field,
             Select2Widget,
 )
 
@@ -23,14 +21,8 @@ from mig_main.models import (
 
 
 class MemberProfileForm(ModelForm):
-    major = ModelSelect2MultipleField(
-                widget=Select2MultipleWidget(
-                            select2_options={
-                                    'width': 'element',
-                                    'placeholder': 'Select Major(s)',
-                                    'closeOnSelect': True
-                            }
-                ),
+    major = forms.ModelMultipleChoiceField(
+                widget=Select2MultipleWidget(),
                 queryset=Major.objects.all().order_by('name')
     )
 
@@ -67,25 +59,13 @@ class ElecteeProfileForm(MemberProfileForm):
 
 
 class MemberProfileNewActiveForm(MemberProfileForm):
-    init_term = ModelSelect2Field(
-                    widget=Select2Widget(
-                            select2_options={
-                                    'width': '12em',
-                                    'placeholder': 'Select Term',
-                                    'closeOnSelect': True
-                            }
-                    ),
+    init_term = forms.ModelChoiceField(
+                    widget=Select2Widget(),
                     queryset=AcademicTerm.get_rchron(),
                     label='Initiation Term'
     )
-    init_chapter = ModelSelect2Field(
-                    widget=Select2Widget(
-                            select2_options={
-                                    'width': '10em',
-                                    'placeholder': 'Select Chapter',
-                                    'closeOnSelect': True
-                            }
-                    ),
+    init_chapter = forms.ModelChoiceField(
+                    widget=Select2Widget(),
                     queryset=TBPChapter.objects.all(),
                     label='Initiating Chapter'
     )
@@ -269,7 +249,7 @@ class MemberProfileActiveFromNonMemberForm(ConvertNonMemberToMemberForm):
                    'status', 'still_electing',
                    'suffix', 'title', 'uniqname', 'user')
 
-                   
+
 class ManageElecteeStillElectingForm(ModelForm):
     electee = forms.CharField(
                         widget=forms.TextInput(
@@ -315,7 +295,7 @@ class BaseManageElecteeStillElectingFormSet(BaseModelFormSet):
         super(BaseManageElecteeStillElectingFormSet,
               self).__init__(*args, **kwargs)
 
-        #create filtering here whatever that suits you needs
+        # create filtering here whatever that suits you needs
         self.queryset = MemberProfile.objects.filter(
                             status__name='Electee').order_by(
                                                 'last_name',
@@ -366,4 +346,3 @@ class PreferenceForm(forms.Form):
                     preference_value=value_name,
             )
             up.save()
-

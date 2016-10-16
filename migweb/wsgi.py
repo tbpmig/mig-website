@@ -15,8 +15,8 @@ framework.
 """
 
 # virtualenv magic #yolo
-activate_env='/home/webdev/.virtualenvs/migweb/bin/activate_this.py'
-execfile(activate_env, dict(__file__=activate_env))
+activate_env = '/home/webdev/.virtualenvs/migweb/bin/activate_this.py'
+# execfile(activate_env, dict(__file__=activate_env))
 
 import os
 
@@ -30,7 +30,6 @@ if path not in sys.path:
 # mod_wsgi daemon mode with each site in its own daemon process, or use
 # os.environ["DJANGO_SETTINGS_MODULE"] = "migweb.settings"
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "migweb.settings")
-
 
 
 # This application object is used by any WSGI server configured to use this
@@ -47,4 +46,3 @@ application = get_wsgi_application()
 # Fix django closing connection to MemCachier after every request (#11331)
 from django.core.cache.backends.memcached import BaseMemcachedCache
 BaseMemcachedCache.close = lambda self, **kwargs: None
-

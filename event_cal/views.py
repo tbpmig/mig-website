@@ -7,7 +7,7 @@ from django.core.management import call_command
 from django.utils import timezone
 from django.http import HttpResponse
 from django.shortcuts import redirect, get_object_or_404
-from django.template import RequestContext, loader
+from django.template import loader
 from django.contrib.auth.decorators import permission_required, login_required
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.urlresolvers import reverse
@@ -296,8 +296,7 @@ def index(request):
     }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 @login_required
@@ -469,8 +468,7 @@ def meeting_sign_in(request, shift_id):
     }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def event_detail(request, event_id):
@@ -501,8 +499,7 @@ def event_detail(request, event_id):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 @ajax
@@ -1022,8 +1019,7 @@ def carpool_sign_up(request, event_id):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 @login_required
@@ -1095,8 +1091,7 @@ def preferred_items_request(request, event_id):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 @login_required
@@ -1149,8 +1144,7 @@ def add_event_photo(request):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def list(request):
@@ -1245,19 +1239,27 @@ def list(request):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 @ajax
 def get_event_ajax(request, event_id):
-    event_html = cache.get('EVENT_AJAX'+event_id, None)
+    has_profile = False
+    cache_name = 'EVENT_AJAX'+event_id
+    if hasattr(request.user, 'userprofile'):
+        has_profile = True
+        if request.user.userprofile.is_active:
+            cache_name +='ACTIVE'
+        elif request.user.userprofile.is_ugrad:
+            cache_name +='UGRAD_ELECTEE'
+        else:
+            cache_name += 'GRAD_ELECTEE'
+
+    event_html = cache.get(cache_name, None)
     if not event_html:
         event = get_object_or_404(CalendarEvent, id=event_id)
         can_edit = Permissions.can_edit_event(event, request.user)
-        has_profile = False
-        if hasattr(request.user, 'userprofile'):
-            has_profile = True
+        
         context_dict = {
             'event': event,
             'can_edit_event': can_edit,
@@ -1322,8 +1324,7 @@ def my_events(request):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def create_multishift_event(request):
@@ -1429,8 +1430,7 @@ def create_multishift_event(request):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def create_event(request):
@@ -1522,8 +1522,7 @@ def create_event(request):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def create_meeting_signin(request, event_id):
@@ -1566,8 +1565,7 @@ def create_meeting_signin(request, event_id):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def delete_event(request, event_id):
@@ -1670,8 +1668,7 @@ def email_participants(request, event_id):
     }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def edit_event(request, event_id):
@@ -1771,8 +1768,7 @@ def edit_event(request, event_id):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def update_completed_event(request, event_id):
@@ -1887,8 +1883,7 @@ def update_completed_event(request, event_id):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 # TODO: change it so that the form has an extra column that is whether
@@ -2041,8 +2036,7 @@ def complete_event(request, event_id):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def generate_announcements(request):
@@ -2060,8 +2054,7 @@ def generate_announcements(request):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def add_announcement(request):
@@ -2102,8 +2095,7 @@ def add_announcement(request):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def gcal_test(request):
@@ -2247,8 +2239,7 @@ def project_report(request):
         request.session['project_report_id'] = report_id
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def submit_tutoring_form(request):
@@ -2355,8 +2346,7 @@ are not checked.''' % {
     }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def add_project_report_to_event(request, event_id):
@@ -2393,8 +2383,7 @@ def add_project_report_to_event(request, event_id):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def calendar_admin(request):
@@ -2458,8 +2447,7 @@ def calendar_admin(request):
     }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def edit_announcements(request):
@@ -2505,8 +2493,7 @@ def edit_announcements(request):
     }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def event_detail_table(request, event_id):
@@ -2559,8 +2546,7 @@ def event_detail_table(request, event_id):
     }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def create_electee_interviews(request):
@@ -2767,8 +2753,7 @@ def create_electee_interviews(request):
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
     context_dict['edit'] = True
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def interview_view_electees(request, event_id):
@@ -2807,8 +2792,7 @@ def interview_view_electees(request, event_id):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def interview_view_actives(request, event_id):
@@ -2846,8 +2830,7 @@ def interview_view_actives(request, event_id):
         }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 # These are for the interview slots

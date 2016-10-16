@@ -2,15 +2,23 @@
 
 {% load staticfiles %}
 {% load my_markdown%}
-{% if dp_ids %}
+
+
 {% block css %}
-<link rel="stylesheet" type="text/css" href="{% static 'css/datepicker.css' %}" />
+    {% if dp_ids %}
+
+        <link rel="stylesheet" type="text/css" href="{% static 'css/datepicker.css' %}" />
+    {% endif %}
+    {{form.media.css}}
 {% endblock css %}
-{% block js %}
-<script src="{% static 'js/bootstrap-datepicker.js' %}"></script>
-{% include 'datepicker.html' %}
-{% endblock %}
+
+{% if dp_ids %}
+    {% block js %}
+        <script src="{% static 'js/bootstrap-datepicker.js' %}"></script>
+        {% include 'datepicker.html' %}
+    {% endblock %}
 {% endif %}
+
 {% block content %}
 {% if back_button %}
 <div class = "row">
@@ -31,10 +39,12 @@
 </div>
 {% endblock %}
 
+
 {% if extra_js %}
 {% block js_bottom %}
 {% for html_file in extra_js %}
 {% include html_file %}
 {% endfor %}
+{{form.media.js}}
 {% endblock %}
 {% endif %}

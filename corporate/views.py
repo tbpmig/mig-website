@@ -2,10 +2,10 @@ from django.core.urlresolvers import reverse
 from django.forms.models import modelformset_factory, modelform_factory
 from django.http import HttpResponse
 from django.shortcuts import redirect
-from django.template import RequestContext, loader
+from django.template import loader
 from django_ajax.decorators import ajax
 from corporate.auxiliary_scripts import update_resume_zips
-from corporate.forms import AddContactForm,ContactFormSet
+from corporate.forms import AddContactForm, ContactFormSet
 from corporate.models import CorporateTextField, CorporateResourceGuide
 from corporate.models import CompanyContact, Company, JobField, CorporateEmail
 from mig_main.utility import get_message_dict, Permissions
@@ -44,8 +44,7 @@ def index(request):
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def resumes(request):
@@ -58,8 +57,7 @@ def resumes(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def update_corporate_page(request):
@@ -93,9 +91,8 @@ def update_corporate_page(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('generic_formset.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def update_resource_guide(request):
@@ -134,9 +131,8 @@ def update_resource_guide(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('generic_form.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def add_company_contact(request):
@@ -174,9 +170,8 @@ def add_company_contact(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('generic_form.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 def edit_company_contacts(request):
     if not Permissions.can_edit_corporate_page(request.user):
@@ -210,9 +205,8 @@ def edit_company_contacts(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('generic_formset.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def add_company(request):
@@ -245,9 +239,8 @@ def add_company(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('generic_form.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def add_jobfield(request):
@@ -279,9 +272,8 @@ def add_jobfield(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('generic_form.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def view_company_contacts(request):
@@ -296,9 +288,8 @@ def view_company_contacts(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('corporate/contacts_table.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def view_and_send_email(request):
@@ -324,9 +315,8 @@ def view_and_send_email(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('corporate/view_and_send_email.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 @ajax
 def send_corporate_email(request):
@@ -393,6 +383,5 @@ def update_corporate_email(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('generic_form.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))

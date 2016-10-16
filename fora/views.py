@@ -3,7 +3,7 @@ from django.core.urlresolvers import reverse
 from django.forms.models import modelformset_factory, modelform_factory
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.template import RequestContext, loader
+from django.template import loader
 from django.utils import timezone
 
 from django_ajax.decorators import ajax
@@ -102,8 +102,7 @@ def view_thread(request, thread_id):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def create_thread(request, forum_id):
@@ -141,8 +140,7 @@ def create_forum(request):
     }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def hide_comment(request, comment_id):
@@ -556,8 +554,7 @@ def add_comment(request, forum_id, reply_to_id):
     }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def view_map(request):
@@ -583,5 +580,5 @@ def view_map(request):
     }
     context_dict.update(get_permissions(request.user))
     context_dict.update(get_common_context(request))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
+

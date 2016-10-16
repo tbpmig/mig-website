@@ -35,7 +35,7 @@
                         {% if slide.link %}
                         <a href="{{slide.link}}" title="{{slide.title}}">
                         {% endif %}
-                            <img src="{% static slide.photo.thumbnail.url %}" alt="{{slide.title}}" />
+                            <img src="{{ slide.photo.thumbnail.url }}" alt="{{slide.title}}" />
                         
                         <div class="carousel-caption hidden-xs">
                             <h4>{{slide.title}}</h4>

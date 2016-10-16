@@ -1,10 +1,9 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from django.views.generic import RedirectView
 from outreach import views
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^mindset/$', views.mindset, name='mindset'),
     url(r'^edit_mindset_modules/$',
@@ -29,4 +28,4 @@ urlpatterns = patterns(
     url(r'^(?P<url_stem>[a-z,_]+)/$',
         views.outreach_event,
         name='outreach_event'),
-)
+]

@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.forms.models import modelform_factory, modelformset_factory
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.template import RequestContext, loader
+from django.template import loader
 
 from history.forms import (
             ArticleForm,
@@ -118,8 +118,7 @@ def get_article_view(request, article_id):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def index(request):
@@ -171,8 +170,7 @@ def edit_articles(request):
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def article_view(request, article_id):
@@ -196,8 +194,7 @@ def get_printed_documents(request, document_type, document_name):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def get_project_reports(request):
@@ -219,8 +216,7 @@ def get_project_reports(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def upload_article(request):
@@ -248,8 +244,7 @@ def upload_article(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def cornerstone_view(request):
@@ -307,8 +302,7 @@ def process_project_report_compilation(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def start_project_report_compilation(request, term_id):
@@ -349,8 +343,7 @@ def start_project_report_compilation(request, term_id):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def process_project_reports(request, prh_id, pr_id):
@@ -430,8 +423,7 @@ def process_project_reports(request, prh_id, pr_id):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def process_project_report_photos(request, prh_id, pr_id):
@@ -538,8 +530,7 @@ def process_project_report_photos(request, prh_id, pr_id):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def compile_project_reports(request, prh_id):

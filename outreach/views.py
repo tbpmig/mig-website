@@ -3,7 +3,7 @@ from django.db.models import Min
 from django.http import HttpResponse
 from django.forms.models import modelformset_factory
 from django.shortcuts import redirect, get_object_or_404
-from django.template import RequestContext, loader
+from django.template import loader
 from django.utils import timezone
 
 from event_cal.models import CalendarEvent
@@ -60,8 +60,7 @@ def index(request):
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def mindset(request):
@@ -131,8 +130,7 @@ def mindset(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def update_mindset_modules(request):
@@ -171,9 +169,8 @@ def update_mindset_modules(request):
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('generic_formset.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def update_mindset_profile_additions(request):
@@ -218,9 +215,8 @@ def update_mindset_profile_additions(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('generic_formset.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def update_mindset_photos(request):
@@ -259,9 +255,8 @@ def update_mindset_photos(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('generic_formset.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def tutoring(request):
@@ -280,8 +275,7 @@ def tutoring(request):
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def outreach_event(request, url_stem):
@@ -316,8 +310,7 @@ def outreach_event(request, url_stem):
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def hide_outreach_event(request, url_stem):
@@ -367,9 +360,8 @@ def manage_outreach_event_types(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('generic_formset.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def manage_outreach_events(request, url_stem):
@@ -427,6 +419,5 @@ def manage_outreach_events(request, url_stem):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('generic_formset.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))

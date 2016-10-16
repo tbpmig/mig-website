@@ -1,9 +1,8 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from history import views
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^article/(?P<article_id>\d+)/$',
         views.article_view,
@@ -38,4 +37,4 @@ urlpatterns = patterns(
     url(r'^edit_stories/$',
         views.edit_articles,
         name='edit_articles'),
-)
+]

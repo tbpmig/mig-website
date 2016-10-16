@@ -5,25 +5,49 @@ import shutil
 from datetime import date
 
 
-from django.http import HttpResponse,Http404
+from django.http import HttpResponse, Http404
 from django.shortcuts import  get_object_or_404
 from django.shortcuts import redirect
 from django.template import RequestContext, loader
 from django.template.defaultfilters import slugify
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.forms.models import modelformset_factory,modelform_factory
+from django.forms.models import modelformset_factory, modelform_factory
 from django.forms import CheckboxSelectMultiple
 from django.core.urlresolvers import reverse
 
 from event_cal.models import InterviewShift
-from electees.models import ElecteeGroup, ElecteeGroupEvent,ElecteeResource,EducationalBackgroundForm,ElecteeInterviewSurvey,SurveyPart,SurveyQuestion,SurveyAnswer,ElecteeInterviewFollowup,ElecteeProcessVisibility
+from electees.models import (
+                    ElecteeGroup,
+                    ElecteeGroupEvent,
+                    ElecteeResource,
+                    EducationalBackgroundForm,
+                    ElecteeInterviewSurvey,
+                    SurveyPart,
+                    SurveyQuestion,
+                    SurveyAnswer,
+                    ElecteeInterviewFollowup,
+                    ElecteeProcessVisibility
+)
 from mig_main.models import MemberProfile, AcademicTerm
-from mig_main.utility import Permissions, get_previous_page,  get_message_dict,zipdir
+from mig_main.utility import (
+                Permissions,
+                get_previous_page,
+                get_message_dict,
+                zipdir
+)
 from member_resources.views import get_permissions as get_member_permissions
 from history.models import Officer
-from electees.forms import get_unassigned_electees,InstituteFormset,BaseElecteeGroupForm,AddSurveyQuestionsForm,ElecteeSurveyForm,InterviewFollowupForm,ManualElecteeGroupMembersFormSet
-from requirements.models import EventCategory,ProgressItem
+from electees.forms import (
+                get_unassigned_electees,
+                InstituteFormset,
+                BaseElecteeGroupForm,
+                AddSurveyQuestionsForm,
+                ElecteeSurveyForm,
+                InterviewFollowupForm,
+                ManualElecteeGroupMembersFormSet
+)
+from requirements.models import EventCategory, ProgressItem
 from django.conf import  settings
 
 ELECTEE_RESUME_LOCATION = lambda: os.path.sep.join([settings.MEDIA_ROOT,'electee_resumes'])
@@ -43,7 +67,7 @@ def compile_electee_resumes():
                 os.makedirs(standing_dir)
             resume_name=slugify(electee.last_name+'_'+electee.first_name+'_'+electee.uniqname)+'.pdf'
             shutil.copy(media_parent+electee.resume.url,os.path.sep.join([standing_dir,resume_name]))
-    
+
 def update_electee_resume_zips():
     compile_electee_resumes()
     current_path = os.getcwd()
@@ -56,18 +80,21 @@ def update_electee_resume_zips():
     os.chdir(ELECTEE_RESUME_LOCATION())
     zipdir('.',zip_f)
     zip_f.close()
-    os.chdir(current_path)   
+    os.chdir(current_path)
+
 def can_submit_background_form(user):
     if not user_is_member(user):
         return False
     if user.is_superuser:
         return True
     return (user.userprofile.memberprofile.standing.name=='Graduate' and user.userprofile.memberprofile.status.name=='Electee')
+
 def user_is_member(user):
     if hasattr(user,'userprofile'):
         if user.userprofile.is_member():
             return True
     return False
+
 def get_permissions(user):
     permission_dict = get_member_permissions(user)
     permission_dict.update({
@@ -80,6 +107,7 @@ def get_permissions(user):
         'can_view_followups':Permissions.can_see_follow_up(user),
         })
     return permission_dict
+
 def get_common_context(request):
     context_dict=get_message_dict(request)
     context_dict.update({
@@ -89,6 +117,7 @@ def get_common_context(request):
         'new_bootstrap':True,
     })
     return context_dict
+
 def view_electee_groups(request):
     request.session['current_page']=request.path
     e_groups = ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term()).order_by('points')
@@ -111,8 +140,7 @@ def view_electee_groups(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 def edit_electee_groups(request):
     if not Permissions.can_manage_electee_progress(request.user):
@@ -152,8 +180,7 @@ def edit_electee_groups(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 @ensure_csrf_cookie
 def edit_electee_group_membership(request):
@@ -180,10 +207,8 @@ def edit_electee_group_membership(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
-    
-    
+    return HttpResponse(template.render(context_dict, request))
+
 def manually_edit_electee_group_membership(request):
     if not Permissions.can_manage_electee_progress(request.user):
         request.session['error_message']='You are not authorized to edit electee teams'
@@ -213,8 +238,8 @@ def manually_edit_electee_group_membership(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
+
 def edit_electee_group_points(request):
     if not Permissions.can_manage_electee_progress(request.user):
         request.session['error_message']='You are not authorized to edit electee team points.'
@@ -246,8 +271,7 @@ def edit_electee_group_points(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 def submit_background_form(request):
     if not can_submit_background_form(request.user):
@@ -299,8 +323,8 @@ def submit_background_form(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
+
 def edit_electee_resources(request):
     if not Permissions.can_manage_electee_progress(request.user):
         request.session['error_message']='You are not authorized to edit electee resources.'
@@ -335,9 +359,8 @@ def edit_electee_resources(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
-    
+    return HttpResponse(template.render(context_dict, request))
+
 def manage_survey(request):
     if not Permissions.can_manage_electee_progress(request.user):
         request.session['error_message']='You are not authorized to edit the electee survey.'
@@ -359,8 +382,8 @@ def manage_survey(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
+
 def edit_survey_for_term(request,term_id):
     if not Permissions.can_manage_electee_progress(request.user):
         request.session['error_message']='You are not authorized to edit the electee survey.'
@@ -400,8 +423,7 @@ def edit_survey_for_term(request,term_id):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 def edit_survey(request):
     return redirect('electees:edit_survey_for_term',AcademicTerm.get_current_term().id)
@@ -437,9 +459,8 @@ def edit_survey_parts(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
-    
+    return HttpResponse(template.render(context_dict, request))
+
 def edit_survey_questions(request):
     if not Permissions.can_manage_electee_progress(request.user):
         request.session['error_message']='You are not authorized to edit the electee survey.'
@@ -471,8 +492,7 @@ def edit_survey_questions(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 def add_survey_questions_for_term(request,term_id):
     if not Permissions.can_manage_electee_progress(request.user):
@@ -511,8 +531,7 @@ def add_survey_questions_for_term(request,term_id):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))    
+    return HttpResponse(template.render(context_dict, request))
 
 def add_survey_questions(request):
     return redirect('electees:add_survey_questions_for_term',AcademicTerm.get_current_term().id)
@@ -537,9 +556,8 @@ def preview_survey_for_term(request,term_id):
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context)) 
-    
+    return HttpResponse(template.render(context_dict, request))
+
 def preview_survey(request):
     return redirect('electees:preview_survey_for_term',AcademicTerm.get_current_term().id)
  
@@ -593,9 +611,8 @@ def complete_survey_for_term(request,term_id):
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context)) 
-    
+    return HttpResponse(template.render(context_dict, request))
+
 def complete_survey(request):
     return redirect('electees:complete_survey_for_term',AcademicTerm.get_current_term().id)
 
@@ -647,8 +664,7 @@ Remember the [eligibility code of the association](http://www.tbp.org/off/eligCo
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
     
 def view_interview_follow_up(request,follow_up_id):
     follow_up = get_object_or_404(ElecteeInterviewFollowup,id=follow_up_id)
@@ -667,8 +683,7 @@ def view_interview_follow_up(request,follow_up_id):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 def view_my_interview_forms(request):
     if not user_is_member(request.user) or not request.user.userprofile.memberprofile.status.name=='Active':
@@ -686,9 +701,8 @@ def view_my_interview_forms(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
-    
+    return HttpResponse(template.render(context_dict, request))
+
 def edit_electee_process_visibility(request):
     if not Permissions.can_manage_electee_progress(request.user):
         request.session['error_message']='You are not authorized to edit the electee process visibility settings.'
@@ -718,9 +732,8 @@ def edit_electee_process_visibility(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))  
-    
+    return HttpResponse(template.render(context_dict, request))
+
 def view_interview_follow_up_table(request):
     if not Permissions.can_see_follow_up(request.user):
         request.session['error_message']='You are not authorized to view followups'
@@ -756,5 +769,4 @@ def view_interview_follow_up_table(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))    
+    return HttpResponse(template.render(context_dict, request))

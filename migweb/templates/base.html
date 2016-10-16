@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <title>Tau Beta Pi:MI-G</title>
 <!-- Meta Declarations-->
 <meta charset="utf-8" />
@@ -20,7 +21,7 @@
 {% block css %}
 {% endblock %}
 
-<script src="//code.jquery.com/jquery-1.10.1.min.js"></script>
+<script src="//code.jquery.com/jquery-2.2.4.min.js"></script>
 <!--Icon -->
 <link rel="shortcut icon" href="{% static 'favicon.png'%}" type="image/png">
 
@@ -276,6 +277,7 @@ ga('send', 'pageview');
 </footer>
 <a class="pull-right btn btn-warning btn-small" href="http://bit.ly/13NlSSv">Report a bug.</a>
 </div>
+
 </body>
 </html>
 <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js" defer></script>
@@ -294,9 +296,11 @@ ga('send', 'pageview');
 {% if prefix %}
 <script src="{% static 'js/jquery.formset.js' %}"></script>
 <script type="text/javascript">
+
     $(function() {
         $('#dynForm tbody tr').formset({
             prefix:'{{formset.prefix }}',
+            formTemplate: $('#formset-template').clone(),
             added:function(row){
                 {% for dp_id in dp_ids_dyn %}
                 console.log("#{{formset.prefix}}-"+row.index()+"-{{dp_id}}")
@@ -304,6 +308,8 @@ ga('send', 'pageview');
                     $("#id_{{formset.prefix}}-"+row.index()+"-{{dp_id}}").datepicker('hide');
                     });
                 {% endfor %}
+                 row.find('.django-select2').djangoSelect2({ width: '100%' });
+               
             }
         });
 })

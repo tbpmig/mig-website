@@ -1,5 +1,4 @@
 from time import sleep
-from optparse import make_option
 
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
@@ -14,13 +13,14 @@ from mig_main.models import MemberProfile, AcademicTerm
 
 
 class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option('--elections',
-                action='store_true',
-                dest='is_elections',
-                default=False,
-                help='Specify that the email is for the elections meeting.'),
-    )
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--elections',
+            action='store_true',
+            dest='is_elections',
+            default=False,
+            help='Specify that the email is for the elections meeting.'
+        )
 
     def handle(self, *args, **options):
         term = AcademicTerm.get_current_term()

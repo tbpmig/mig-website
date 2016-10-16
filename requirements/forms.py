@@ -8,13 +8,22 @@ from django.forms import ModelForm, BaseModelFormSet, Form, BaseFormSet
 from django.core.exceptions import ValidationError
 from django.forms.models import modelformset_factory, formset_factory
 
-from django_select2 import ModelSelect2Field, Select2Widget
+from django_select2.forms import Select2Widget
 
 from history.models import Officer
-from requirements.models import ProgressItem, EventCategory, Requirement, DistinctionType
+from requirements.models import (
+                    ProgressItem,
+                    EventCategory,
+                    Requirement,
+                    DistinctionType
+)
 from mig_main.models import AcademicTerm, MemberProfile
-from mig_main.utility import get_current_group_leaders, get_current_event_leaders
+from mig_main.utility import (
+                get_current_group_leaders,
+                get_current_event_leaders
+)
 from electees.models import ElecteeGroup
+
 
 def max_peer_interviews_validator(value):
     requirement = Requirement.objects.filter(
@@ -44,7 +53,7 @@ class ManageDuesForm(ModelForm):
                         )
     )
     dues_paid = forms.BooleanField(required=False)
-    
+
     class Meta:
         model = ProgressItem
         fields = ['electee', 'uniqname', 'dues_paid']
@@ -54,7 +63,7 @@ class ManageDuesForm(ModelForm):
         if self.instance:
             self.fields['electee'].initial = self.instance.member.get_firstlast_name()
             self.fields['uniqname'].initial = self.instance.member.uniqname
-            self.fields['dues_paid'].initial = self.instance.amount_completed>0
+            self.fields['dues_paid'].initial = self.instance.amount_completed > 0
 
     def save(self, commit=True):
         dues_paid = self.cleaned_data.pop('dues_paid', False)
@@ -68,13 +77,14 @@ class ManageDuesForm(ModelForm):
         if commit:
             instance.save()
         return instance
-    
+
+
 class BaseManageDuesFormSet(BaseModelFormSet):
     def __init__(self, *args, **kwargs):
         super(BaseManageDuesFormSet,
               self).__init__(*args, **kwargs)
 
-        #create filtering here whatever that suits you needs
+        # create filtering here whatever that suits you needs
         self.queryset = ProgressItem.objects.filter(
                                 member__status__name='Electee',
                                 event_type__name='Dues',
@@ -85,24 +95,22 @@ class BaseManageDuesFormSet(BaseModelFormSet):
                                 'member__uniqname'
                             )
 
+
 ManageDuesFormSet = modelformset_factory(
                         ProgressItem,
                         form=ManageDuesForm,
                         formset=BaseManageDuesFormSet,
                         extra=0
 )
+
+
 class ManageActiveGroupMeetingsForm(ModelForm):
-    member = ModelSelect2Field(
-                widget=Select2Widget(
-                        select2_options={
-                                'width': 'element',
-                                'placeholder': 'Select Member',
-                                'closeOnSelect': True
-                        }
-                ),
+    member = forms.ModelChoiceField(
+                widget=Select2Widget(),
                 queryset=ElecteeGroup.get_current_leaders()
     )
     amount_completed = forms.IntegerField(min_value=0, label='Team Meetings')
+
     class Meta:
         model = ProgressItem
         fields = ['member', 'amount_completed']
@@ -124,15 +132,15 @@ class ManageActiveGroupMeetingsForm(ModelForm):
             init_val = int(instance.amount_completed + extra_amt)
 
         initial['amount_completed'] = init_val
-        kwargs['initial']=initial
+        kwargs['initial'] = initial
         super(ManageActiveGroupMeetingsForm, self).__init__(*args, **kwargs)
-    
+
     def save(self, commit=True):
         instance = super(ManageActiveGroupMeetingsForm, self).save(commit=False)
         term = AcademicTerm.get_current_term()
         instance.term = term
-        instance.date_completed=date.today()
-        instance.name='Team Meetings'
+        instance.date_completed = date.today()
+        instance.name = 'Team Meetings'
         extra_meetings = ProgressItem.objects.filter(
                             term=term,
                             member=instance.member,
@@ -148,7 +156,7 @@ class ManageActiveGroupMeetingsForm(ModelForm):
             print group
             if group[0].members.exists():
                 print group[0]
-                standing=group[0].members.all()[0].standing
+                standing = group[0].members.all()[0].standing
                 dist = DistinctionType.objects.filter(
                         status_type__name='Electee',
                         standing_type=standing)
@@ -162,7 +170,7 @@ class ManageActiveGroupMeetingsForm(ModelForm):
             amount_group_req = 0
         if extra_meetings.count() > 1 or instance.amount_completed <= amount_group_req:
             extra_meetings.delete()
-        
+
         if not extra_meetings.exists() and instance.amount_completed > amount_group_req:
             extra_meeting = ProgressItem(
                             term=term,
@@ -183,6 +191,7 @@ class ManageActiveGroupMeetingsForm(ModelForm):
         if commit:
             instance.save()
         return instance
+
 
 class BaseManageActiveGroupMeetingsFormSet(BaseModelFormSet):
     def __init__(self, *args, **kwargs):
@@ -206,6 +215,7 @@ ManageActiveGroupMeetingsFormSet = modelformset_factory(
                         formset=BaseManageActiveGroupMeetingsFormSet,
                         extra=1
 )
+
 
 class ManageUgradPaperWorkForm(Form):
     electee = forms.CharField(
@@ -245,6 +255,7 @@ class ManageUgradPaperWorkForm(Form):
                                 required=False,
                                 label='Grad Advisor Form'
     )
+
     def save_helper(self,
                     profile,
                     p_field,
@@ -297,9 +308,10 @@ class ManageUgradPaperWorkForm(Form):
                             secondary_type,
                             secondary_type + ' Completed',
                 )
-                    
+
         else:
             existing_progress.delete()
+
     def save(self, commit=True):
         uniqname = self.cleaned_data['uniqname']
         profile = MemberProfile.objects.get(uniqname=uniqname)
@@ -340,7 +352,7 @@ class ManageUgradPaperWorkForm(Form):
                     'Team Meetings Completed',
                     secondary_type='Extra Team Meetings',
                     primary_max=amount_group_req,
-        )       
+        )
         self.save_helper(
                     profile,
                     self.cleaned_data.pop('advisor_form', None),
@@ -349,6 +361,8 @@ class ManageUgradPaperWorkForm(Form):
                     'Advisor Form Completed',
                     is_boolean=True,
         )
+
+
 class BaseManageUgradPaperWorkFormSet(BaseFormSet):
     def __init__(self, *args, **kwargs):
         profiles = kwargs.pop('profiles', None)
@@ -364,7 +378,7 @@ class BaseManageUgradPaperWorkFormSet(BaseFormSet):
             init_dict = {'electee': profile.get_firstlast_name(),
                          'standing': profile.standing.name,
                          'uniqname': profile.uniqname}
-            
+
             exam_progress = ProgressItem.objects.filter(
                             event_type__name=exam_name,
                             term=term,
@@ -381,7 +395,7 @@ class BaseManageUgradPaperWorkFormSet(BaseFormSet):
             ).aggregate(Sum('amount_completed'))
             amount = interview_progress['amount_completed__sum']
             init_dict['peer_interviews_completed'] = int(amount) if amount else 0
-                            
+
             group_meetings_progress = ProgressItem.objects.filter(
                                 event_type__name__in=group_meetings_name,
                                 term=term,
@@ -399,39 +413,39 @@ class BaseManageUgradPaperWorkFormSet(BaseFormSet):
             else:
                 init_dict['advisor_form'] = False
             initial.append(init_dict)
-        kwargs['initial']=initial
+        kwargs['initial'] = initial
         print initial
         super(BaseManageUgradPaperWorkFormSet, self).__init__(*args, **kwargs)
-    
+
     def save(self):
         for form in self:
             form.save()
 
-ManageUgradPaperWorkFormSet = formset_factory(form=ManageUgradPaperWorkForm,formset=BaseManageUgradPaperWorkFormSet,extra=0)
+
+ManageUgradPaperWorkFormSet = formset_factory(
+                        form=ManageUgradPaperWorkForm,
+                        formset=BaseManageUgradPaperWorkFormSet,
+                        extra=0
+)
 
 
 class LeadershipCreditForm(forms.ModelForm):
-    member = ModelSelect2Field(
-                widget=Select2Widget(
-                select2_options={
-                        'width': 'element',
-                        'placeholder': 'Select Member',
-                        'closeOnSelect': True
-                }),
+    member = forms.ModelChoiceField(
+                widget=Select2Widget(),
                 queryset=MemberProfile.get_members()
     )
     approve = forms.BooleanField(required=False)
 
     class Meta:
         model = ProgressItem
-        exclude= (
+        exclude = (
                 'term',
                 'event_type',
                 'amount_completed',
                 'date_completed',
                 'related_event'
         )
-    
+
     def save(self, commit=True):
         approved = self.cleaned_data.pop('approve', False)
         if approved:
@@ -439,7 +453,7 @@ class LeadershipCreditForm(forms.ModelForm):
             instance.term = AcademicTerm.get_current_term()
             instance.event_type = EventCategory.objects.get(name='Leadership')
             instance.amount_completed = 1
-            instance.date_completed = date.today() 
+            instance.date_completed = date.today()
             if commit:
                 instance.save()
             return instance
@@ -449,11 +463,11 @@ class LeadershipCreditForm(forms.ModelForm):
 
 class BaseLeadershipCreditFormSet(BaseModelFormSet):
     def __init__(self, *args, **kwargs):
-        initial=[]
+        initial = []
         group_leaders = get_current_group_leaders()
         event_leaders = get_current_event_leaders()
         officers = Officer.get_current_members()
-        leader_list = group_leaders |event_leaders |officers
+        leader_list = group_leaders | event_leaders | officers
         for leader in leader_list:
             if ProgressItem.objects.filter(
                                 member=leader,
@@ -468,7 +482,7 @@ class BaseLeadershipCreditFormSet(BaseModelFormSet):
                 name_str = 'Was a group leader'
             else:
                 name_str = 'Led a project'
-            initial.append({'member':leader, 'name':name_str})
+            initial.append({'member': leader, 'name': name_str})
         kwargs['initial'] = initial
         super(BaseLeadershipCreditFormSet,
               self).__init__(*args, **kwargs)

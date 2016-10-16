@@ -1,9 +1,8 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from fora import views
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^add_comment/(?P<forum_id>\d+)-(?P<reply_to_id>\d+)/$',
         views.add_comment, name='add_comment'),
@@ -27,4 +26,4 @@ urlpatterns = patterns(
     url(r'^get_thread_page/(?P<forum_id>\d+)-(?P<page_num>\d+)/$',
         views.get_thread_page, name='get_thread_page'),
     url(r'^map/$', views.view_map, name='view_map'),
-)
+]

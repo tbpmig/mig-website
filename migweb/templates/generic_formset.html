@@ -1,7 +1,9 @@
 {% extends base %}
 {% load staticfiles %}
 {% load my_markdown %}
-
+{% block css %}
+{{formset.0.media.css}}
+{% endblock %}
 {% block content %}
 {% if back_button %}
 <div class="row">
@@ -11,6 +13,39 @@
 </div>
 {% endif %}
 <div class="row">
+<table  style="display: none;">
+    <tr class="formset-row" id="formset-template" >
+        {% for field in formset.empty_form.visible_fields %}
+            <td>{{field}}</td>
+        {% endfor %}
+    </tr>
+</table>
+<div style="display: none;">
+    <tr class="formset-row" id="formset-template">
+        {% for field in formset.empty_form.visible_fields %}
+            <td>
+                {% if forloop.first %}
+                    {% for hidden in form.hidden_fields %}
+                    {{ hidden }}
+                    {% endfor %}
+                {% endif %}
+                <ul>
+                    {% for error in field.errors %}
+                    <li class="text-danger">{{error}}</li>
+                    {% endfor %}
+                </ul>
+                {{field}}
+                {% if forloop.last %}
+                <ul>
+                    {% for error in form.non_field_errors %}
+                    <li class="text-danger">{{error}}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </td>
+        {% endfor %}
+    </tr>
+</div>
     <div class="col-md-6">
         <h4>{{form_title}}</h4>
         <p>{{help_text|my_markdown}}</p>
@@ -24,4 +59,5 @@
 </form>
     </div>
 </div>
+{{formset.0.media.js}}
 {% endblock content %}

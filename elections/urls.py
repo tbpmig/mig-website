@@ -1,9 +1,8 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from elections import views
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^(?P<election_id>\d+)/officer_positions/$',
         views.positions,
@@ -20,4 +19,4 @@ urlpatterns = patterns(
     url(r'^(?P<election_id>\d+)/my_nominations/$',
         views.my_nominations,
         name='my_nominations'),
-)
+]

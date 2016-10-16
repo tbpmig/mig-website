@@ -1,8 +1,8 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from corporate import views
 
-urlpatterns = patterns('',
+urlpatterns = [
 	url(r'^$',views.index, name='index'),
 	url(r'^resumes/$',views.resumes, name='resumes'),
 	url(r'^edit/$',views.update_corporate_page, name='update_corporate_page'),
@@ -15,4 +15,4 @@ urlpatterns = patterns('',
 	url(r'^view_contacts/$',views.view_company_contacts, name='view_company_contacts'),
 	url(r'^view_and_send_email/$',views.view_and_send_email, name='view_and_send_email'),
 	url(r'^send_email_to_companies/$',views.send_corporate_email, name='send_corporate_email'),
-)
+]

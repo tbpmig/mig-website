@@ -195,7 +195,7 @@
                     console.log($('.select2-container'))
                     row.find('.select2-container').remove();
                     row.find('select').each(function(){
-                        $(this).removeClass('select2-offscreen');
+                       $(this).removeClass('select2-offscreen');
                     })
 
                 }

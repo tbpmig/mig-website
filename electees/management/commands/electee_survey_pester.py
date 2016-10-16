@@ -1,5 +1,4 @@
 from datetime import date
-from optparse import make_option
 
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
@@ -10,13 +9,15 @@ from electees.models import ElecteeInterviewSurvey
 from mig_main.models import MemberProfile,AcademicTerm
 from requirements.models import ProgressItem,EventCategory
 class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option('--duedate',
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--duedate',
             action='store_true',
             dest='duedate',
             default=False,
-            help='Specify that this pester is the 8pm on the due date one.'),
+            help='Specify that this pester is the 8pm on the due date one.'
         )
+
     def handle(self,*args,**options):
         term = AcademicTerm.get_current_term()
         current_surveys = ElecteeInterviewSurvey.objects.filter(term = term)

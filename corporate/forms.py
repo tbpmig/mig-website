@@ -1,8 +1,10 @@
 from django import forms
-from django.forms.formsets import BaseFormSet,formset_factory
+from django.forms.formsets import BaseFormSet, formset_factory
 from django.forms.models import modelformset_factory
 
-from django_select2 import ModelSelect2MultipleField,Select2MultipleWidget,ModelSelect2Field,Select2Widget
+from django_select2.forms import (
+    Select2Widget
+)
 from localflavor.us.forms import USPhoneNumberField
 
 from corporate.models import Company, MemberContact, NonMemberContact
@@ -10,26 +12,51 @@ from mig_main.models import MemberProfile, TBPChapter
 
 
 class AddContactForm(forms.Form):
-    address = forms.CharField(widget=forms.Textarea,required=False)
-    company = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select company','closeOnSelect':True}),queryset=Company.objects.order_by('name'),label='Company',initial = Company.objects.order_by('name')[0])
+    address = forms.CharField(widget=forms.Textarea, required=False)
+    company = forms.ModelChoiceField(
+                    widget=Select2Widget(),
+                    queryset=Company.objects.order_by('name'),
+                    label='Company',
+                    initial=Company.objects.order_by('name')[0]
+    )
     gets_email = forms.BooleanField(required=False)
     has_contacted = forms.BooleanField(required=False)
-    personal_contact_of = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select member','closeOnSelect':True}),queryset=MemberProfile.get_members(),label='Personal contact of',required=False)
-    member = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select member contact','closeOnSelect':True}),queryset=MemberProfile.get_members(),label='Contact',required=False,initial=None)
-    
+    personal_contact_of = forms.ModelChoiceField(
+                    widget=Select2Widget(),
+                    queryset=MemberProfile.get_members(),
+                    label='Personal contact of',
+                    required=False
+    )
+    member = forms.ModelChoiceField(
+                    widget=Select2Widget( ),
+                    queryset=MemberProfile.get_members(),
+                    label='Contact',
+                    required=False,
+                    initial=None
+    )
+
     speaking_interest = forms.BooleanField(required=False)
     name = forms.CharField(max_length=256, required=False)
-    email = forms.EmailField(max_length=254,required=False)
+    email = forms.EmailField(max_length=254, required=False)
     phone = USPhoneNumberField(required=False)
-    short_bio = forms.CharField(widget=forms.Textarea,required=False)
-    initiating_chapter = ModelSelect2Field(widget=Select2Widget(select2_options={'width':'element','placeholder':'Select chapter','closeOnSelect':True}),queryset=TBPChapter.objects.order_by('state','letter'),label='Initiating TBP Chapter (if any)',required=False)
-    
-    id = forms.IntegerField(widget=forms.HiddenInput(),initial=0)
-    is_member = forms.BooleanField(widget=forms.HiddenInput(),initial=None,required=False)
-    
+    short_bio = forms.CharField(widget=forms.Textarea, required=False)
+    initiating_chapter = forms.ModelChoiceField(
+                    widget=Select2Widget(),
+                    queryset=TBPChapter.objects.order_by('state', 'letter'),
+                    label='Initiating TBP Chapter (if any)',
+                    required=False
+    )
+
+    id = forms.IntegerField(widget=forms.HiddenInput(), initial=0)
+    is_member = forms.BooleanField(
+                        widget=forms.HiddenInput(),
+                        initial=None,
+                        required=False
+    )
+
     def __init__(self, *args, **kwargs):
-        c = kwargs.pop('contact',None)
-        ed = kwargs.pop('can_edit',False)
+        c = kwargs.pop('contact', None)
+        ed = kwargs.pop('can_edit', False)
         super(AddContactForm, self).__init__(*args, **kwargs)
         if not ed:
             self.fields['gets_email'].widget = forms.HiddenInput()
@@ -41,7 +68,7 @@ class AddContactForm(forms.Form):
             self.fields['personal_contact_of'].initial = c.personal_contact_of
             self.fields['speaking_interest'].initial = c.speaking_interest
             self.fields['id'].initial = c.id
-            if hasattr(c,'member'):
+            if hasattr(c, 'member'):
                 self.fields['is_member'].initial = True
                 self.fields['member'].initial = c.member
             else:
@@ -52,13 +79,16 @@ class AddContactForm(forms.Form):
                 self.fields['phone'].initial = c.phone
                 self.fields['short_bio'].initial = c.short_bio
                 self.fields['initiating_chapter'].initial = c.initiating_chapter
+
     def clean(self):
         cleaned_data = super(AddContactForm, self).clean()
         member = cleaned_data.get('member')
         name = cleaned_data.get('name')
-     
+
         if self.has_changed() and not(name or member):
-            raise forms.ValidationError('Either a member profile or a contact name must be provided')
+            raise forms.ValidationError(
+                            ('Either a member profile or a '
+                             'contact name must be provided'))
 
     def is_overdetermined(self):
         if self.cleaned_data.get('member'):
@@ -112,7 +142,7 @@ class AddContactForm(forms.Form):
     def delete(self):
         id = self.cleaned_data.get('id')
         was_instance = id and id > 0
-        was_member = self.cleaned_data.get('is_member') 
+        was_member = self.cleaned_data.get('is_member')
         if not was_instance:
             return
         if was_member:
@@ -122,8 +152,8 @@ class AddContactForm(forms.Form):
 
 
 class BaseContactFormSet(BaseFormSet):
-    def __init__(self,*args,**kwargs):
-        initial = kwargs.pop('initial',None)
+    def __init__(self, *args, **kwargs):
+        initial = kwargs.pop('initial', None)
         if initial:
             new_initial = []
             for contact in initial:
@@ -135,19 +165,19 @@ class BaseContactFormSet(BaseFormSet):
                 tmp_dict['address'] = contact.address
                 tmp_dict['personal_contact_of'] = contact.personal_contact_of
                 tmp_dict['speaking_interest'] = contact.speaking_interest
-                if hasattr(contact,'member'):
+                if hasattr(contact, 'member'):
                     tmp_dict['is_member'] = True
                     tmp_dict['member'] = contact.member
                 else:
                     tmp_dict['is_member'] = None
-                    tmp_dict['member']=None
+                    tmp_dict['member'] = None
                     tmp_dict['name'] = contact.name
                     tmp_dict['email'] = contact.email
                     tmp_dict['phone'] = contact.phone
                     tmp_dict['short_bio'] = contact.short_bio
                     tmp_dict['initiating_chapter'] = contact.initiating_chapter
                 new_initial.append(tmp_dict)
-            kwargs['initial']=new_initial
+            kwargs['initial'] = new_initial
         super(BaseContactFormSet, self).__init__(*args, **kwargs)
 
     def save(self):
@@ -162,4 +192,8 @@ class BaseContactFormSet(BaseFormSet):
         return overdetermined
 
 
-ContactFormSet = formset_factory(AddContactForm,formset=BaseContactFormSet,can_delete =True)
+ContactFormSet = formset_factory(
+                        AddContactForm,
+                        formset=BaseContactFormSet,
+                        can_delete=True
+)

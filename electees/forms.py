@@ -10,10 +10,8 @@ from django.forms.models import (
 )
 from django.utils.translation import ugettext as _
 
-from django_select2 import (
-                    ModelSelect2MultipleField,
+from django_select2.forms import (
                     Select2MultipleWidget,
-                    ModelSelect2Field,
                     Select2Widget
 )
 
@@ -85,24 +83,12 @@ InstituteFormset = inlineformset_factory(
 
 
 class BaseElecteeGroupForm(forms.ModelForm):
-    leaders = ModelSelect2MultipleField(
-                widget=Select2MultipleWidget(
-                            select2_options={
-                                    'width': '26em',
-                                    'placeholder': 'Select leader(s)',
-                                    'closeOnSelect': True
-                            }
-                ),
+    leaders = forms.ModelMultipleChoiceField(
+                widget=Select2MultipleWidget(),
                 queryset=MemberProfile.get_actives()
     )
-    officers = ModelSelect2MultipleField(
-                widget=Select2MultipleWidget(
-                            select2_options={
-                                    'width': '26em',
-                                    'placeholder': 'Select officer liaison(s)',
-                                    'closeOnSelect': True
-                            }
-                ),
+    officers = forms.ModelMultipleChoiceField(
+                widget=Select2MultipleWidget(),
                 queryset=Officer.get_current_members()
     )
 
@@ -225,14 +211,8 @@ ManualElecteeGroupMembersFormSet = modelformset_factory(
 
 
 class AddSurveyQuestionsForm(forms.ModelForm):
-    questions = ModelSelect2MultipleField(
-                    widget=Select2MultipleWidget(
-                            select2_options={
-                                    'width': '26em',
-                                    'placeholder': 'Select question(s)',
-                                    'closeOnSelect': True
-                            }
-                    ),
+    questions = forms.ModelMultipleChoiceField(
+                    widget=Select2MultipleWidget( ),
                     queryset=SurveyQuestion.objects.all().order_by(
                                                             'short_name')
     )

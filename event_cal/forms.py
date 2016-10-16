@@ -7,8 +7,8 @@ from django.forms.models import BaseInlineFormSet, BaseFormSet
 from django.forms.formsets import formset_factory
 from django.utils.translation import ugettext as _
 
-from django_select2 import ModelSelect2MultipleField, Select2MultipleWidget
-from django_select2 import ModelSelect2Field, Select2Widget
+
+from django_select2.forms import Select2Widget, Select2MultipleWidget
 
 from requirements.models import EventCategory, ProgressItem
 from event_cal.models import CalendarEvent, EventShift
@@ -22,25 +22,13 @@ class BaseEventPhotoForm(ModelForm):
     Form for adding photos. These can be associated with an event and/or a
     project report.
     """
-    event = ModelSelect2Field(
-                    widget=Select2Widget(
-                                select2_options={
-                                    'width': 'element',
-                                    'placeholder': 'Select Event',
-                                    'closeOnSelect': True
-                                }
-                    ),
+    event = forms.ModelChoiceField(
+                    widget=Select2Widget(),
                     queryset=CalendarEvent.objects.all(),
                     required=False,
     )
-    project_report = ModelSelect2Field(
-                    widget=Select2Widget(
-                            select2_options={
-                                'width': 'element',
-                                'placeholder': 'Select Report',
-                                'closeOnSelect': True
-                            }
-                    ),
+    project_report = forms.ModelChoiceField(
+                    widget=Select2Widget(),
                     queryset=ProjectReport.objects.all(),
                     required=False
     )
@@ -57,14 +45,8 @@ class BaseEventPhotoFormAlt(ModelForm):
     sufficient permissions to create events and thus shouldn't be able to edit
     project reports.
     """
-    event = ModelSelect2Field(
-                    widget=Select2Widget(
-                            select2_options={
-                                'width': 'element',
-                                'placeholder': 'Select Event',
-                                'closeOnSelect': True
-                            }
-                    ),
+    event = forms.ModelChoiceField(
+                    widget=Select2Widget(),
                     queryset=CalendarEvent.objects.all(),
                     required=False,
     )
@@ -79,14 +61,8 @@ class BaseAnnouncementForm(ModelForm):
     Form for creating and submitting announcements to be included in the weekly
     announcements sent to membership.
     """
-    contacts = ModelSelect2MultipleField(
-                    widget=Select2MultipleWidget(
-                            select2_options={
-                                'width': 'element',
-                                'placeholder': 'Select Contact Person/People',
-                                'closeOnSelect': True
-                            }
-                    ),
+    contacts = forms.ModelMultipleChoiceField(
+                    widget=Select2MultipleWidget(),
                     queryset=MemberProfile.get_members()
     )
 
@@ -113,34 +89,23 @@ class BaseEventForm(ModelForm):
         ('T', 'Tweet normally'),
         ('H', 'Tweet with #UmichEngin'),
     )
-    leaders = ModelSelect2MultipleField(
-                widget=Select2MultipleWidget(
-                        select2_options={
-                                'width': 'element',
-                                'placeholder': 'Select Leader(s)',
-                                'closeOnSelect': True
-                        }
-                ),
+    leaders = forms.ModelMultipleChoiceField(
+                widget=Select2MultipleWidget(),
                 queryset=MemberProfile.get_members()
     )
     tweet_option = forms.ChoiceField(
                     choices=TWEET_CHOICES,
                     initial='N'
     )
-    agenda = ModelSelect2Field(
-                widget=Select2Widget(
-                        select2_options={
-                            'width': 'element',
-                            'placeholder': 'Select agenda',
-                            'closeOnSelect': True
-                        }
-                ),
+    agenda = forms.ModelChoiceField(
+                widget=Select2Widget(),
                 queryset=MeetingMinutes.objects.filter(
                                 semester=AcademicTerm.get_current_term(),
                                 meeting_type__in=['NI','MM']
                 ),
                 required=False,
     )
+
     class Meta:
         model = CalendarEvent
         fields = [
@@ -399,14 +364,8 @@ class CompleteEventForm(ModelForm):
     """
     Form used to specify how many hours the attendee was at the event.
     """
-    member = ModelSelect2Field(
-                widget=Select2Widget(
-                        select2_options={
-                                'width': 'element',
-                                'placeholder': 'Select Attendee',
-                                'closeOnSelect': True
-                        }
-                ),
+    member = forms.ModelChoiceField(
+                widget=Select2Widget(),
                 queryset=MemberProfile.get_members()
     )
 
@@ -433,14 +392,8 @@ class CompleteFixedProgressEventForm(ModelForm):
     For events where progress is fixed (i.e. you were there or you weren't)
     only listing attendees is necessary.
     """
-    member = ModelSelect2Field(
-                widget=Select2Widget(
-                        select2_options={
-                                'width': '26em',
-                                'placeholder': 'Select Attendee',
-                                'closeOnSelect': True
-                        }
-                ),
+    member = forms.ModelChoiceField(
+                widget=Select2Widget(),
                 queryset=MemberProfile.get_members()
     )
 
@@ -468,14 +421,8 @@ class AddProjectReportForm(Form):
     """
     A form for selecting a project report to associate with a particular event.
     """
-    report = ModelSelect2Field(
-                widget=Select2Widget(
-                        select2_options={
-                            'width': 'element',
-                            'placeholder': 'Select Report',
-                            'closeOnSelect': True
-                        }
-                ),
+    report = forms.ModelChoiceField(
+                widget=Select2Widget(),
                 queryset=ProjectReport.objects.all()
     )
 

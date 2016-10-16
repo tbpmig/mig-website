@@ -1,7 +1,7 @@
 {% load staticfiles %}
 <div class="item" id="slideshow_photo{{slide.id}}>
     <a href="{{slide.link}}" title="{{slide.title}}">
-        <img src="{% static slide.photo.thumbnail.url %}" alt="{{slide.title}}" />
+        <img src="{{ slide.photo.thumbnail.url }}" alt="{{slide.title}}" />
     
         <div class="carousel-caption">
             <h4>{{slide.title}}</h4>

@@ -7,7 +7,6 @@ from django import forms
 from django.forms.utils import flatatt
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from django.utils.six import with_metaclass
 from django.utils.translation import ugettext as _
 
 MAP_WIDGET = r'''
@@ -163,7 +162,7 @@ class LocationFormField(forms.CharField):
         return v
 
 
-class LocationField(with_metaclass(models.SubfieldBase, models.CharField)):
+class LocationField(models.CharField):
     """ A Location (latitude and longitude)."""
 
     description = _('A comma-separated pair of decimal values representing'
@@ -177,7 +176,10 @@ class LocationField(with_metaclass(models.SubfieldBase, models.CharField)):
         name, path, args, kwargs = super(LocationField, self).deconstruct()
         del kwargs['max_length']
         return name, path, args, kwargs
-
+    
+    def from_db_value(self, value, expression, connection, context):
+        return self.to_python(value)
+    
     def to_python(self, value):
         if isinstance(value, GeoLocation):
             return value

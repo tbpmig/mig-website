@@ -2,11 +2,11 @@ from django import forms
 from django.forms import ModelForm, BaseModelFormSet
 from django.forms.models import modelformset_factory
 from django.db.models import Q
-from django_select2 import (
-            ModelSelect2Field,
-            ModelSelect2MultipleField,
-            Select2MultipleWidget,
+from django_select2.forms import (
+            ModelSelect2Widget,
             Select2Widget,
+            ModelSelect2MultipleWidget,
+            Select2MultipleWidget,
 )
 
 from history.models import (
@@ -30,17 +30,10 @@ from mig_main.models import (
             UserProfile,
 )
 from requirements.models import DistinctionType
-
 class AwardForm(forms.ModelForm):
     """ Form for giving out an award."""
-    recipient = ModelSelect2Field(
-                    widget=Select2Widget(
-                            select2_options={
-                                    'width': 'element',
-                                    'placeholder': 'Select member',
-                                    'closeOnSelect': True
-                            }
-                    ),
+    recipient = forms.ModelChoiceField(
+                    widget=Select2Widget( ),
                     queryset=MemberProfile.get_members()
     )
 
@@ -59,25 +52,13 @@ class OfficerForm(forms.ModelForm):
 
     Excludes term, since that is specified externally.
     """
-    user = ModelSelect2Field(
-                    widget=Select2Widget(
-                        select2_options={
-                                'width': 'element',
-                                'placeholder': 'Select member',
-                                'closeOnSelect': True
-                        }
-                    ),
+    user = forms.ModelChoiceField(
+                    widget=Select2Widget(),
                     queryset=MemberProfile.get_members(),
                     label='Member'
     )
-    position = ModelSelect2Field(
-                    widget=Select2Widget(
-                        select2_options={
-                                'width': 'element',
-                                'placeholder': 'Select member',
-                                'closeOnSelect': True
-                        }
-                    ),
+    position = forms.ModelChoiceField(
+                    widget=Select2Widget(),
                     queryset=OfficerPosition.get_current()
     )
 
@@ -88,14 +69,8 @@ class OfficerForm(forms.ModelForm):
 
 class CommitteeMemberForm(forms.ModelForm):
     """ Form for adding committee members for a given term."""
-    member = ModelSelect2Field(
-                    widget=Select2Widget(
-                        select2_options={
-                                'width': 'element',
-                                'placeholder': 'Select member',
-                                'closeOnSelect': True
-                        }
-                    ),
+    member = forms.ModelChoiceField(
+                    widget=Select2Widget(),
                     queryset=MemberProfile.get_members(),
                     label='Member'
     )
@@ -126,14 +101,8 @@ class WebArticleForm(forms.ModelForm):
         ('T', 'Tweet normally'),
         ('H', 'Tweet with #UmichEngin'),
     )
-    tagged_members = ModelSelect2MultipleField(
-                        widget=Select2MultipleWidget(
-                            select2_options={
-                                'width': '26em',
-                                'placeholder': 'Tag member(s)',
-                                'closeOnSelect': True
-                            }
-                        ),
+    tagged_members = forms.ModelMultipleChoiceField(
+                        widget=Select2MultipleWidget(),
                         queryset=MemberProfile.get_members(),
                         required=False
     )
@@ -142,18 +111,12 @@ class WebArticleForm(forms.ModelForm):
     class Meta:
         model = WebsiteArticle
         exclude = ['created_by', 'approved']
-
+        
 
 class MeetingMinutesForm(forms.ModelForm):
     """ Form for submitting meeting minutes"""
-    semester = ModelSelect2Field(
-                    widget=Select2Widget(
-                        select2_options={
-                            'width': '10em',
-                            'placeholder': 'Select Term',
-                            'closeOnSelect': True
-                        }
-                    ),
+    semester = forms.ModelChoiceField(
+                    widget=Select2Widget(),
                     queryset=AcademicTerm.get_rchron(),
                     initial=AcademicTerm.get_current_term()
     )
@@ -167,7 +130,7 @@ class MeetingMinutesForm(forms.ModelForm):
             'meeting_name',
             'display_order'
         ]
-
+        
 
 class ProjectDescriptionForm(forms.Form):
     """ Form used to provide project description for a project report
@@ -227,22 +190,12 @@ ProjectPhotoFormset = modelformset_factory(
 class BaseProjectReportHeaderForm(forms.ModelForm):
     """ Form for starting the project report compilation.
     """
-    terms = ModelSelect2MultipleField(
-                    widget=Select2MultipleWidget(
-                        select2_options={
-                                'width': '26em',
-                                'placeholder': 'Select Term(s)',
-                                'closeOnSelect': True
-                        }
-                    ),
+    terms = forms.ModelMultipleChoiceField(
+                    widget=Select2MultipleWidget(),
                     queryset=AcademicTerm.get_rchron()
     )
-    preparer = ModelSelect2Field(
-                    widget=Select2Widget(
-                        select2_options={
-                                'width': '26em'
-                        }
-                    ),
+    preparer = forms.ModelChoiceField(
+                    widget=Select2Widget(),
                     queryset=MemberProfile.get_actives()
     )
 
@@ -259,34 +212,17 @@ class BaseProjectReportHeaderForm(forms.ModelForm):
 class BaseNEPForm(forms.ModelForm):
     """ Base form for filling out a non-event project summary.
     """
-    leaders = ModelSelect2MultipleField(
-                widget=Select2MultipleWidget(
-                    select2_options={
-                            'width': '26em',
-                            'placeholder': 'Select Leader(s)',
-                            'closeOnSelect':
-                            True
-                    }
-                ),
+    leaders = forms.ModelMultipleChoiceField(
+                widget=Select2MultipleWidget(),
                 queryset=MemberProfile.get_members()
     )
-    term = ModelSelect2Field(
-                widget=Select2Widget(
-                    select2_options={
-                            'width': '26em'
-                    }
-                ),
+    term = forms.ModelChoiceField(
+                widget=Select2Widget(),
                 queryset=AcademicTerm.get_rchron(),
                 initial=AcademicTerm.get_current_term()
     )
-    assoc_officer = ModelSelect2Field(
-                widget=Select2Widget(
-                    select2_options={
-                            'width': '26em',
-                            'placeholder': 'Select Officer Position',
-                            'closeOnSelect': True
-                    }
-                ),
+    assoc_officer = forms.ModelChoiceField(
+                widget=Select2Widget(),
                 queryset=OfficerPosition.get_current(),
                 label='Associated Officer'
     )
@@ -307,14 +243,8 @@ class BaseNEPForm(forms.ModelForm):
 
 class BaseNEPParticipantForm(forms.ModelForm):
     """ Base form for adding participants to a non-event project."""
-    participant = ModelSelect2Field(
-                widget=Select2Widget(
-                    select2_options={
-                            'width': '26em',
-                            'placeholder': 'Select Participant',
-                            'closeOnSelect': True
-                    }
-                ),
+    participant = forms.ModelChoiceField(
+                widget=Select2Widget(),
                 queryset=MemberProfile.get_members()
     )
 
@@ -326,14 +256,8 @@ class BaseNEPParticipantForm(forms.ModelForm):
 class BaseBackgroundCheckForm(forms.ModelForm):
     """ Base form for adding member background checks.
     """
-    member = ModelSelect2Field(
-                widget=Select2Widget(
-                    select2_options={
-                            'width': '26em',
-                            'placeholder': 'Select Participant',
-                            'closeOnSelect': True
-                    }
-                ),
+    member = forms.ModelChoiceField(
+                widget=Select2Widget(),
                 queryset=UserProfile.objects.all().order_by('last_name')
     )
 
@@ -378,22 +302,16 @@ class MassAddBackgroundCheckForm(forms.Form):
 
 
 class AddStatusForm(forms.ModelForm):
-    member = ModelSelect2Field(
-                    widget=Select2Widget(
-                            select2_options={
-                                    'width': 'element',
-                                    'placeholder': 'Select Member',
-                                    'closeOnSelect': True
-                            }
-                    ),
-                    queryset=MemberProfile.get_actives()
+    member = forms.ModelChoiceField(
+                    widget=Select2Widget(),
+                queryset=MemberProfile.get_actives()
     )
     approve = forms.BooleanField(required=False)
 
     class Meta:
         model = Distinction
         exclude= ('term',)
-
+        
     def save(self, commit=True):
         approved = self.cleaned_data.pop('approve', False)
         if approved:

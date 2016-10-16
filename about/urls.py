@@ -1,9 +1,8 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import  url
 
 from about import views
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(r'^$',
         views.index,
         name='index'),
@@ -28,4 +27,4 @@ urlpatterns = patterns(
     url(r'^leadership/$',
         views.leadership,
         name='leadership'),
-)
+]

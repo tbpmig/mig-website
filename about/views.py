@@ -9,7 +9,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.forms.models import modelformset_factory
-from django.template import RequestContext, loader
+from django.template import loader
 from django.db.models import Q, Count
 
 from django_ajax.decorators import ajax
@@ -67,8 +67,7 @@ def index(request):
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def eligibility(request):
@@ -94,8 +93,7 @@ def eligibility(request):
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def update_about_photos(request):
@@ -140,9 +138,8 @@ def update_about_photos(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('generic_formset.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict,request))
 
 
 def update_joining_page(request):
@@ -184,9 +181,8 @@ def update_joining_page(request):
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
     template = loader.get_template('generic_formset.html')
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict,request))
 
 
 def leadership(request):
@@ -220,8 +216,7 @@ def leadership_for_term(request, term_id):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict,request))
 
 
 @ajax
@@ -258,5 +253,4 @@ def bylaws(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict,request))

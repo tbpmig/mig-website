@@ -8,7 +8,7 @@ from django.contrib.auth import logout, login
 from django.contrib.auth.models import User
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, get_object_or_404
-from django.template import RequestContext, loader
+from django.template import loader
 from django.utils import timezone
 
 from django_ajax.decorators import ajax
@@ -76,9 +76,7 @@ def home(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
-    context = RequestContext(request, context_dict)
-
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 @ajax
@@ -139,8 +137,7 @@ def cf_companies(request):
     request.session['current_page'] = request.path
     template = loader.get_template('career_fair/CareerFairCompanySheet.html')
     context_dict = {}
-    context = RequestContext(request, context_dict)
-    return HttpResponse(template.render(context))
+    return HttpResponse(template.render(context_dict, request))
 
 
 def login_view(request):
