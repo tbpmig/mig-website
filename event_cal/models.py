@@ -82,7 +82,10 @@ def default_term():
     Fixes a serialization issue that results from circular references in
     migrations.
     """
-    return AcademicTerm.get_current_term().id
+    try:
+        return AcademicTerm.get_current_term().id
+    except:
+        return 1
 
 
 class GoogleCalendar(models.Model):
@@ -1023,7 +1026,7 @@ class EventShift(models.Model):
     max_attendance = models.IntegerField(null=True, blank=True, default=None)
     attendees = models.ManyToManyField('mig_main.UserProfile',
                                        related_name="event_attendee",
-                                       blank=True, null=True, default=None)
+                                       blank=True, default=None)
     electees_only = models.BooleanField(default=False)
     actives_only = models.BooleanField(default=False)
     grads_only = models.BooleanField(default=False)

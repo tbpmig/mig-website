@@ -136,10 +136,8 @@ class OutreachEventType(models.Model):
 
     Each gets its own page.
     """
-    event_category = models.ForeignKey(
-                        'requirements.EventCategory',
-                        unique=True
-    )
+    event_category = models.OneToOneField(
+                        'requirements.EventCategory')
     title = models.CharField(max_length=256)
     text = models.TextField()
     url_stem = models.CharField(

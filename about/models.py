@@ -25,9 +25,26 @@ class AboutSlideShowPhoto(models.Model):
 
 class JoiningTextField(models.Model):
     """
-    Text for one of the sections of the joining page.
-    Can select a section and add text for it so that
+    Text for one of the sections of the joining page:
+    :view:`about.views.eligibility`.
+    
+    Allows a user to select a section and add text for it so that
     editing of html is not required.
+    
+    ``CHOICES`` attribute:
+
+    EL
+        Eligibility Requirements
+
+    Y   
+        Why Join TYP
+
+    UG
+        Requirements to Join for Undergrads
+
+    GR
+        Requirements to Join for Grads
+
     """
     CHOICES = (
             ('EL', 'Eligibility Requirements'),
@@ -35,8 +52,17 @@ class JoiningTextField(models.Model):
             ('UG', 'Requirements to Join (Undergrads)'),
             ('GR', 'Requirements to Join (Grads)'),
     )
-    section = models.CharField(max_length=2, choices=CHOICES, default='EL')
-    text = models.TextField()
+    section = models.CharField(
+                max_length=2,
+                choices=CHOICES,
+                default='EL',
+                help_text=('One of the sections defined by the CHOICES '
+                           'attribute:')                           
+    )
+    text = models.TextField(
+            help_text=('The text which should be displayed for the section. '
+                       'Supports markdown formatting.')
+    )
 
     def __unicode__(self):
         return 'Joining Text for: '+self.get_section_display()

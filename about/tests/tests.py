@@ -5,7 +5,7 @@ It currently contains:
 -views (complete)
 """
 from django.test import TestCase
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from about.models import AboutSlideShowPhoto, JoiningTextField

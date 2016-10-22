@@ -93,6 +93,8 @@ class CorporateViewsTestCase(TestCase):
         self.client = MyClient()
         self.user = User.objects.get(username='johndoe')
         self.admin = User.objects.get(username='jimharb')
+        CorporateResourceGuide.objects.all().delete()
+
 
     def tearDown(self):
         del(self.client)
@@ -151,8 +153,9 @@ class CorporateViewsTestCase(TestCase):
         self.assertFalse(context['can_edit_corporate'])
         self.assertTrue('user' in context)
         self.assertEqual(context['user'], self.user)
-        self.assertFalse(update_corp_url in resp.content)
-        self.assertFalse(update_resource_url in resp.content)
+        resp_content = resp.content.decode('utf-8')
+        self.assertFalse(update_corp_url in resp_content)
+        self.assertFalse(update_resource_url in resp_content)
         client.logout()
 
         # Test admin permissions
@@ -161,12 +164,13 @@ class CorporateViewsTestCase(TestCase):
         resp = client.get(view_url)
         self.assertEqual(resp.status_code, 200)
         context = resp.context
+        resp_content = resp.content.decode('utf-8')
         self.assertTrue('can_edit_corporate' in context)
         self.assertTrue(context['can_edit_corporate'])
         self.assertTrue('user' in context)
         self.assertEqual(context['user'], self.admin)
-        self.assertTrue(update_corp_url in resp.content)
-        self.assertTrue(update_resource_url in resp.content)
+        self.assertTrue(update_corp_url in resp_content)
+        self.assertTrue(update_resource_url in resp_content)
         client.logout()
 
         # test officer permissions
@@ -176,15 +180,16 @@ class CorporateViewsTestCase(TestCase):
             resp = client.get(view_url)
             self.assertEqual(resp.status_code, 200)
             context = resp.context
+            resp_content = resp.content.decode('utf-8')
             self.assertTrue('can_edit_corporate' in context)
             if officer.position.name in CAN_EDIT_CORP:
                 self.assertTrue(context['can_edit_corporate'])
-                self.assertTrue(update_corp_url in resp.content)
-                self.assertTrue(update_resource_url in resp.content)
+                self.assertTrue(update_corp_url in resp_content)
+                self.assertTrue(update_resource_url in resp_content)
             else:
                 self.assertFalse(context['can_edit_corporate'])
-                self.assertFalse(update_corp_url in resp.content)
-                self.assertFalse(update_resource_url in resp.content)
+                self.assertFalse(update_corp_url in resp_content)
+                self.assertFalse(update_resource_url in resp_content)
             self.assertTrue('user' in context)
             self.assertEqual(context['user'], officer.user.user)
             client.logout()
@@ -230,8 +235,9 @@ class CorporateViewsTestCase(TestCase):
         self.assertFalse(context['can_edit_corporate'])
         self.assertTrue('user' in context)
         self.assertEqual(context['user'], self.user)
-        self.assertFalse(update_corp_url in resp.content)
-        self.assertFalse(update_resource_url in resp.content)
+        resp_content = resp.content.decode('utf-8')
+        self.assertFalse(update_corp_url in resp_content)
+        self.assertFalse(update_resource_url in resp_content)
         client.logout()
 
         # Test admin permissions
@@ -240,12 +246,13 @@ class CorporateViewsTestCase(TestCase):
         resp = client.get(view_url)
         self.assertEqual(resp.status_code, 200)
         context = resp.context
+        resp_content = resp.content.decode('utf-8')
         self.assertTrue('can_edit_corporate' in context)
         self.assertTrue(context['can_edit_corporate'])
         self.assertTrue('user' in context)
         self.assertEqual(context['user'], self.admin)
-        self.assertTrue(update_corp_url in resp.content)
-        self.assertTrue(update_resource_url in resp.content)
+        self.assertTrue(update_corp_url in resp_content)
+        self.assertTrue(update_resource_url in resp_content)
         client.logout()
 
         # test officer permissions
@@ -255,15 +262,16 @@ class CorporateViewsTestCase(TestCase):
             resp = client.get(view_url)
             self.assertEqual(resp.status_code, 200)
             context = resp.context
+            resp_content = resp.content.decode('utf-8')
             self.assertTrue('can_edit_corporate' in context)
             if officer.position.name in CAN_EDIT_CORP:
                 self.assertTrue(context['can_edit_corporate'])
-                self.assertTrue(update_corp_url in resp.content)
-                self.assertTrue(update_resource_url in resp.content)
+                self.assertTrue(update_corp_url in resp_content)
+                self.assertTrue(update_resource_url in resp_content)
             else:
                 self.assertFalse(context['can_edit_corporate'])
-                self.assertFalse(update_corp_url in resp.content)
-                self.assertFalse(update_resource_url in resp.content)
+                self.assertFalse(update_corp_url in resp_content)
+                self.assertFalse(update_resource_url in resp_content)
             self.assertTrue('user' in context)
             self.assertEqual(context['user'], officer.user.user)
             client.logout()
@@ -410,6 +418,8 @@ class CorporateViewsTestCase(TestCase):
         resp = client.get(view_url)
         self.assertEqual(resp.status_code, 302)
         client.logout()
+        
+
         # only a few officers can access it
         officers = Officer.objects.all()
         for officer in officers:
@@ -436,6 +446,7 @@ class CorporateViewsTestCase(TestCase):
         self.assertEqual(context['user'], self.admin)
         self.assertTrue(context['has_files'])
         self.assertTrue('base' in context)
+        
 
         # test submissions, first one that succeeds
         pdf_file = open('migweb/test_docs/test.pdf', 'rb')
@@ -479,7 +490,7 @@ class CorporateViewsTestCase(TestCase):
         self.assertFalse(resp.context['error_message'])
         self.assertFalse(resp.context['warning_message'])
         self.assertTrue(resp.context['success_message'])
-        self.assertEqual(CorporateTextField.objects.count(), 2)
+        self.assertEqual(CorporateResourceGuide.objects.count(), 2)
         self.assertEqual(CorporateResourceGuide.objects.filter(active=True).count(), 1)
         self.assertEqual(CorporateResourceGuide.objects.filter(active=False).count(), 1)
         self.assertEqual(CorporateResourceGuide.objects.get(active=True).name,
@@ -535,6 +546,7 @@ class CorporateAuxiliaryTestCase(TestCase):
     def tearDownClass(self):
         CorporateResourceGuide.objects.all().delete()
         super(CorporateAuxiliaryTestCase,self).tearDownClass()
+
 
     def test_resume_compile(self):
         compile_resumes()

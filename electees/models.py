@@ -421,5 +421,5 @@ class ElecteeInterviewFollowup(models.Model):
 class ElecteeProcessVisibility(models.Model):
     """ Encapsulates whether followups are visible in a given semester.
     """
-    term = models.ForeignKey('mig_main.AcademicTerm', unique=True)
+    term = models.OneToOneField('mig_main.AcademicTerm')
     followups_visible = models.BooleanField(default=False)

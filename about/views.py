@@ -56,7 +56,8 @@ def get_common_context(request):
 def index(request):
     """
     The landing page for the about section. Has some overview text (static)
-    and a photo slideshow determined by the records in the AboutSlideShowPhoto
+    and a photo slideshow determined by the records in the 
+    :model:`about.AboutSlideShowPhoto`
     table.
     """
     slideshow_photos = AboutSlideShowPhoto.objects.filter(active=True)
@@ -75,7 +76,8 @@ def eligibility(request):
     The joining page. The name eligibility is a backwards compatibility to the
     old name of the page. Unfortunately changing the view names is a big hassle
     as all the links throughout the website are kind of based on those. Shows
-    text determined by the JoiningTextField table and a static photo that
+    text determined by the :model:`about.JoiningTextField`
+    table and a static photo that
     desperately needs updating.
     """
     template = loader.get_template('about/eligibility.html')

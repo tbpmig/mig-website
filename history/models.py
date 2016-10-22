@@ -273,7 +273,6 @@ class WebsiteArticle(models.Model):
     tagged_members = models.ManyToManyField(
                             'mig_main.MemberProfile',
                             blank=True,
-                            null=True,
                             related_name='article_tagged_members',
     )
     approved = models.BooleanField(default=False)

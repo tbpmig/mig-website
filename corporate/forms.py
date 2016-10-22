@@ -17,7 +17,6 @@ class AddContactForm(forms.Form):
                     widget=Select2Widget(),
                     queryset=Company.objects.order_by('name'),
                     label='Company',
-                    initial=Company.objects.order_by('name')[0]
     )
     gets_email = forms.BooleanField(required=False)
     has_contacted = forms.BooleanField(required=False)
