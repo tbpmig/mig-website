@@ -3,6 +3,9 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css" href="{% static 'css/datepicker.css' %}" />
+{% if formset %}
+{{form.media.css}}
+{% endif %}
 {% endblock css %}
 {% block js %}
 <script>
@@ -15,6 +18,9 @@
 </script>
 <script src="{% static 'js/bootstrap-datepicker.js' %}"></script>
 {% include 'datepicker.html' %}
+{% if formset %}
+{{form.media.js}}
+{% endif %}
 {% endblock js %}
 {% block cal_content %}
 {% if not edit %}

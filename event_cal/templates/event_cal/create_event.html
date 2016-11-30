@@ -3,6 +3,7 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css" href="{% static 'css/datepicker.css' %}" />
+{{form.media.css}}
 {% endblock css %}
 {% block js %}
 <script>
@@ -25,6 +26,8 @@
 </script>
 <script src="{% static 'js/bootstrap-datepicker.js' %}"></script>
 {% include 'datepicker.html' %}
+
+{{form.media.js}}
 {% endblock js %}
 {% block cal_content %}
 <h3>{{form_title}}</h3>
