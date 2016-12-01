@@ -1308,8 +1308,8 @@ class AnnouncementBlurb(models.Model):
         """Return a queryset of blurbs to include in today's announcements."""
         now = timezone.localtime(timezone.now())
         return cls.objects.filter(
-                    start_date__lte=now.date,
-                    end_date__gt=now.date
+                    start_date__lte=now.date(),
+                    end_date__gt=now.date()
         )
 
     def __unicode__(self):

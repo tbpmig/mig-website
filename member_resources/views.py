@@ -2338,10 +2338,10 @@ def add_external_service(request):
     ExternalServiceFormSet = modelformset_factory(
                                     ProgressItem,
                                     form=ExternalServiceForm,
-                                    can_delete=True
+                                    can_delete=True,
     )
     formset = ExternalServiceFormSet(
-                    request.POST,
+                    request.POST or None,
                     queryset=ProgressItem.objects.filter(
                                 term=AcademicTerm.get_current_term(),
                                 event_type__name='External Service Hours'
@@ -2723,7 +2723,8 @@ def approve_tutoring_forms(request):
     TutoringFormFormSet = modelformset_factory(
                                     TutoringRecord,
                                     extra=0,
-                                    can_delete=True
+                                    can_delete=True,
+                                    exclude=[]
     )
     formset = TutoringFormFormSet(
                     request.POST or None,
