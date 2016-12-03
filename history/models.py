@@ -1333,15 +1333,10 @@ class BackgroundCheck(models.Model):
 
     @classmethod
     def get_valid_checks_for_user(cls, userprofile):
-        bu_q = Q(
+        bua_q = Q(
                 date_added__gte=date.today()-timedelta(days=2*365),
-                check_type__in=['B', 'U']
         )
-        a_q = Q(
-                date_added__gte=date.today()-timedelta(days=1*365),
-                check_type='A'
-        )
-        query = bu_q | a_q
+        query = bua_q 
         return cls.objects.filter(member=userprofile).filter(query)
 
     @classmethod
