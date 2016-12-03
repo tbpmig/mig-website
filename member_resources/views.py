@@ -474,6 +474,8 @@ def profile(request, uniqname):
             officer_positions.append({
                             'name': position.position.name,
                             'term': term})
+                            
+    background_checks = BackgroundCheck.objects.filter(member=profile)
 
     context_dict = {
         'profile': profile,
@@ -491,6 +493,7 @@ def profile(request, uniqname):
         'has_distinctions': has_distinctions,
         'subnav': 'member_profiles',
         'praise': praise,
+        'checks':background_checks,
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
