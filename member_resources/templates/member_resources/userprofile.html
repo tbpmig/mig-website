@@ -52,7 +52,7 @@
                 {% regroup checks|dictsort:"check_type" by get_check_type_display as grouped_checks %}
                 {% for check_type in grouped_checks %}
                     {% if check_type.list %}
-                    {% with sorted_checks=check_type.list|dictsort:"date_added"  %}
+                    {% with sorted_checks=check_type.list|dictsortreversed:"date_added"  %}
                     <li><i>{{check_type.grouper}}:</i> {{sorted_checks.0.date_added}}</li>
                     {% endwith %}
                     {% endif %}
