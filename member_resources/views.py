@@ -870,7 +870,7 @@ def view_progress_list(request):
 
 
 def download_active_progress(request):
-    if not Permissions.can_manage_active_progress(request.user):
+    if not Permissions.can_download_active_status(request.user):
         request.session['error_message'] = 'You are not authorized to view actives\' progress.'
         return redirect('member_resources:index')
     response = HttpResponse(content_type='text/csv')
@@ -1451,6 +1451,7 @@ def view_misc_reqs(request):
         'can_manage_background_checks': Permissions.can_manage_background_checks(request.user),
         'can_view_interviews': Permissions.can_view_interview_pairings(request.user),
         'can_view_demographics': Permissions.can_view_demographics(request.user),
+        'can_download_active_status': Permissions.can_download_active_status(request.user),
         'active_distinctions': DistinctionType.objects.filter(status_type__name="Active"),
         'ugrad_electee_distinctions': DistinctionType.objects.filter(
                                             status_type__name='Electee',

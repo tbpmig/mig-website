@@ -880,7 +880,18 @@ class Permissions:
             return True
         else:
             return False
-
+    
+    @classmethod
+    def can_download_active_status(cls, user):
+        if cls.can_manage_active_progress(user):
+            return True
+        current_positions = cls.get_current_officer_positions(user)
+        query_actives = Q(position__name='Secretary')
+        if current_positions.filter(query_actives).exists():
+            return True
+        else:
+            return False
+    
     @classmethod
     def can_manage_electee_progress(cls, user):
         if user.is_superuser:

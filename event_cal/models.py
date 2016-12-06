@@ -193,6 +193,9 @@ class CalendarEvent(models.Model):
     # Shift aggregations to speed querying
     earliest_start = models.DateTimeField(default=datetime.now)
     latest_end = models.DateTimeField(default=datetime.now)
+    
+    # To support active-status emails
+    active_status_email_sent = models.BooleanField(default=False)
 
     @classmethod
     def get_current_meeting_query(cls):
