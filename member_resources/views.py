@@ -2693,18 +2693,18 @@ def view_meeting_feedback_for_term(request, term_id):
                         )
         })
     template = loader.get_template('member_resources/meeting_feedback.html')
+    terms_w_data_Q = Q(num_surveys__gt=0)
+    current_term_Q = Q(id=AcademicTerm.get_current_term().id)
     terms_w_data = AcademicTerm.objects.annotate(
                                     num_surveys=Count(
                                         'calendarevent__meetingsignin'
                                     )
-                                ).filter(num_surveys__gt=0)
-
-    current_term_query = AcademicTerm.objects.filter(
-                            id=AcademicTerm.get_current_term().id),
+                                ).filter(terms_w_data_Q | current_term_Q
+                                ).order_by('-id')
     context_dict = {
         'surveys': meeting_surveys,
         'term': term,
-        'display_terms': terms_w_data | current_term_query,
+        'display_terms': terms_w_data ,
         'subnav': 'history',
     }
     context_dict.update(get_common_context(request))
