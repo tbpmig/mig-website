@@ -67,9 +67,6 @@ class MemberProfileAdmin(admin.ModelAdmin):
         ('Alumni Info', {
                 'fields': [
                     'alum_mail_freq',
-                    'job_field',
-                    'employer',
-                    'meeting_speak'
                 ],
                 'classes': ['collapse']
         }),
