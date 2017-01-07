@@ -1481,7 +1481,8 @@ def manage_website(request):
     should_warn = True
     HomePageSlideShowFormSet = modelformset_factory(
                                         SlideShowPhoto,
-                                        can_delete=True
+                                        can_delete=True,
+                                        exclude=[],
     )
     formset = HomePageSlideShowFormSet(
                             request.POST or None,
