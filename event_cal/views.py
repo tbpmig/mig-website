@@ -2459,7 +2459,7 @@ def edit_announcements(request):
     announcement_parts = AnnouncementBlurb.objects.filter(
                                                 end_date__gt=now.date()
     )
-    AnnouncementFormSet = modelformset_factory(AnnouncementBlurb)
+    AnnouncementFormSet = modelformset_factory(AnnouncementBlurb, exclude=[])
     prefix = 'announcements'
     formset = AnnouncementFormSet(
                 request.POST or None,
