@@ -2457,7 +2457,7 @@ def edit_announcements(request):
     request.session['current_page'] = request.path
     now = timezone.localtime(timezone.now())
     announcement_parts = AnnouncementBlurb.objects.filter(
-                                                end_date__gt=now.date
+                                                end_date__gt=now.date()
     )
     AnnouncementFormSet = modelformset_factory(AnnouncementBlurb)
     prefix = 'announcements'
