@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta
 from markdown import markdown
 import json
+import time
 
 from django.core.cache import cache
 from django.core.mail import EmailMessage, send_mail
@@ -11,6 +12,7 @@ from django.utils import timezone
 from django.utils.encoding import force_unicode
 from stdimage import StdImageField
 import tweepy
+from gcal.apiclient.errors import HttpError
 
 from event_cal.gcal_functions import get_credentials, get_authorized_http
 from event_cal.gcal_functions import get_service
@@ -888,11 +890,13 @@ not checked.
             return
         c = get_credentials()
         h = get_authorized_http(c)
+        current_error_wait = .1
         if h:
             service = get_service(h)
             gcal = self.google_cal
             for shift in self.eventshift_set.all():
                 new_event = True
+                successfully_added = False
                 if shift.google_event_id:
                     try:
                         if previous_cal and not (previous_cal == gcal):
@@ -932,19 +936,28 @@ not checked.
                                             safe_mode=True,
                                             enable_attributes=False
                 )
-                if not new_event:
-                    service.events().update(
-                                    calendarId=gcal.calendar_id,
-                                    eventId=shift.google_event_id,
-                                    body=gcal_event
-                    ).execute()
-                else:
-                    submitted_event = service.events().insert(
-                                    calendarId=gcal.calendar_id,
-                                    body=gcal_event
-                    ).execute()
-                    shift.google_event_id = submitted_event['id']
-                    shift.save()
+                while not successfully_added:
+                    try:
+                        if not new_event:
+                            service.events().update(
+                                            calendarId=gcal.calendar_id,
+                                            eventId=shift.google_event_id,
+                                            body=gcal_event
+                            ).execute()
+                        else:
+                            submitted_event = service.events().insert(
+                                            calendarId=gcal.calendar_id,
+                                            body=gcal_event
+                            ).execute()
+                            shift.google_event_id = submitted_event['id']
+                            shift.save()
+                            successfully_added = True
+                    except HttpError, err:
+                        if err.resp.status in [403, 500, 503]:
+                            time.sleep(current_error_wait)
+                            current_error_wait = current_error_wait * 2
+                        else:
+                            raise
 
     def can_complete_event(self):
         """ Returns True if the event is able to be marked 'complete'.

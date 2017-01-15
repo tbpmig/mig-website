@@ -4,6 +4,7 @@
 {% block css %}
 <link rel="stylesheet" type="text/css" href="{% static 'css/datepicker.css' %}" />
 {{form.media.css}}
+{{formset.0.media.css}}
 {% endblock css %}
 {% block js %}
 <script>
@@ -27,9 +28,42 @@
 <script src="{% static 'js/bootstrap-datepicker.js' %}"></script>
 {% include 'datepicker.html' %}
 
-{{form.media.js}}
+
 {% endblock js %}
 {% block cal_content %}
+<table  style="display: none;">
+    <tr class="formset-row" id="formset-template" >
+        {% for field in formset.empty_form.visible_fields %}
+            <td>{{field}}</td>
+        {% endfor %}
+    </tr>
+</table>
+<div style="display: none;">
+    <tr class="formset-row" id="formset-template">
+        {% for field in formset.empty_form.visible_fields %}
+            <td>
+                {% if forloop.first %}
+                    {% for hidden in form.hidden_fields %}
+                    {{ hidden }}
+                    {% endfor %}
+                {% endif %}
+                <ul>
+                    {% for error in field.errors %}
+                    <li class="text-danger">{{error}}</li>
+                    {% endfor %}
+                </ul>
+                {{field}}
+                {% if forloop.last %}
+                <ul>
+                    {% for error in form.non_field_errors %}
+                    <li class="text-danger">{{error}}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </td>
+        {% endfor %}
+    </tr>
+</div>
 <h3>{{form_title}}</h3>
 <p>{{help_text}}</p>
 <p><strong>Note:</strong> If your event is on campus and needs a room, fill out the form <a href="http://tinyurl.com/tbprooms">here</a> so that one will be reserved for you.</p>
@@ -49,7 +83,10 @@
     {% endfor %}
      </ul>
 </div>
+
 <form action="{{ request.path }}" method="post" id="dynForm">{% csrf_token %}
     {% include 'event_cal/event_form.html' %}
 </form>
+{{form.media.js}}
+{{formset.0.media.js}}
 {% endblock cal_content %}

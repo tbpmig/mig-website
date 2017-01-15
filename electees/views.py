@@ -432,7 +432,7 @@ def edit_survey_parts(request):
     if not Permissions.can_manage_electee_progress(request.user):
         request.session['error_message']='You are not authorized to edit the electee survey.'
         return redirect('electees:view_electee_groups')
-    SurveyPartFormSet = modelformset_factory(SurveyPart)
+    SurveyPartFormSet = modelformset_factory(SurveyPart, exclude=[])
     prefix='surveyparts'
    
     if request.method =='POST':
@@ -465,7 +465,7 @@ def edit_survey_questions(request):
     if not Permissions.can_manage_electee_progress(request.user):
         request.session['error_message']='You are not authorized to edit the electee survey.'
         return redirect('electees:view_electee_groups')
-    SurveyQuestionFormSet = modelformset_factory(SurveyQuestion)
+    SurveyQuestionFormSet = modelformset_factory(SurveyQuestion, exclude=[])
     prefix='surveyquestions'
    
     if request.method =='POST':
