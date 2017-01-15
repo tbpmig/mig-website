@@ -2778,7 +2778,7 @@ def interview_view_electees(request, event_id):
         is_two_part = True
         shifts = InterviewPairing.objects.filter(
             first_shift__event=event
-        ).distinct().order_by('first_shift.start_time')
+        ).distinct().order_by('first_shift__start_time')
     organized_shifts, locations = organize_shifts_interview(shifts, is_two_part)
 
     context_dict = {
