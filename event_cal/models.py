@@ -956,6 +956,8 @@ not checked.
                         if err.resp.status in [403, 500, 503]:
                             time.sleep(current_error_wait)
                             current_error_wait = current_error_wait * 2
+                            if 'sequence' in gcal_event:
+                                gcal_event['sequence']=gcal_event['sequence']+1
                         else:
                             raise
 
