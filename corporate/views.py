@@ -214,7 +214,7 @@ def add_company(request):
         request.session['error_message'] = 'You are not authorized to add companies'
         return redirect('corporate:index')
     prefix = 'corporate_page'
-    AddCompanyForm = modelform_factory(Company)
+    AddCompanyForm = modelform_factory(Company, exclude=[])
     form = AddCompanyForm(request.POST or None,prefix=prefix)
     if request.method == 'POST':
         if form.is_valid():
@@ -248,7 +248,7 @@ def add_jobfield(request):
         request.session['error_message'] = 'You are not authorized to add industries'
         return redirect('corporate:index')
     prefix = 'corporate_page'
-    AddIndustryForm = modelform_factory(JobField)
+    AddIndustryForm = modelform_factory(JobField, exclude=[])
     form = AddIndustryForm(request.POST or None,prefix=prefix)
     if request.method == 'POST':
         if form.is_valid():
@@ -344,7 +344,7 @@ def update_corporate_email(request):
         return redirect('corporate:index')
     prefix = 'corporate_email'
     existing_email = CorporateEmail.objects.filter(active=True)
-    UpdateEmailForm = modelform_factory(CorporateEmail)
+    UpdateEmailForm = modelform_factory(CorporateEmail, exclude=[])
     if existing_email.exists():
         form = UpdateEmailForm(request.POST or None,prefix=prefix,instance=existing_email[0])
     else:
