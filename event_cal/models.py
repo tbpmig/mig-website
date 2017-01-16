@@ -951,7 +951,7 @@ not checked.
                             ).execute()
                             shift.google_event_id = submitted_event['id']
                             shift.save()
-                            successfully_added = True
+                        successfully_added = True
                     except HttpError, err:
                         if err.resp.status in [403, 500, 503]:
                             time.sleep(current_error_wait)
