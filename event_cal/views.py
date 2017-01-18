@@ -1190,13 +1190,13 @@ def list(request):
             can_attend = form.cleaned_data['can_attend']
             if can_attend and user_is_member:
                 profile = request.user.userprofile
-                q_can_attend = (Q(ugrads_only=profile.is_ugrad) |
+                q_can_attend = (Q(ugrads_only=profile.is_ugrad()) |
                                 Q(ugrads_only=False))
-                q_can_attend &= (Q(grads_only=profile.is_grad) |
+                q_can_attend &= (Q(grads_only=profile.is_grad()) |
                                  Q(grads_only=False))
-                q_can_attend &= (Q(actives_only=profile.is_active) |
+                q_can_attend &= (Q(actives_only=profile.is_active()) |
                                  Q(actives_only=False))
-                q_can_attend &= (Q(electees_only=profile.is_electee) |
+                q_can_attend &= (Q(electees_only=profile.is_electee()) |
                                  Q(electees_only=False))
             event_categories = form.cleaned_data['event_reqs']
             for category in event_categories:
