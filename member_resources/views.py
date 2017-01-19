@@ -1851,7 +1851,8 @@ def manage_active_statuses(request):
         return redirect('member_resources:index')
     ManageActiveCurrentStatusFormSet = modelformset_factory(
                                                     Distinction,
-                                                    can_delete=True
+                                                    can_delete=True,
+                                                    exclude=[],
     )
     ManageActiveCurrentStatusFormSet.form.base_fields['member'].queryset = MemberProfile.get_actives()
     ManageActiveCurrentStatusFormSet.form.base_fields['distinction_type'].queryset = DistinctionType.objects.filter(status_type__name='Active')
@@ -2630,9 +2631,10 @@ def change_event_categories(request):
     if request.user.is_superuser:
         EventCategoryFormSet = modelformset_factory(
                                             EventCategory,
-                                            can_delete=True)
+                                            can_delete=True,
+                                            exclude=[])
     else:
-        EventCategoryFormSet = modelformset_factory(EventCategory)
+        EventCategoryFormSet = modelformset_factory(EventCategory, exclude=[])
     if request.method == 'POST':
         formset = EventCategoryFormSet(request.POST, prefix='categories')
         if formset.is_valid():
