@@ -1849,15 +1849,15 @@ def manage_active_statuses(request):
         request.session['error_message'] = ('You are not authorized to manage '
                                             'active progress.')
         return redirect('member_resources:index')
-    ManageActiveCurrentStatusFormSet = modelformset_factory(
+    ManageActiveCurrentStatusFormSet2 = modelformset_factory(
                                                     Distinction,
                                                     can_delete=True,
                                                     exclude=[],
     )
-    ManageActiveCurrentStatusFormSet.form.base_fields['member'].queryset = MemberProfile.get_actives()
-    ManageActiveCurrentStatusFormSet.form.base_fields['distinction_type'].queryset = DistinctionType.objects.filter(status_type__name='Active')
+    ManageActiveCurrentStatusFormSet2.form.base_fields['member'].queryset = MemberProfile.get_actives()
+    ManageActiveCurrentStatusFormSet2.form.base_fields['distinction_type'].queryset = DistinctionType.objects.filter(status_type__name='Active')
     if request.method == 'POST':
-        formset = ManageActiveCurrentStatusFormSet(request.POST,
+        formset = ManageActiveCurrentStatusFormSet2(request.POST,
                                                    prefix='active_status')
         if formset.is_valid():
             formset.save()
@@ -1867,7 +1867,7 @@ def manage_active_statuses(request):
         else:
             request.session['error_message'] = INVALID_FORM_MESSAGE
     else:
-        formset = ManageActiveCurrentStatusFormSet(prefix='active_status')
+        formset = ManageActiveCurrentStatusFormSet2(prefix='active_status')
     template = loader.get_template('generic_formset.html')
     context_dict = {
         'formset': formset,

@@ -304,7 +304,7 @@ class MassAddBackgroundCheckForm(forms.Form):
 class AddStatusForm(forms.ModelForm):
     member = forms.ModelChoiceField(
                     widget=Select2Widget(),
-                queryset=MemberProfile.get_actives()
+                    queryset=MemberProfile.get_actives()
     )
     approve = forms.BooleanField(required=False)
 
@@ -320,6 +320,11 @@ class AddStatusForm(forms.ModelForm):
             print 'unapproved'
             return None
 
+class AddElecteeStatusForm(AddStatusForm):
+    member = forms.ModelChoiceField(
+                    widget=Select2Widget(),
+                    queryset=MemberProfile.get_electees()
+    )
 
 class BaseAddStatusFormSet(BaseModelFormSet):
     def __init__(self, *args, **kwargs):
@@ -375,13 +380,13 @@ class BaseAddActiveStatusFormSet(BaseAddStatusFormSet):
         self.form.base_fields['distinction_type'].queryset =\
                 DistinctionType.objects.filter(status_type__name='Active')
 
-ManageElecteeDAPAFormSet = modelformset_factory(Distinction,form=AddStatusForm)
+ManageElecteeDAPAFormSet = modelformset_factory(Distinction,form=AddElecteeStatusForm)
 ManageElecteeDAPAFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Electee').filter(Q(name__contains='DA')|Q(name__contains='PA'))
-ManageElecteeDAPAFormSet.form.base_fields['member'].queryset = MemberProfile.get_electees()
+#ManageElecteeDAPAFormSet.form.base_fields['member'].queryset = MemberProfile.get_electees()
 
-ElecteeToActiveFormSet = modelformset_factory(Distinction,form=AddStatusForm)
+ElecteeToActiveFormSet = modelformset_factory(Distinction,form=AddElecteeStatusForm)
 ElecteeToActiveFormSet.form.base_fields['distinction_type'].queryset=DistinctionType.objects.filter(status_type__name='Electee').exclude(Q(name__contains='DA')|Q(name__contains='PA'))
-ElecteeToActiveFormSet.form.base_fields['member'].queryset = MemberProfile.get_electees()
+#ElecteeToActiveFormSet.form.base_fields['member'].queryset = MemberProfile.get_electees()
 
 ManageActiveCurrentStatusFormSet = modelformset_factory(
                                                 Distinction,
