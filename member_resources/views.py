@@ -2582,7 +2582,7 @@ def change_requirements(request, distinction_id):
                                               exclude=('distinction_type',),
                                               can_delete=True)
     formset = RequirementFormSet(
-                        request.POST,
+                        request.POST or None,
                         prefix='requirements',
                         queryset=Requirement.objects.filter(
                                             distinction_type=distinction)
