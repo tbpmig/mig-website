@@ -335,7 +335,9 @@ class ManageUgradPaperWorkForm(Form):
         )
         dist = DistinctionType.objects.filter(
                 status_type__name='Electee',
-                standing_type=profile.standing)
+                standing_type=profile.standing).exclude(
+                    name__contains='DA').exclude(
+                    name__contains='PA')
         group_meeting_req = Requirement.objects.filter(
                 distinction_type=dist,
                 event_category__name='Team Meetings',
