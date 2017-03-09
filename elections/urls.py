@@ -4,6 +4,7 @@ from elections import views
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
+    url(r'^create_new$', views.create_elections, name='create_elections'),
     url(r'^(?P<election_id>\d+)/officer_positions/$',
         views.positions,
         name='positions'),

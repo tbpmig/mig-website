@@ -11,6 +11,7 @@
 	{% endfor %}
 {% else %}
 	<p> Nominations are not currently open. Check back later</p>
+    <p><a class="btn btn-default" href="{% url 'elections:create_elections' %}"> Create Elections</a></p>
 {% endif %}
     </div>
 </div>

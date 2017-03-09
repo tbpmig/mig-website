@@ -25,6 +25,9 @@ from mig_main.utility import get_message_dict, Permissions
 
 def get_permissions(user):
     permission_dict = get_member_permissions(user)
+    permission_dict.update({
+        'can_create_elections': user.is_superuser,
+        })
     return permission_dict
 
 
@@ -57,6 +60,17 @@ def index(request):
     return HttpResponse(template.render(context_dict, request))
 
 
+def create_elections(request):
+    if not request.user.is_superuser:
+        request.session['error_message'] = 'Invalid Action.'
+        return redirect('elections:index')
+    term = AcademicTerm.get_current_term()
+    e = Election.create_election_for_next_term(term)
+    request.session['success_message'] = 'Elections Created'
+    return HttpResponseRedirect(
+                reverse('elections:list', args=(e.id,))
+    )
+    
 def list(request, election_id):
     """ The landing page for an individual election.
 

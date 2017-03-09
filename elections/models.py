@@ -7,6 +7,7 @@ from django.utils.encoding import force_unicode
 
 from markdown import markdown
 
+from mig_main.models import OfficerPosition
 
 def default_close_date():
     return date.today()+timedelta(weeks=3)
@@ -34,6 +35,20 @@ class Election(models.Model):
                         close_date__gte=date.today()
         )
 
+    @classmethod
+    def create_election_for_next_term(cls, current_term):
+        election = cls(term=current_term.get_next_full_term())
+        election.save()
+        officers_to_elect = OfficerPosition.objects.filter(
+                    enabled=True).filter(is_elected=True)
+        if current_term.semester_type.name=='Fall':
+            officers_to_elect = officers_to_elect.exclude(term_length='A')
+        else:
+            officers_to_elect = officers_to_elect.exclude(term_length='C')
+            
+        election.officers_for_election = officers_to_elect
+        election.save()
+        return election
 
 class Nomination(models.Model):
     """ A user-submitted nomination for an officer position.
