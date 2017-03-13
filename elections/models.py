@@ -67,6 +67,7 @@ class Nomination(models.Model):
     )
     position = models.ForeignKey('mig_main.OfficerPosition')
     accepted = models.NullBooleanField(default=None)
+    message = models.TextField(blank=True, default='')
 
     def __unicode__(self):
         name = self.nominee.get_full_name()
@@ -100,6 +101,14 @@ class Nomination(models.Model):
             team_member_bit += teams
         else:
             team_member_bit = ''
+        if len(self.message)>0:
+            message = ', who wanted to pass along this message: ' + self.message
+        else:
+            message = '.'
+        if self.nominator:
+            nominator = self.nominator.get_firstlast_name()
+        else:
+            nominator = 'Anonymous'
         body = r'''Hello %(name)s,
 
 You've been nominated for %(position)s!
@@ -108,6 +117,9 @@ Here's some information on it:
 %(team_info)s
 
 %(description)s
+
+You were nominated by %(nominator)s%(message)s
+
 
 To accept the nomination please click this link: %(accept_link)s
 or to decline click this link: %(decline_link)s
@@ -122,7 +134,9 @@ tbp-elections@umich.edu''' % {
             'description': position.description,
             'accept_link': accept_link,
             'decline_link': decline_link,
-            'team_info': team_lead_bit + '\n' + team_member_bit
+            'team_info': team_lead_bit + '\n' + team_member_bit,
+            'nominator': nominator,
+            'message': message,
         }
         html_body = markdown(
                         force_unicode(body),
