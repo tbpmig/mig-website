@@ -207,7 +207,10 @@ def email_active_status(meeting, is_elections):
 This is a friendly reminder that we have a critical voting meeting -
 %(name)s - %(date)s
 in %(location)s and we need to have a quorum of active members
-present.
+present. Please remember to bring your iClickers. In addition, we will
+be voting on the ratification ballot for the TBP Association ("nationals")
+so active member attendance is very important.
+
 Our records indicate that %(status)s
 
 %(alumni)s
@@ -228,6 +231,9 @@ The TBP Website'''
     start = timezone.localtime(start_end['start']).strftime('%A (%b %d) at %I:%M%p')
     start_string = 'this '+start
     event_name = meeting.name
+    print event_name
+    print location
+    sleep(5)
     for m in all_actives:
         print 'emailing ' + m.uniqname+'...'
         sleep(1)
