@@ -1066,6 +1066,7 @@ class EventShift(models.Model):
         """
         super(EventShift, self).save(*args, **kwargs)
         cache.delete('EVENT_AJAX'+unicode(self.event.id))
+        self.event.save()
 
     def delete(self, *args, **kwargs):
         """ Deletes the shift from the database.
