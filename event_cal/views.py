@@ -493,6 +493,9 @@ def event_detail(request, event_id):
         'can_edit_event': Permissions.can_edit_event(event, request.user),
         'can_add_sign_in': (Permissions.can_create_events(request.user) and not MeetingSignIn.objects.filter(event=event).exists() and event.use_sign_in),
         'can_complete': (event.can_complete_event() and Permissions.can_edit_event(event, request.user)),
+        'can_edit_signin': (not event.can_complete_event() and
+                            Permissions.can_edit_event(event, request.user) and
+                            event.use_sign_in),
         'subnav': 'list',
         'show_shifts': True,
         'needs_social_media': True,
@@ -1535,8 +1538,18 @@ def create_meeting_signin(request, event_id):
         request.session['error_message'] = ('You can only create a meeting '
                                             'signin for a meeting.')
         return get_previous_page(request, alternate='event_cal:list')
+    if not Permissions.can_edit_event(e, request.user):
+        request.session['error_message'] = ('You can only create a meeting '
+                                            'signin for a meeting you are'
+                                            'a leader of,')
+        return get_previous_page(request, alternate='event_cal:list')
     MeetingSignInForm = modelform_factory(MeetingSignIn, exclude=('event',))
-    form = MeetingSignInForm(request.POST or None)
+    existing_signin = MeetingSignIn.objects.filter(event=e)
+    if existing_signin.exists():
+        ex_sign = existing_signin[0]
+    else:
+        ex_sign = None
+    form = MeetingSignInForm(request.POST or None, instance=ex_sign)
     if request.method == 'POST':
         if form.is_valid():
             signin = form.save(commit=False)
@@ -1556,7 +1569,7 @@ def create_meeting_signin(request, event_id):
                 'link': reverse('event_cal:event_detail', args=[event_id]),
                 'text': 'To %s Page' % (e.name)
         },
-        'form_title': 'Add Sign in for %s' % (e.name),
+        'form_title': 'Add/Edit Sign in for %s' % (e.name),
         'help_text': ('In order to use the sign-in feature, please create a '
                       'sign-in form. Note that the form will automatically '
                       'have an optional \"Free Response\" question in '

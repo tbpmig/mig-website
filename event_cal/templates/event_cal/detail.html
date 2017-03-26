@@ -40,6 +40,9 @@
     <a class="btn btn-info btn-lg" href="{% url 'event_cal:add_project_report_to_event' event.id %}">Add/Swap Existing Project Report</a>
     {% endif %}
     <a class="btn btn-primary btn-lg" href = "{% url 'event_cal:email_participants' event.id %}">Email Event Participants</a>
+    {% if can_edit_signin %}
+    <a class="btn btn-primary btn-lg" href = "{% url 'event_cal:create_meeting_signin' event.id %}">Edit Sign-In Code/Question</a>
+    {% endif %}
     {% endif %}
 {% else %}
 <h3>{{event.name}}</h3>
