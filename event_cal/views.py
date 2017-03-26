@@ -2329,11 +2329,41 @@ are not checked.''' % {
                 'chair_name': tutoring_chair_name,
                 'position_name': tutoring_name,
             }
+            tutor_email_body = r'''Hello %(tutor)s!
+
+Thank you for logging that you tutored %(tutoree)s for %(hours)s hours on %(date)s.
+We'd like to know how it went. If you have any feedback for us we invite you to
+fill out a feedback form: www.tinyurl.com/TBP-tutoring-survey-tutor
+
+If you have any other questions about tutoring, please feel free to email me
+at %(email)s,
+
+Regards,
+%(chair_name)s%(position_name)s
+%(email)s
+
+Note: This is an automated email. Please do not reply to it as responses
+are not checked.''' % {
+                'tutor': tutor_name,
+                'hours': number_hours,
+                'date': unicode(tutoring_record.date_tutored),
+                'email': tutoring_email,
+                'chair_name': tutoring_chair_name,
+                'position_name': tutoring_name,
+                'tutoree':recipient,
+            }
             send_mail(
                 'We want your feedback on your recent tutoring session.',
                 body,
                 tutoring_email,
                 [recipient_email],
+                fail_silently=True
+            )
+            send_mail(
+                'We want your feedback on your recent tutoring session.',
+                tutor_email_body,
+                tutoring_email,
+                [profile.get_email()],
                 fail_silently=True
             )
             return get_previous_page(request, alternate='event_cal:index')
