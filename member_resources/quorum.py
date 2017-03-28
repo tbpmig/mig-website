@@ -207,9 +207,7 @@ def email_active_status(meeting, is_elections):
 This is a friendly reminder that we have a critical voting meeting -
 %(name)s - %(date)s
 in %(location)s and we need to have a quorum of active members
-present. Please remember to bring your iClickers. In addition, we will
-be voting on the ratification ballot for the TBP Association ("nationals")
-so active member attendance is very important.
+present. Please remember to bring your iClickers. 
 
 Our records indicate that %(status)s
 
