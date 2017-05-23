@@ -2394,7 +2394,8 @@ are not checked.''' % {
 
 def add_project_report_to_event(request, event_id):
     event = get_object_or_404(CalendarEvent, id=event_id)
-    if not Permissions.can_edit_event(event, request.user):
+    if not (Permissions.can_edit_event(event, request.user) or
+            Permissions.can_process_project_reports(request.user)):
         request.session['error_message'] = messages.EVT_NO_PERMISSIONS
         return get_previous_page(request, alternate='event_cal:index')
     initial = {'report': event.project_report}
