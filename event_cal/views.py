@@ -240,7 +240,7 @@ def remove_user_from_shift(profile, shift):
 
 
 def get_permissions(user):
-    return {}
+    return {'can_edit_reports': Permissions.can_process_project_reports(user)}
 
 
 def get_common_context(request):

@@ -28,12 +28,12 @@
         {% include 'event_cal/event.html' %}
     {% endwith %}
     {% if can_add_sign_in %}
-        <a class="btn btn-primary btn-lg" href={% url 'event_cal:create_meeting_signin' event.id %}>Add meeting sign-in</a>
+        <a class="btn btn-primary btn-lg" href="{% url 'event_cal:create_meeting_signin' event.id %}">Add meeting sign-in</a>
     {% endif %}
     {% if can_complete %}
         <a class="btn btn-success btn-lg" href="{% url 'event_cal:complete_event' event.id %}">Complete Event and Assign Hours</a>
     {% endif %}
-    {% if can_edit_event %}
+    {% if can_edit_event or can_edit_reports %}
     {% if event.completed %}
     <a class="btn btn-info btn-lg" href="{% url 'event_cal:event_project_report' event.id %}">Add/Update Project Report</a>
     <a class="btn btn-warning btn-lg" href="{% url 'event_cal:update_completed_event' event.id %}">Update Event Progress</a>

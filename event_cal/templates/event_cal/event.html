@@ -369,7 +369,8 @@
 </table>
 {% endfor %}
 {% endif %}
-{% if can_edit_event and not full_view %}
+{% if not full_view %}
+{% if can_edit_event or can_edit_reports %}
 {% if event.can_complete_event %}
         <a class="btn btn-success btn-sm" href="{% url 'event_cal:complete_event' event.id %}">Complete Event and Assign Hours</a>
     {% endif %}
@@ -378,5 +379,6 @@
     <a class="btn btn-warning btn-sm" href="{% url 'event_cal:update_completed_event' event.id %}">Update Event Progress</a>
     <a class="btn btn-info btn-sm" href="{% url 'event_cal:add_project_report_to_event' event.id %}">Add/Swap Existing Project Report</a>
     {% endif %}
+{% endif %}
 {% endif %}
 </div>
