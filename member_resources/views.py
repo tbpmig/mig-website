@@ -57,6 +57,7 @@ from history.models import (
                     CompiledProjectReport,
                     BackgroundCheck,
                     CommitteeMember,
+                    ProjectReport
 )
 from member_resources.forms import (
                     TBPraiseForm,
@@ -107,7 +108,8 @@ from mig_main.utility import (
                     get_current_group_leaders,
                     get_message_dict,
                     UnicodeWriter,
-                    get_officer_positions_predecessors
+                    get_officer_positions_predecessors,
+                    get_project_report_term
 )
 from outreach.models import TutoringRecord
 from requirements.models import (
@@ -245,14 +247,48 @@ def get_electees_who_completed_reqs():
 
 
 def get_permissions(user):
-    return {}
+    return {'can_edit_project_reports': Permissions.can_process_project_reports(user)}
 
 
 def get_common_context(request):
     context_dict = get_message_dict(request)
+    terms = get_project_report_term();
+    print terms
+    f_term = terms.filter(semester_type__name='Fall')
+    if f_term.exists():
+        f_term = f_term[0]
+        f_term_id = f_term.id
+        f_term_name = unicode(f_term)
+    else:
+        f_term_id = None
+        f_term_name = None
+        
+    s_term = terms.filter(semester_type__name='Summer')
+    if s_term.exists():
+        s_term = s_term[0]
+        s_term_id = s_term.id
+        s_term_name = unicode(s_term)
+    else:
+        s_term_id = None
+        s_term_name = None
+        
+    w_term = terms.filter(semester_type__name='Winter')
+    if w_term.exists():
+        w_term = w_term[0]
+        w_term_id = w_term.id
+        w_term_name = unicode(w_term)
+    else:
+        w_term_id = None
+        w_term_name = None
     context_dict.update({
         'request': request,
         'main_nav': 'members',
+        'f_term_name': f_term_name,
+        's_term_name': s_term_name,
+        'w_term_name': w_term_name,
+        'fall_report_term': f_term_id,
+        'winter_report_term': w_term_id,
+        'summer_report_term': s_term_id,
         'new_bootstrap': True,
     })
     return context_dict
@@ -1384,7 +1420,61 @@ def project_reports_list(request):
     context_dict.update(get_permissions(request.user))
     return HttpResponse(template.render(context_dict, request))
 
+def edit_project_reports(request, term_id):
+    if not Permissions.can_process_project_reports(request.user):
+        request.session['error_message'] = ('You are not authorized to edit '
+                                            'project reportss.')
+        return redirect('member_resources:project_reports_list')
+    ProjectReportFormset = modelformset_factory(
+                                        ProjectReport,
+                                        can_delete=True,
+                                        exclude=['term'],
+    )
+    term = get_object_or_404(AcademicTerm, id=term_id)
+    prefix = 'project_reports'
+    formset = ProjectReportFormset(
+                            request.POST or None,
+                            prefix=prefix,
+                            queryset=ProjectReport.objects.filter(term=term)
+    )
+    if request.method == 'POST':
+        if formset.is_valid():
+            instances = formset.save(commit=False)
+            for instance in instances:
+                instance.term = term
+                instance.save()
+            for instance in formset.deleted_objects:
+                instance.delete()
+            request.session['success_message'] = ('Project reports updated '
+                                                  'successfully')
+            return redirect('member_resources:project_reports_list')
+        else:
+            request.session['error_message'] = INVALID_FORM_MESSAGE
 
+    template = loader.get_template('generic_formset.html')
+    context_dict = {
+        'formset': formset,
+        'prefix': prefix,
+        'subnav': 'history',
+        'can_add_row': False,
+        'has_files': False,
+        'base': 'member_resources/base_member_resources.html',
+        'submit_name': 'Update Project Reports',
+        'form_title': 'Edit/Remove project reports for %s' % (
+                                                                unicode(term)),
+        'help_text': ('Edit or remove the project reports for this term.'
+                      ' To add a new report please create an event or process '
+                      'a non-event report.'),
+        'back_button': {
+                'link': reverse('member_resources:project_reports_list'),
+                'text': 'To Project Reports'
+        },
+    }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    return HttpResponse(template.render(context_dict, request))
+    
+    
 def access_history(request):
     template = loader.get_template('member_resources/access_history.html')
     context_dict = {

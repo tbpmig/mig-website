@@ -5,6 +5,19 @@
 <div class="row">
     <div class="col-md-6">
         <h3>Project Report Management</h3>
+        {% if can_edit_project_reports %}
+        <div class="btn-group">
+        {% if fall_report_term %}
+        <a href="{% url 'member_resources:edit_project_reports' fall_report_term %}" class="btn btn-small btn-primary">Edit {{f_term_name}} Project Reports</a>
+        {% endif %}
+        {% if winter_report_term %}
+        <a href="{% url 'member_resources:edit_project_reports' winter_report_term %}" class="btn btn-small btn-primary">Edit {{w_term_name}} Project Reports</a>
+        {% endif %}
+        {% if summer_report_term %}
+        <a href="{% url 'member_resources:edit_project_reports' summer_report_term %}" class="btn btn-small btn-primary">Edit {{s_term_name}} Project Reports</a>
+        {% endif %}
+        </div>
+        {% endif %}
         <h4> Reports for current semester</h4>
         <ul>
             {%for report in project_reports %}
