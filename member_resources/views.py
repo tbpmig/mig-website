@@ -1435,7 +1435,7 @@ def edit_project_reports(request, term_id):
     formset = ProjectReportFormset(
                             request.POST or None,
                             prefix=prefix,
-                            queryset=ProjectReport.objects.filter(term=term).order_by('project_name')
+                            queryset=ProjectReport.objects.filter(term=term).order_by('name')
     )
     if request.method == 'POST':
         if formset.is_valid():
