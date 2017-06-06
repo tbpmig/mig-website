@@ -253,7 +253,6 @@ def get_permissions(user):
 def get_common_context(request):
     context_dict = get_message_dict(request)
     terms = get_project_report_term();
-    print terms
     f_term = terms.filter(semester_type__name='Fall')
     if f_term.exists():
         f_term = f_term[0]
