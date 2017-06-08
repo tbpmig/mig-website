@@ -1212,12 +1212,14 @@ class ProjectReportHeader(models.Model):
                     print 'officer compilation successful'
                     comp_proj = CompiledProjectReport.objects.filter(
                                     term=term,
-                                    associated_officer=officer
+                                    associated_officer=officer,
+                                    is_full=False,
                     )
                     if comp_proj.exists():
                         c = CompiledProjectReport.objects.get(
                                     term=term,
-                                    associated_officer=officer
+                                    associated_officer=officer,
+                                    is_full=False
                         )
                     else:
                         c = CompiledProjectReport(
