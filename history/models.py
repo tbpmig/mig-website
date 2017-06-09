@@ -1105,8 +1105,8 @@ class ProjectReportHeader(models.Model):
     def write_tex_files(self):
         f = open('/tmp/Project_Report_Final_%d.tex' % (self.id), 'w')
         errors = []
-        terms = self.terms.all().order_by('year').distinct()
-        years = '--'.join([str(term.year) for term in terms])
+        terms = self.terms.all().order_by('year').values('year').distinct()
+        years = '--'.join([str(term['year']) for term in terms])
         print years
         print self.preparer_title
         output_string = RAW_HEADER_STRING % {
