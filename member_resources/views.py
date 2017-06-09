@@ -1384,6 +1384,11 @@ def project_reports_list(request):
     if Permissions.can_view_missing_reports(tmp_user):
         events_w_o_reports = CalendarEvent.get_events_w_o_reports(
                                             AcademicTerm.get_current_term())
+        if AcademicTerm.get_current_term().semester_type.name=='Winter':
+            events_w_o_reports_prev = CalendarEvent.get_events_w_o_reports(
+                                            AcademicTerm.get_previous_full_term(AcademicTerm.get_current_term()))
+        else:
+            events_w_o_reports_prev = None                                    
     if Permissions.can_view_pending_events(tmp_user):
         pending_events = CalendarEvent.get_pending_events()
     if tmp_user.is_superuser:
@@ -1413,6 +1418,7 @@ def project_reports_list(request):
         'old_reports': old_reports,
         'pending_events': pending_events,
         'events_w_o_reports': events_w_o_reports,
+        'events_w_o_reports_old': events_w_o_reports_prev,
         'subnav': 'history',
     }
     context_dict.update(get_common_context(request))

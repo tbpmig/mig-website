@@ -54,6 +54,21 @@
             {% endfor %}
         </ul>
         {% endif %}
+        {% if events_w_o_reports_old %}
+        <h3>Events Missing Reports (Last Semester)</h3>
+        <ul>
+            {% for event in events_w_o_reports_old %}
+            <li><p><a href="{% url 'event_cal:event_detail' event.id %}">{{event.name}}</a><p>
+                <p><strong>Leaders:</strong>
+                <ul>
+                    {% for leader in event.leaders.all %}
+                        <p>{{leader}}</p>
+                    {% endfor %}
+                </ul>
+                </p>
+            {% endfor %}
+        </ul>
+        {% endif %}
     </div>
     <div class="col-md-3">
         {% if pending_events %}
