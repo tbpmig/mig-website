@@ -1086,6 +1086,7 @@ class Permissions:
         current_positions = cls.get_current_officer_positions(user)
         query = (Q(position__name='President') |
                  Q(position__name='Corporate Relations Officer') |
+                 Q(position__name='Professional Development Officer') |
                  Q(position__name='External Vice President'))
         if current_positions.filter(query).exists():
             return True
