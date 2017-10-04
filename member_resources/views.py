@@ -1381,14 +1381,14 @@ def project_reports_list(request):
     events_w_o_reports = None
     pending_events = None
     old_reports = None
+    events_w_o_reports_prev = None  
     if Permissions.can_view_missing_reports(tmp_user):
         events_w_o_reports = CalendarEvent.get_events_w_o_reports(
                                             AcademicTerm.get_current_term())
         if AcademicTerm.get_current_term().semester_type.name=='Winter':
             events_w_o_reports_prev = CalendarEvent.get_events_w_o_reports(
                                             AcademicTerm.get_previous_full_term(AcademicTerm.get_current_term()))
-        else:
-            events_w_o_reports_prev = None                                    
+                                 
     if Permissions.can_view_pending_events(tmp_user):
         pending_events = CalendarEvent.get_pending_events()
     if tmp_user.is_superuser:
