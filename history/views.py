@@ -134,7 +134,9 @@ def edit_articles(request):
                                             'web articles.')
         return redirect('history:index')
     prefix = 'webstories'
-    WebStoryFormset = modelformset_factory(WebsiteArticle, can_delete=True)
+    WebStoryFormset = modelformset_factory(WebsiteArticle,
+                                           can_delete=True,
+                                           exclude=[])
     formset = WebStoryFormset(
                 request.POST or None,
                 prefix=prefix,
