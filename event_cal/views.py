@@ -2311,7 +2311,7 @@ def submit_tutoring_form(request):
 
 %(tutor)s logged that you were tutored for %(hours)s hours on %(date)s.
 We'd like to know how it went. If you have any feedback for us we invite you to
-fill out an (anonymous) feedback form: https://goo.gl/forms/pL0x677rPSh51Mky1
+fill out an (anonymous) feedback form: https://goo.gl/L1L9oW
 
 If you have any other questions about tutoring, please feel free to email me
 at %(email)s,
