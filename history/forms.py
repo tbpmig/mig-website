@@ -22,7 +22,7 @@ from history.models import (
             WebsiteArticle,
             Distinction,
             GoverningDocument,
-            GoverningDocumentType
+            GoverningDocumentType,
 )
 from event_cal.models import EventPhoto
 from mig_main.models import (
@@ -50,7 +50,19 @@ class GoverningDocumentForm(forms.ModelForm):
             gd.active = True
             gd.save()
 
+class GoverningDocumentTypeForm(forms.ModelForm):
+    """" Form for adding a new type of governing documents"""
+    class Meta:
+        model = GoverningDocumentType
+        fields = ['name']
 
+GoverningDocumentTypeFormset = modelformset_factory(
+                            GoverningDocumentType,
+                            form=GoverningDocumentTypeForm,
+                            extra=1,
+                            can_delete=True
+)
+        
 class AwardForm(forms.ModelForm):
     """ Form for giving out an award."""
     recipient = forms.ModelChoiceField(

@@ -2,6 +2,10 @@
 {% load staticfiles %}
 
 {% block content %}
+{% if can_edit_bylaws %}
+        <p><a class="btn btn-warning" href="{% url 'about:update_bylaws' %}">Upload New Governing Documents</a>
+        <a class="btn btn-warning" href="{% url 'about:update_governing_doc_types' %}">Add/Edit Governing Document Types</a></p>
+{% endif %}
 <div class="row">
     <div class="col-md-6">
         <h3>Chapter Governing Documents</h3>

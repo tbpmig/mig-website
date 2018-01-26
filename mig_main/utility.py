@@ -1052,6 +1052,10 @@ class Permissions:
     @classmethod
     def can_manage_website(cls, user):
         return user.is_superuser
+        
+    @classmethod
+    def can_manage_bylaws(cls, user):
+        return user.is_superuser
 
     @classmethod
     def can_view_pending_events(cls, user):

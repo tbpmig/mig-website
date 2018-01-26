@@ -24,7 +24,7 @@ from mig_main.utility import (
             get_previous_page,
 )
 
-from history.forms import GoverningDocumentForm
+from history.forms import GoverningDocumentForm, GoverningDocumentTypeFormset
 
 FORM_ERROR = 'Your submision contained errors, please correct and resubmit.'
 
@@ -39,6 +39,7 @@ def get_permissions(user):
     """
     permission_dict = {
             'can_edit_about_photos': Permissions.can_manage_website(user),
+            'can_edit_bylaws': Permissions.can_manage_bylaws(user),
     }
     return permission_dict
 
@@ -249,7 +250,7 @@ def officer(request, officer_id):
 
 def update_bylaws(request):
     denied_message = 'You are not authorized to update bylaws.'
-    if not request.user.is_superuser:
+    if not Permissions.can_manage_bylaws(request.user):
         request.session['error_message'] = denied_message
         return redirect('about:bylaws')
     form = GoverningDocumentForm(request.POST or None, request.FILES or None)
@@ -274,6 +275,45 @@ def update_bylaws(request):
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     return HttpResponse(template.render(context_dict, request))    
+
+def update_governing_doc_types(request):
+    """
+    Standard form view based on the generic_formset. Used to update the text
+    in the joining page.
+    """
+    denied_message = 'You are not authorized to update bylaws.'
+    if not Permissions.can_manage_bylaws(request.user):
+        request.session['error_message'] = denied_message
+        return redirect('about:bylaws')
+    prefix = 'bylaws'
+    # messages and static text
+    success_message = 'Governing doc types updated successfully updated.'
+
+    formset = GoverningDocumentTypeFormset(request.POST or None, prefix=prefix)
+    if request.method == 'POST':
+        if formset.is_valid():
+            instances = formset.save()
+            request.session['success_message'] = success_message
+            return redirect('about:bylaws')
+        else:
+            request.session['error_message'] = FORM_ERROR
+    context_dict = {
+        'formset': formset,
+        'prefix': prefix,
+        'subnav': 'bylaws',
+        'has_files': False,
+        'submit_name': 'Update Governing Document Types',
+        'back_button': {'link': reverse('about:bylaws'),
+                        'text': 'To Bylaws Page'},
+        'form_title': 'Update or Add Governing Document Types',
+        'help_text': 'Used to add or rename governing document types.',
+        'can_add_row': True,
+        'base': 'about/base_about.html',
+    }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    template = loader.get_template('generic_formset.html')
+    return HttpResponse(template.render(context_dict,request))
     
 def bylaws(request):
     """
