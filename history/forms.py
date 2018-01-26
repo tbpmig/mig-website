@@ -21,6 +21,8 @@ from history.models import (
             Publication,
             WebsiteArticle,
             Distinction,
+            GoverningDocument,
+            GoverningDocumentType
 )
 from event_cal.models import EventPhoto
 from mig_main.models import (
@@ -30,6 +32,25 @@ from mig_main.models import (
             UserProfile,
 )
 from requirements.models import DistinctionType
+
+class GoverningDocumentForm(forms.ModelForm):
+    """" Form for updating the governing documents"""
+    class Meta:
+        model = GoverningDocument
+        exclude = ['active']
+
+    def save(self, commit=True):
+        gd = super(GoverningDocumentForm, self).save(commit=commit)
+        if commit:
+            gdt = gd.document_type
+            gds = GoverningDocument.objects.filter(document_type=gdt)
+            for gd_i in gds:
+                gd_i.active = False
+                gd_i.save()
+            gd.active = True
+            gd.save()
+
+
 class AwardForm(forms.ModelForm):
     """ Form for giving out an award."""
     recipient = forms.ModelChoiceField(

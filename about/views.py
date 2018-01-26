@@ -18,8 +18,13 @@ from about.models import AboutSlideShowPhoto, JoiningTextField
 from history.models import Officer, CommitteeMember, GoverningDocument
 from history.models import GoverningDocumentType, pack_officers_for_term
 from mig_main.models import OfficerPosition, OfficerTeam, AcademicTerm
-from mig_main.utility import get_message_dict, Permissions
+from mig_main.utility import (
+            get_message_dict,
+            Permissions,
+            get_previous_page,
+)
 
+from history.forms import GoverningDocumentForm
 
 FORM_ERROR = 'Your submision contained errors, please correct and resubmit.'
 
@@ -242,6 +247,34 @@ def officer(request, officer_id):
     return output
 
 
+def update_bylaws(request):
+    denied_message = 'You are not authorized to update bylaws.'
+    if not request.user.is_superuser:
+        request.session['error_message'] = denied_message
+        return redirect('about:bylaws')
+    form = GoverningDocumentForm(request.POST or None, request.FILES or None)
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()
+            request.session['success_message'] = ('Document uploaded '
+                                                  'successfully')
+            return get_previous_page(request, 'about:bylaws')
+        else:
+            request.session['error_message'] = messages.GENERIC_SUBMIT_ERROR
+    template = loader.get_template('generic_form.html')
+    context_dict = {
+        'form': form,
+        'subnav': 'bylaws',
+        'has_files': True,
+        'submit_name': 'Update Governing Document',
+        'form_title': 'Upload New Version of Governing Document',
+        'help_text': 'This will replace the existing document of this type.',
+        'base': 'about/base_about.html',
+        }
+    context_dict.update(get_common_context(request))
+    context_dict.update(get_permissions(request.user))
+    return HttpResponse(template.render(context_dict, request))    
+    
 def bylaws(request):
     """
     Nothing fancy here. Just shows the bylaws (does filter to only show the
