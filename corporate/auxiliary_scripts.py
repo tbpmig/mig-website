@@ -13,7 +13,7 @@ from mig_main.utility import zipdir
 RESUMES_BY_MAJOR_LOCATION = lambda: os.path.sep.join([settings.MEDIA_ROOT,'Resumes_by_major'])
 RESUMES_BY_YEAR_LOCATION = lambda: os.path.sep.join([settings.MEDIA_ROOT,'Resumes_by_year'])
 
-def compile_resumes():
+def compile_resumes(include_alums=False):
     media_parent = '/'.join(settings.MEDIA_ROOT.split('/')[:-2])+'/'
     if os.path.exists(RESUMES_BY_MAJOR_LOCATION()):
         shutil.rmtree(RESUMES_BY_MAJOR_LOCATION())
@@ -23,7 +23,7 @@ def compile_resumes():
         shutil.copy(media_parent+resource_guides[0].resource_guide.url,os.path.sep.join([RESUMES_BY_MAJOR_LOCATION(),slugify(resource_guides[0].name)+'.pdf']))
     for resume_major in Major.objects.all():
         query=Q(major=resume_major)
-        users_in_major = MemberProfile.get_members().filter(query)
+        users_in_major = MemberProfile.get_members(include_alums=include_alums).filter(query)
         for user in users_in_major:
             if user.resume:
                 major_dir = os.path.sep.join([RESUMES_BY_MAJOR_LOCATION(),slugify(resume_major.name)])
@@ -40,6 +40,8 @@ def compile_resumes():
     for standing in Standing.objects.all():
         members = MemberProfile.get_members().filter(standing=standing)
         if standing.name == 'Alumni':
+            if not include_alums:
+                continue
             status_dir = os.path.sep.join([RESUMES_BY_YEAR_LOCATION(),slugify(standing.name)])
         else:
             status_dir = os.path.sep.join([RESUMES_BY_YEAR_LOCATION(), slugify(standing.name)+'-student'])

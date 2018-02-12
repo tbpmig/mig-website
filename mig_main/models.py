@@ -618,12 +618,18 @@ class MemberProfile(UserProfile):
 
     # Methods
     @classmethod
-    def get_members(cls):
+    def get_members(cls, include_alums=True):
         query = Q(status__name='Active') | Q(status__name='Electee',
                                              still_electing=True)
-        return cls.objects.filter(query).order_by('last_name',
-                                                  'first_name',
-                                                  'uniqname')
+        if include_alums:
+            output = cls.objects.filter(query)
+        else:
+            output = cls.objects.filter(query).exclude(standing__name='Alumni')
+
+        return output.order_by('last_name',
+                               'first_name',
+                               'uniqname')
+            
 
     @classmethod
     def get_actives(cls):
