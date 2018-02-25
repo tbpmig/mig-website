@@ -76,6 +76,7 @@
             <li><a href="{% url 'member_resources:add_active_statuses' %}">Add Active/DA/PA Status for current term</a></li>
             <li><a href="{% url 'member_resources:manage_active_statuses' %}">Edit/Remove Active/DA/PA Status</a></li>
             <li><a href="{% url 'member_resources:add_electee_DA_PA_status' %}">Add Electee DA/PA Status</a></li>
+            <li><a href="{% url 'member_resources:manage_alumni_status' %}">Move Graduates to Alumni</a></li>
         {% endif %}
         {% if can_manage_background_checks %}
             <li><a href="{% url 'member_resources:add_background_checks' %}">Add Background Checks</a></li>

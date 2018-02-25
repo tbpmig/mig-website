@@ -3,7 +3,7 @@ from django import forms
 from django.forms import ModelForm, BaseModelFormSet
 from django.forms.models import modelformset_factory
 from django.db import IntegrityError
-
+#from django.utils.timezone import now
 from django_select2.forms import (
             Select2MultipleWidget,
             Select2Widget,
@@ -20,6 +20,40 @@ from mig_main.models import (
 )
 
 
+class ChangeMemberStandingForm(ModelForm):
+    uniqname = forms.CharField(disabled=True)
+    first_name = forms.CharField(disabled=True)
+    last_name = forms.CharField(disabled=True)
+    class Meta:
+        model = MemberProfile
+        fields = ['uniqname',
+                  'first_name',
+                  'last_name',
+                  'standing',
+ 
+                 ]
+
+class BaseMakeMembersAlumniFormSet(BaseModelFormSet):
+    def __init__(self, *args, **kwargs):
+        super(BaseMakeMembersAlumniFormSet,
+              self).__init__(*args, **kwargs)
+
+        # create filtering here whatever that suits you needs
+        self.queryset = MemberProfile.objects.exclude(
+                            standing__name='Alumni').order_by(
+                                                'last_name',
+                                                'first_name',
+                                                'uniqname')
+
+                 
+MakeMembersAlumniFormSet = modelformset_factory(
+                            MemberProfile,
+                            form=ChangeMemberStandingForm,
+                            formset=BaseMakeMembersAlumniFormSet,
+                            extra=0
+)
+
+                  
 class MemberProfileForm(ModelForm):
     major = forms.ModelMultipleChoiceField(
                 widget=Select2MultipleWidget(),

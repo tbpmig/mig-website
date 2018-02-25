@@ -84,7 +84,8 @@ from mig_main.forms import (
                 MemberProfileActiveFromNonMemberForm,
                 MemberProfileElecteeFromNonMemberForm,
                 ManageElecteeStillElectingFormSet,
-                PreferenceForm
+                PreferenceForm,
+                MakeMembersAlumniFormSet
 )
 from mig_main.models import (
                     MemberProfile,
@@ -3511,4 +3512,46 @@ def view_photos(request):
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     template = loader.get_template('member_resources/view_photos.html')
+    return HttpResponse(template.render(context_dict, request))
+
+
+def manage_alumni_status(request):
+    if not Permissions.can_manage_active_progress(request.user):
+        request.session['error_message'] = ('You are not authorized to'
+                                            'update alumni standing.')
+        return get_previous_page(request, alternate='member_resources:index')
+    
+    prefix = 'alumni'
+    formset = MakeMembersAlumniFormSet(
+                    request.POST or None,
+                    prefix=prefix,
+    )
+    if request.method == 'POST':
+        if formset.is_valid():
+            instances = formset.save()
+            request.session['success_message'] = 'Standing updated successfully'
+            return redirect('member_resources:view_misc_reqs')
+        else:
+            request.session['error_message'] = ('Form contained errors, was '
+                                                'not saved.')
+    template = loader.get_template('generic_formset.html')
+    form_title = 'Update Member Standing, e.g. for alumni'
+    context_dict = {
+        'formset': formset,
+        'can_add_row': False,
+        'subnav': 'misc_reqs',
+        'has_files': False,
+        'prefix': prefix,
+        'submit_name': 'Update standing',
+        'form_title': form_title,
+        'help_text': ('Update the standing of members who appear to have '
+                      'graduated.'),
+        'base': 'member_resources/base_member_resources.html',
+        'back_button': {
+                'link': reverse('member_resources:view_misc_reqs'),
+                'text': 'To Membership Management'
+        },
+    }
+    context_dict.update(get_permissions(request.user))
+    context_dict.update(get_common_context(request))
     return HttpResponse(template.render(context_dict, request))

@@ -205,4 +205,7 @@ urlpatterns = [
     url(r'^view_photos/$',
         views.view_photos,
         name='view_photos'),
+    url(r'^manage_alumni_status/$',
+        views.manage_alumni_status,
+        name='manage_alumni_status'),
 ]
