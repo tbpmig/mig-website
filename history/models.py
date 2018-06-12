@@ -95,8 +95,8 @@ MI-$\Gamma$ %(preparer_title)s~%(years)s
 \newoddside
 \begin{abstract}
 This section lists all of the projects performed by the
-Michigan Gamma Chapter of Tau Beta Pi for the school year
-extending from September 2011 to May 2012. The projects
+Michigan Gamma Chapter of Tau Beta Pi for the most recent
+school year. The projects
 presented here were categorized into five separate groups:
 \begin{enumerate}[1.]
     \item Professional: Projects which were performed to enhance
