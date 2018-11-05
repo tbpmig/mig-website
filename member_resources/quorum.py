@@ -215,7 +215,7 @@ Our records indicate that %(status)s
 
 If you believe this to be in error, or especially if you are no longer on
 campus, please let us know by emailing tbp-website@umich.edu or by speaking
-to the president or website chair at the meeting tonight.
+to the president or website chair at the meeting.
 
 Thanks,
 The TBP Website'''
@@ -248,7 +248,7 @@ The TBP Website'''
             status_text = (' you are an active member. You will be '
                            'eligible to vote at the meeting and will '
                            'count against quorum if you cannot or do not '
-                           'attend tonight.')
+                           'attend.')
         elif m.standing.name == 'Alumni':
             continue
         else:
