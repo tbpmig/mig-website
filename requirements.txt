@@ -1,6 +1,6 @@
 backports.ssl-match-hostname==3.4.0.2
 beautifulsoup4==4.3.2
-Django==1.7
+Django==1.11.23
 #django-ajax==2.2.12
 django-htmlmin==0.6.3
 django-localflavor==1.0
