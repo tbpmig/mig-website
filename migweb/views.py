@@ -150,7 +150,9 @@ def login_view(request):
     if DEBUG:
         user_name = DEBUG_user
     else:
-        user_name = request.META['REMOTE_USER']
+        uniqname,domain = request.META['REMOTE_USER'].split('@')
+        if domain == 'umich.edu':
+            user_name = uniqname
     users_w_name = User.objects.filter(username=user_name)
     if not users_w_name.exists():
         user = User.objects.create_user(user_name, user_name+'@umich.edu', '')
