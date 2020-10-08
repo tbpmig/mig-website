@@ -39,38 +39,39 @@
 
                 <p class="text-justify"><b>Bio: </b>{{profile.short_bio|my_markdown}}</p>
                 {% if full_view %}
-                {% if is_user %}<h4>Your info (only visible to you and to admins):</h4>{% endif %}
-                <p><b>UMID:</b> {{profile.UMID}}</p>
-                <p><b>Expected Graduation Date:</b> {{profile.expect_grad_date|date:"N j, Y"}}</p>
-                {% if profile.edu_bckgrd_form %}
-                <p><b>Educational Background Form:</b> <a href="{{profile.edu_bckgrd_form.url}}">Link</a>
-                {% endif %}
-                {% if checks %}
-                <p><b>Background Checks on file:</b><br/>
-                This lists the date the check was filed. AAPS background checks and BSA training are good for 2 years. UM background checks are good for 3.
-                <ul>
-                {% regroup checks|dictsort:"check_type" by get_check_type_display as grouped_checks %}
-                {% for check_type in grouped_checks %}
-                    {% if check_type.list %}
-                    {% with sorted_checks=check_type.list|dictsortreversed:"date_added"  %}
-                    <li><i>{{check_type.grouper}}:</i> {{sorted_checks.0.date_added}}</li>
-                    {% endwith %}
+                    {% if is_user %}<h4>Your info (only visible to you and to admins):</h4>{% endif %}
+                    <p><b>UMID:</b> {{profile.UMID}}</p>
+                    <p><b>Expected Graduation Date:</b> {{profile.expect_grad_date|date:"N j, Y"}}</p>
+                    {% if profile.edu_bckgrd_form %}
+                        <p><b>Educational Background Form:</b> <a href="{{profile.edu_bckgrd_form.url}}">Link</a>
                     {% endif %}
-                {% endfor %}
-                </ul>
-                </p>
+                    <p><b>Alternate email address:</b> <a href="mailto:{{profile.alt_email}}">{{profile.alt_email}}</a></p>
+                    <p><b>Phone number:</b>: {{profile.phone}} </p>
+                    <p><b>Receive Corporate/Job Emails?</b>: {{profile.jobs_email|yesno:"Yes,No"}} </p>
+                    {% if profile.resume %}
+                        <p><b>Resume</b>: <a href="{{profile.resume.url}}">Link</a> </p>
+                    {% endif %}
+                    <p><b>Gender</b>: {{profile.get_gender_display}}</p>
+                    <p><b>Shirt Size</b>: {{profile.shirt_size.name}} </p>
+                    {% if profile.standing.name == "Alumni" %}
+                        <p><b>Desired email frequency </b>:{{profile.get_alum_mail_freq_display}} </p>
+                    {% endif %}
                 {% endif %}
-                <p><b>Alternate email address:</b> <a href="mailto:{{profile.alt_email}}">{{profile.alt_email}}</a></p>
-                <p><b>Phone number:</b>: {{profile.phone}} </p>
-                <p><b>Receive Corporate/Job Emails?</b>: {{profile.jobs_email|yesno:"Yes,No"}} </p>
-                {% if profile.resume %}
-                <p><b>Resume</b>: <a href="{{profile.resume.url}}">Link</a> </p>
-                {% endif %}
-                <p><b>Gender</b>: {{profile.get_gender_display}}</p>
-                <p><b>Shirt Size</b>: {{profile.shirt_size.name}} </p>
-                {% if profile.standing.name == "Alumni" %}
-                <p><b>Desired email frequency </b>:{{profile.get_alum_mail_freq_display}} </p>
-                {% endif %}
+
+                {% if background_check_view and checks %}
+                    <p><b>Background Checks on file:</b><br/>
+                    This lists the date the check was filed. AAPS background checks and BSA training are good for 2 years. UM background checks are good for 3.
+                    <ul>
+                    {% regroup checks|dictsort:"check_type" by get_check_type_display as grouped_checks %}
+                    {% for check_type in grouped_checks %}
+                        {% if check_type.list %}
+                        {% with sorted_checks=check_type.list|dictsortreversed:"date_added"  %}
+                        <li><i>{{check_type.grouper}}:</i> {{sorted_checks.0.date_added}}</li>
+                        {% endwith %}
+                        {% endif %}
+                    {% endfor %}
+                    </ul>
+                    </p>
                 {% endif %}
                 {% endif %}
             </div>
