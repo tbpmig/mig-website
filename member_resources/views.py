@@ -512,6 +512,9 @@ def profile(request, uniqname):
                             'term': term})
                             
     background_checks = BackgroundCheck.objects.filter(member=profile)
+    show_full_view = is_user or Permissions.can_view_others_data(request.user,
+                                                                 uniqname)
+    show_bg_check_view = show_full_view or Permissions.can_manage_background_checks(request.user)
 
     context_dict = {
         'profile': profile,
@@ -523,13 +526,13 @@ def profile(request, uniqname):
         'awards': profile.award_set.all(),
         'distinction_terms': distinction_terms,
         'is_user': is_user,
-        'full_view': is_user or Permissions.can_view_others_data(request.user,
-                                                                 uniqname),
+        'full_view': show_full_view,
+        'background_check_view': show_bg_check_view,
         'edit': False,
         'has_distinctions': has_distinctions,
         'subnav': 'member_profiles',
         'praise': praise,
-        'checks':background_checks,
+        'checks': background_checks,
     }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
