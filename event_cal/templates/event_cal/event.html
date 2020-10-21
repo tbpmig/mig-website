@@ -44,6 +44,9 @@
 <div id="event-shift">
 	<p id="event-when"><b>When:</b> {{shift.start_time|date:"D. N d, Y P" }}&ndash;{% if shift.start_time|date:"N d Y" != shift.end_time|date:"N d Y" %}{{shift.end_time|date:"D. N d, Y P"}}{% else %}{{shift.end_time|date:"P"}}{% endif %}</p>
     <p id="event-where"><b>Where:</b> {{shift.location}}{% if shift.on_campus%} (on campus){% else %} (off campus){%endif%}</p>
+    {% if can_edit_event and shift.get_waitlist_length > 0 %}
+        <p><i>There are currently {{shift.get_waitlist_length}} users in the waitlist.</i></p>
+    {% endif %}
     {% if user.is_authenticated and has_profile %}
     {% if user.userprofile.is_member and user.userprofile.memberprofile in event.get_attendees_with_progress %}
         {% if event.use_sign_in %}
