@@ -52,6 +52,7 @@
                         <p><b>Resume</b>: <a href="{{profile.resume.url}}">Link</a> </p>
                     {% endif %}
                     <p><b>Gender</b>: {{profile.get_gender_display}}</p>
+                    <p><b>Pronouns</b>: {{profile.get_pronouns_display}}</p>
                     <p><b>Shirt Size</b>: {{profile.shirt_size.name}} </p>
                     {% if profile.standing.name == "Alumni" %}
                         <p><b>Desired email frequency </b>:{{profile.get_alum_mail_freq_display}} </p>

@@ -54,6 +54,14 @@ GENDER_CHOICES = (
     ("O", "Other/Prefer not to respond"),
 )
 
+PRONOUNS_CHOICES = (
+    ("S", "She/Her"),
+    ("H", "He/Him"),
+    ("T", "They/Them"),
+    ("Z", "Ze/Hir"),
+    ("N", "No pronouns - Use my name"),
+    ("A", "Ask me")
+)
 
 # homepage models
 class SlideShowPhoto(models.Model):
@@ -600,6 +608,11 @@ class MemberProfile(UserProfile):
                         max_length=1,
                         choices=GENDER_CHOICES,
                         default="O"
+    )
+    pronouns = models.CharField(
+                        max_length=1,
+                        choices=PRONOUNS_CHOICES,
+                        default="A"
     )
     expect_grad_date = models.DateField("Expected graduation date")
     still_electing = models.BooleanField(default=True)
