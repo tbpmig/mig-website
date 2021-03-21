@@ -19,9 +19,18 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
+        migrations.CreateModel(
+            name='Pronoun',
+            fields=[
+                ('pronoun', models.CharField(max_length=60)),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.AddField(
             model_name='memberprofile',
             name='pronouns',
-            field=models.CharField(default=b'A', max_length=1, verbose_name=b'What are your personal pronouns?', choices=choices),
-        ),
+            field=models.ManyToManyField(to='mig_main.Pronoun'),
+        )
     ]

@@ -13,6 +13,7 @@ from electees.models import electee_stopped_electing
 from mig_main.models import (
             AcademicTerm,
             Major,
+            Pronoun,
             MemberProfile,
             UserProfile,
             TBPChapter,
@@ -58,6 +59,11 @@ class MemberProfileForm(ModelForm):
     major = forms.ModelMultipleChoiceField(
                 widget=Select2MultipleWidget(),
                 queryset=Major.objects.all().order_by('name')
+    )
+
+    pronouns = forms.ModelMultipleChoiceField(
+                widget=Select2MultipleWidget(),
+                queryset=Pronoun.objects.all()
     )
 
     class Meta:

@@ -54,15 +54,6 @@ GENDER_CHOICES = (
     ("O", "Other/Prefer not to respond"),
 )
 
-PRONOUNS_CHOICES = (
-    ("S", "She/Her"),
-    ("H", "He/Him"),
-    ("T", "They/Them"),
-    ("Z", "Ze/Hir"),
-    ("N", "No pronouns - Use my name"),
-    ("A", "Ask me")
-)
-
 # homepage models
 class SlideShowPhoto(models.Model):
     """ Photo that can be displayed on the home page.
@@ -392,6 +383,14 @@ class Status(models.Model):
     def __unicode__(self):
         return self.name
 
+class Pronoun(models.Model):
+    """ Personal pronouns
+    """
+
+    class Meta:
+        verbose_name_plural = 'Pronouns'
+    pronoun = models.CharField(max_length=60)
+
 
 class ShirtSize(models.Model):
     """ Used for compiling member demographics, assisting with T-shirt orders.
@@ -609,11 +608,7 @@ class MemberProfile(UserProfile):
                         choices=GENDER_CHOICES,
                         default="O"
     )
-    pronouns = models.CharField(
-                        max_length=1,
-                        choices=PRONOUNS_CHOICES,
-                        default="A"
-    )
+    pronouns = models.ManyToManyField(Pronoun)
     expect_grad_date = models.DateField("Expected graduation date")
     still_electing = models.BooleanField(default=True)
     photo = StdImageField(

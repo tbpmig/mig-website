@@ -3,7 +3,7 @@ from datetime import date
 
 from history.models import GoverningDocumentType
 from event_cal.models import GoogleCalendar
-from mig_main.models  import AcademicTerm, TBPChapter, OfficerPosition, Status, Standing, ShirtSize, Major, OfficerTeam,CurrentTerm
+from mig_main.models  import AcademicTerm, TBPChapter, OfficerPosition, Status, Standing, ShirtSize, Major, Pronoun, OfficerTeam, CurrentTerm
 from requirements.models import SemesterType, DistinctionType, EventCategory,Requirement
 GOOGLE_CALENDARS = [
     {"name":"Service Events Calendar", "calendar_id":"6837sd9phcm1sajfv1gcp6lnh0@group.calendar.google.com"},
@@ -508,6 +508,16 @@ GOVERNING_DOC_TYPE=[
         {'name':'Constitution'},
         {'name':'Bylaws'},
         ]
+
+PRONOUNS = [
+    {"pronoun": "She/Her"},
+    {"pronoun": "He/Him"},
+    {"pronoun": "They/Them"},
+    {"pronoun": "Ze/Hir"},
+    {"pronoun": "No pronouns - Use my name"},
+    {"pronoun": "Ask me"}
+]
+
 def initializedb():
 
     #Governing Document types
@@ -606,6 +616,14 @@ def initializedb():
             m.save()
         else:
             print "Major: "+major["acronym"]+" already exists."
+
+    #Pronouns
+    for pronoun in PRONOUNS:
+        if len(Pronoun.objects.filter(acronym=pronoun["pronoun"]))==0:
+            p = Pronoun(pronoun=pronoun["pronoun"])
+            p.save()
+        else:
+            print "Pronoun: "+pronoun["pronoun"]+" already exists."
     
     #Officer Teams
     for team in OFFICER_TEAMS:
