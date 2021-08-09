@@ -15,7 +15,7 @@ choices = [
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('mig_main', '0014_auto_20160103_1812.py'),
+        ('mig_main', '0014_auto_20160103_1812'),
     ]
 
     operations = [
