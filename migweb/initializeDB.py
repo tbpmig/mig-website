@@ -619,7 +619,7 @@ def initializedb():
 
     #Pronouns
     for pronoun in PRONOUNS:
-        if len(Pronoun.objects.filter(acronym=pronoun["pronoun"]))==0:
+        if len(Pronoun.objects.filter(pronoun=pronoun["pronoun"]))==0:
             p = Pronoun(pronoun=pronoun["pronoun"])
             p.save()
         else:
@@ -630,6 +630,8 @@ def initializedb():
         if len(OfficerTeam.objects.filter(name=team["name"]))==0:
             t = OfficerTeam(name=team["name"])
             t.lead = OfficerPosition.objects.get(name=team["lead"])
+            t.start_term = AcademicTerm.objects.filter(year=2021)[0]
+            t.end_term = AcademicTerm.objects.filter(year=2021)[0]
             t.save()
             for officer in team["members"]:
                 t.members.add(OfficerPosition.objects.get(name=officer))
