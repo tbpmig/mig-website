@@ -14,6 +14,8 @@ framework.
 
 """
 
+from __future__ import absolute_import
+
 # virtualenv magic #yolo
 activate_env = '/home/webdev/.virtualenvs/migweb/bin/activate_this.py'
 # execfile(activate_env, dict(__file__=activate_env))
@@ -36,7 +38,9 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "migweb.settings")
 # file. This includes Django's development server, if the WSGI_APPLICATION
 # setting points here.
 from django.core.wsgi import get_wsgi_application
+from apig_wsgi import make_lambda_handler
 application = get_wsgi_application()
+lambda_handler = make_lambda_handler(application)
 
 # Apply WSGI middleware here.
 # from helloworld.wsgi import HelloWorldApplication
