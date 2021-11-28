@@ -1,0 +1,37 @@
+import os
+
+DEBUG = True
+
+base_url = 'http://localhost:8000'
+
+ALLOWED_HOSTS = ['localhost', '*']
+ADMINS = ['simonli']
+DEBUG_user = 'simonli'
+SECRET_KEY = 'abcd1234'
+
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+gcal_cal_data = []
+gcal_client_id = '112748357402626814723'
+gcal_client_secret = 'xxxxxx'
+gcal_redirect_uri = '{}/oauth2callback'.format(base_url)
+
+twitter_token = '1863305378-HKeC0PS40zkAOxXCy87KOjg52Dap6cn6tr8GsbL'
+twitter_secret = 'xxxxxx'
+
+DATABASES = {
+  'default': {
+    'ENGINE': 'django.db.backends.postgresql_psycopg2',
+    'NAME': os.environ.get('POSTGRES_NAME'),
+    'USER': os.environ.get('POSTGRES_USER'),
+    'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
+    'HOST': 'db',
+    'PORT': '5432'
+  }
+}
+
+INTERNAL_IPS = [
+  '127.0.0.1'
+  # '*'
+]
