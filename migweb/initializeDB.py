@@ -619,7 +619,7 @@ def initializedb():
 
     #Pronouns
     for pronoun in PRONOUNS:
-        if len(Pronoun.objects.filter(acronym=pronoun["pronoun"]))==0:
+        if len(Pronoun.objects.filter(pronoun=pronoun["pronoun"]))==0:
             p = Pronoun(pronoun=pronoun["pronoun"])
             p.save()
         else:

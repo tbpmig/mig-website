@@ -391,6 +391,9 @@ class Pronoun(models.Model):
         verbose_name_plural = 'Pronouns'
     pronoun = models.CharField(max_length=60)
 
+    def __unicode__(self):
+        return self.pronoun
+
 
 class ShirtSize(models.Model):
     """ Used for compiling member demographics, assisting with T-shirt orders.
