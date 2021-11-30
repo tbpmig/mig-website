@@ -35,8 +35,7 @@ class DocumentTypeFactory(factory.DjangoModelFactory):
 class OldDocumentFactory(factory.DjangoModelFactory):
     class Meta:
         model = GoverningDocument
-    id = factory.Sequence(lambda n:n)
-    document_type = factory.LazyAttribute(lambda o:GoverningDocumentType.objects.get(name='Constitution') if o.id %2 else GoverningDocumentType.objects.get(name='Bylaws'))
+    document_type = GoverningDocumentType.objects.get(name='Constitution')
     active = False
     pdf_file = factory.django.FileField(from_path='migweb/test_docs/test.pdf')
 
@@ -44,7 +43,6 @@ class OldDocumentFactory(factory.DjangoModelFactory):
 class CurrentDocumentFactory(factory.DjangoModelFactory):
     class Meta:
         model = GoverningDocument
-    id = factory.Sequence(lambda n:n)
-    document_type = factory.LazyAttribute(lambda o:GoverningDocumentType.objects.get(name='Constitution') if o.id %2 else GoverningDocumentType.objects.get(name='Bylaws'))
+    document_type = GoverningDocumentType.objects.get(name='Constitution')
     active = True
     pdf_file = factory.django.FileField(from_path='migweb/test_docs/test.pdf')

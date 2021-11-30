@@ -21,7 +21,7 @@ from mig_main.tests.factories import AcademicTermFactory, TBPChapterFactory,\
 from history.models import Officer
 from mig_main.models import AcademicTerm, OfficerPosition, MemberProfile,\
                     Major, ShirtSize, TBPChapter, Status, Standing, OfficerTeam
-from migweb.test_tools import MyClient
+from migweb.test_tools import MyClient, normalize_html
 
 JOINING_HTML = r'''<h1>A First Level Header</h1>
 <h2>A Second Level Header</h2>
@@ -260,7 +260,7 @@ class AboutViewsTestCase(TestCase):
         self.assertEqual(resp.context['why_join_text'].count(), 1)
         self.assertEqual(resp.context['why_join_text'][0].text, JOINING_TEXT)
         self.assertEqual(resp.context['why_join_text'][0].section, 'Y')
-        self.assertTrue(JOINING_HTML in resp.content,
+        self.assertTrue(normalize_html(JOINING_HTML) in normalize_html(resp.content),
                         msg='Markdown not working correctly')
 
     def test_views_bylaws(self):

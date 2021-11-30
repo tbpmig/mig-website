@@ -14,7 +14,8 @@ with open('output.sql', 'r+') as f:
   f.seek(0, 0)
   f.write('CREATE ROLE tbp_django\n'
           'LOGIN\n'
-          "PASSWORD 'postgres';\n" + content)
+          "PASSWORD 'postgres';\n"
+          'ALTER USER tbp_django CREATEDB;\n' + content)
 
 os.system('docker build -t tbp-postgres -f Dockerfile.postgres .')
 os.system('aws ecr get-login-password --region {} | docker login --username AWS --password-stdin {}'.format(REGION, REGISTRY))

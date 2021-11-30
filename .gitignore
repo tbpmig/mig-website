@@ -12,3 +12,4 @@ htmlcov/
 .coverage
 .DS_Store
 db/
+output.sql
