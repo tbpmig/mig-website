@@ -14,6 +14,11 @@ To develop TBP MIG website in your local environment, follow the instructions be
   * This is so that you can pull Docker images from our private registry.
   * Ask [#committee-website](https://app.slack.com/client/TFBHPDE1F/C02BDLKRH6C) to add you to our AWS organization.
 * [Configure](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html) the AWS CLI.
+  * You will have to create an Access Key/Secret Key pair through the AWS IAM console
+  * Configure command:
+    ```console
+    $ aws configure --profile [username]
+    ```
 
 ### Start Developing
 1. Make sure your Docker daemon is up and running.
