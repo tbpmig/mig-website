@@ -1,0 +1,29 @@
+name: Unit Tests
+
+# Controls when the workflow will run
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  id-token: write
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: us-east-2
+          role-to-assume: arn:aws:iam::836736564967:role/GitHubActionsOIDC
+          role-session-name: GitHubActionsSession
+      
+      - name: Test
+        run: ./test.sh

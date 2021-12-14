@@ -10,3 +10,6 @@ gcal/client_secrets.json
 deploy_update.sh
 htmlcov/
 .coverage
+.DS_Store
+db/
+output.sql

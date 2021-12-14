@@ -3,6 +3,35 @@ mig-website
 
 This repository contains all of the publicly accessible source code for the website for Michigan Gamma chapter of Tau Beta Pi. To see how this all comes together, visit [the website](https://tbp.engin.umich.edu), (note that most of the content is behind user authentication controls available only to members).
 
+Developer Guide
+---------
+To develop TBP MIG website in your local environment, follow the instructions below.
+
+### Preparation
+* Clone this repository.
+* Install [Docker](https://docs.docker.com/get-docker/).
+* Install the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+  * This is so that you can pull Docker images from our private registry.
+  * Ask [#committee-website](https://app.slack.com/client/TFBHPDE1F/C02BDLKRH6C) to add you to our AWS organization.
+* [Configure](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html) the AWS CLI.
+  * You will have to create an Access Key/Secret Key pair through the AWS IAM console
+  * Configure command:
+    ```console
+    $ aws configure --profile [username]
+    ```
+
+### Start Developing
+1. Make sure your Docker daemon is up and running.
+2. Under the project directory, run the following command:
+```console
+$ ./develop.sh
+```
+3. Ta-da, the website is up! You can access it at `http://localhost:8000`. The website backend will reload as you make changes to the code.
+  - If you want to run command in the webserver’s Docker container, run `./develop.sh [COMMAND]`. For example, to make migrations, you can run:
+  ```console
+  $ ./develop.sh python manage.py makemigrations
+  ```
+
 License
 ---------
 Licensed under the Apache License, Version 2.0 (the "License");
