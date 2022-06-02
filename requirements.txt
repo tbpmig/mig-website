@@ -6,7 +6,7 @@ django-htmlmin==0.6.3
 django-localflavor==1.0
 Django-Select2==4.2.2
 django-stdimage==1.0.2
-html5lib==0.999
+html5lib==0.99999999
 Markdown==2.3.1
 numpy==1.9.1
 matplotlib==1.4.2
