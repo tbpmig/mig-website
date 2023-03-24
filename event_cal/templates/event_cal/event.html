@@ -125,7 +125,7 @@
                 <p>Sign in not allowed after the event ends.</p>
             {% elif not shift.is_before_start %}
                 <p>Sign up not allowed after the event starts.</p>
-            {% elif shift.is_full and shift.max_attendance %}
+            {% if shift.is_full and shift.max_attendance %}
                 <p>Shift is full.</p>
                 {% if user.userprofile in shift.get_users_on_waitlist %}
                 <p><a id="shift-waitlist{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:remove_from_waitlist'  shift.id %}',function(){$('#shift-waitlist{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-remove"></i> Leave waitlist (there
