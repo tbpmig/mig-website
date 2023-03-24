@@ -125,6 +125,7 @@
                 <p>Sign in not allowed after the event ends.</p>
             {% elif not shift.is_before_start %}
                 <p>Sign up not allowed after the event starts.</p>
+            {% endif %}
             {% if shift.is_full and shift.max_attendance %}
                 <p>Shift is full.</p>
                 {% if user.userprofile in shift.get_users_on_waitlist %}
