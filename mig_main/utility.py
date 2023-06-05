@@ -340,7 +340,7 @@ def get_dropdowns(user):
     })
     dropdowns['corporate'].append({
                     'subnav': 'resumes',
-                    'link_name': u'Member R\u00e9sum\u00e9s',
+                    'link_name': u'Member R\u00e9sum\u00e9s', # Generates "Member résumés" string
                     'link': reverse('corporate:resumes')
     })
 
