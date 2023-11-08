@@ -138,7 +138,7 @@ def update_mindset_modules(request):
         request.session['error_message'] = ('You are not authorized to '
                                             'update MindSET Materials')
         return redirect('outreach:mindset')
-    MindSETModuleForm = modelformset_factory(MindSETModule, can_delete=True)
+    MindSETModuleForm = modelformset_factory(MindSETModule, can_delete=True, exclude=[])
     formset = MindSETModuleForm(
                     request.POST or None,
                     request.FILES or None,
@@ -180,7 +180,8 @@ def update_mindset_profile_additions(request):
         return redirect('outreach:mindset')
     MindSETProfileForm = modelformset_factory(
                             MindSETProfileAdditions,
-                            can_delete=True
+                            can_delete=True,
+                            exclude=[]
     )
     MindSETProfileForm.form.base_fields['user'].queryset = \
         MemberProfile.objects.filter(
@@ -224,7 +225,7 @@ def update_mindset_photos(request):
         request.session['error_message'] = ('You are not authorized to update '
                                             'MindSET Materials')
         return redirect('outreach:mindset')
-    MindSETPhotoForm = modelformset_factory(OutreachPhoto, can_delete=True)
+    MindSETPhotoForm = modelformset_factory(OutreachPhoto, can_delete=True, exclude=[])
     formset = MindSETPhotoForm(
                     request.POST or None,
                     request.FILES or None,

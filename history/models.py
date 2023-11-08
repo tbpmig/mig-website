@@ -734,8 +734,11 @@ class ProjectReport(models.Model):
         Writes the project report to a .tex file.
         """
         f = open('/tmp/project_report%d.tex' % (self.id), 'w')
+        print str(f)
         tex_code = self.print_to_tex()
         if tex_code == 0 or tex_code == -1:
+            print 'error'
+            print str(self.id)
             sys.stderr.write('Error printing project report: %d (Error %d)'% (self.id, tex_code))
             return -1
         f.write(tex_code.encode('utf8'))
@@ -814,11 +817,22 @@ class ProjectReport(models.Model):
         A unicode-encoded string is returned that can be written into a file
         for the report.
         """
+        print 'in print_to_tex'
         has_events = self.calendarevent_set.count() > 0
+        print str(has_events)
         if has_events:
+            print 'has events'
+            print 'calendarevent: ' + str(self.calendarevent_set)
             events = self.calendarevent_set.all()
+            print 'events: ' + str(events)
+            for event in events:
+                print 'event: ' + str(event)
+                print event.id
+                print event.get_max_duration()
+            print 'duration next'
             duration = sum([event.get_max_duration().total_seconds()/3600.
                             for event in events])
+            print str(duration)
             if events.count() > 1:
                 hours_string = '(Total Duration for %d Events)' % (
                                         events.count()
@@ -827,7 +841,9 @@ class ProjectReport(models.Model):
                 hours_string = '(Event Duration)'
             leaders = MemberProfile.objects.filter(
                             event_leader__in=events).distinct()
+            print str(leaders)
             shifts = EventShift.objects.filter(event__in=events).distinct()
+            print str(shifts)
             desc = list(set([e.description for e in events]))
             desc_string = '\n'.join(desc)
             all_dates = []
@@ -866,12 +882,14 @@ class ProjectReport(models.Model):
                         electee_count += 1
             all_attendees = UserProfile.objects.filter(
                                 event_attendee__event__in=events).distinct()
+            print str(all_attendees)
             non_members = [member for member in all_attendees
                            if not member.is_member()]
             non_member_count = len(non_members)
             leader_string = r'''Project Leader(%s) (uniqname)\\
             \begin{tabular}{|l|}\hline
             ''' % ('s' if leaders.count > 1 else '')
+            print str(leaders)
             for leader in leaders:
                 if leader not in attendees:
                     if not leader.init_term == self.term:
@@ -897,6 +915,7 @@ class ProjectReport(models.Model):
                 status = 'Active'
                 if member.init_term == self.term:
                     status = 'Electee'
+                print str(member)
                 attendee_string += r'''%s&(%s)&%s&%.2f\\
                 ''' % (member.get_firstlast_name(),
                        member.uniqname,
@@ -995,6 +1014,7 @@ class ProjectReport(models.Model):
             else:
                 hours_string = 'Varies by participant'
 
+        print 'out of if block'
         if self.is_new_event:
             new_project = r'Yes'
         else:
@@ -1048,6 +1068,39 @@ class ProjectReport(models.Model):
         else:
             picture_string = ''
 
+        print 'pre-output'
+        print str({
+            'project_name': self.name,
+            'dates': date_string,
+            'planning_date': self.planning_start_date.strftime('%x'),
+            'new_project': new_project,
+            'participant_numbers': num_part_string,
+            'participant_names': leader_string+attendee_string,
+            'description': self.clean_tex_string(desc_string),
+            'audience': self.get_target_audience_display(),
+            'objectives': self.clean_tex_string(
+                                self.relation_to_TBP_objectives
+            ),
+            'contact_string': contact_string,
+            'org_hours': self.organizing_hours,
+            'part_hours': duration_s,
+            'hours_string': hours_string,
+            'other_group': other_group_string,
+            'gen_comments': self.clean_tex_string(self.general_comments),
+            'items': self.clean_tex_string(self.items),
+            'cost': self.cost,
+            'problems': self.problems_encountered,
+            'recommend': self.clean_tex_string(self.recommendations),
+            'eval_results': self.clean_tex_string(
+                                    self.evaluations_and_results
+            ),
+            'rating': self.rating,
+            'best_part': self.clean_tex_string(self.best_part),
+            'improve': self.clean_tex_string(self.opportunity_to_improve),
+            'continue': ('Yes' if self.recommend_continuing else 'No'),
+            'picture_string': picture_string
+
+            })
         output_string = RAW_TEX_STRING % {
             'project_name': self.name,
             'dates': date_string,
@@ -1145,16 +1198,22 @@ class ProjectReportHeader(models.Model):
                                                 'planning_start_date'
         )
         for project in projects.distinct():
+            print str(project)
             has_events = project.calendarevent_set.exists()
+            print str(has_events)
             has_nep = project.noneventproject_set.exists()
+            print str(has_nep)
             if not has_events and not has_nep:
                 continue
             if not previous_category == project.get_target_audience_display():
                 previous_category = project.get_target_audience_display()
                 output_string += r'''\part{%s}
                 ''' % (previous_category)
+            print 'about to write'
             project.write_tex_file()
+            print 'written'
             asc_off = project.get_associated_officer()
+            print str(asc_off)
             if asc_off not in officer_files:
                 officer_files[asc_off] = {}
             if project.term not in officer_files[asc_off]:
@@ -1165,11 +1224,13 @@ class ProjectReportHeader(models.Model):
                         ),
                         'w'
                 )
+                print str(tmp_file)
                 officer_files[asc_off][project.term] = tmp_file
                 header_string = officer_sheet_header % {
                             'officer': asc_off.name,
                             'term': unicode(project.term)
                 }
+                print str(header_string)
                 officer_files[asc_off][project.term].write(
                                             header_string.encode('utf8')
                 )
@@ -1184,6 +1245,7 @@ class ProjectReportHeader(models.Model):
         cmd = 'xelatex -interaction=nonstopmode %(file_name)s'
         current_dir = os.getcwd()
         os.chdir('/tmp/')
+        print 'test'
         for officer in officer_files:
             for term in officer_files[officer]:
                 end_doc = r'''\end{document}'''.encode('utf8')
@@ -1340,7 +1402,7 @@ class BackgroundCheck(models.Model):
                 check_type__in=['B', 'A']
         )
         u_q = Q(
-                date_added__gte=date.today()-timedelta(days=3*365),
+                date_added__gte=date.today()-timedelta(days=2*365),
                 check_type='U'
         )
         query = ba_q | u_q

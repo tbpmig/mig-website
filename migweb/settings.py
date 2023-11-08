@@ -18,6 +18,7 @@ LOGIN_URL='login_view'
 ### admins in local_settings ###
 MANAGERS = ADMINS
 ### database settings in local_settings ###
+CONN_MAX_AGE = 30
 
 ### allowed hosts in local_settings ###
 

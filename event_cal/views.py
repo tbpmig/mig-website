@@ -301,6 +301,8 @@ def index(request):
 
 @login_required
 def meeting_sign_in(request, shift_id):
+    # XXX kldebug
+    from django.db import connection
     shift = get_object_or_404(EventShift, id=shift_id)
     event = shift.event
     sign_in_sheets = MeetingSignIn.objects.filter(event=event)
@@ -436,6 +438,7 @@ def meeting_sign_in(request, shift_id):
                                                               'already signed '
                                                               'in')
                     shift.attendees.add(profile)
+                    print connection.queries #XXX kldebug
                     return get_previous_page(
                                 request,
                                 alternate='event_cal:event_detail',
