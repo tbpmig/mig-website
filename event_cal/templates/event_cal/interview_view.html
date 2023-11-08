@@ -64,6 +64,7 @@
         {% for shift in time_row.locations %}
             {% if shift %}
                 <td>
+{{ shift.id }}
                 {% if is_two_part %}
                     {% with actual_shift=shift.first_shift is_shift_two_part=is_two_part %}
                     {% include "event_cal/interview_sign_in.html" %}

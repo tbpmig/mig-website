@@ -337,7 +337,7 @@ class MassAddBackgroundCheckForm(forms.Form):
 class AddStatusForm(forms.ModelForm):
     member = forms.ModelChoiceField(
                     widget=Select2Widget(),
-                    queryset=MemberProfile.get_actives()
+                    queryset=MemberProfile.get_actives().exclude(standing__name='Alumni')
     )
     approve = forms.BooleanField(required=False)
 

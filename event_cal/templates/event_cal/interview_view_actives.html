@@ -70,7 +70,7 @@
         {% for shift in time_row.locations %}
             {% if shift %}
                 <td>
-                <p><em>{{shift.location}}</em></p>
+                <p><em>{{shift.location}}</em> {{shift.id}}</p>
                     {% with actual_shift=shift is_shift_two_part=False is_interviewer=True %}
                     {% include "event_cal/interview_sign_in.html" %}
                     {% endwith %}
