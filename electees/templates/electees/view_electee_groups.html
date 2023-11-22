@@ -135,8 +135,8 @@
             </thead>
             <tbody>
             {% regroup groups|dictsortreversed:"points" by points as groups_by_points %}
-            {% for groups in groups_by_points %}
-                {% for group in groups.list %}
+            {% for point_groups in groups_by_points %}
+                {% for group in point_groups.list %}
                     <tr>
                         <td>{% if groups.list|length > 1 %}T{% endif %}{{group.get_ranking}}</td>
                         <td>{{group.group_name}}</td>
@@ -144,13 +144,6 @@
                     </tr>
                 {% endfor %}
             {% endfor %}
-            <!-- {% for group in groups.list %}
-                <tr>
-                    <td>{% if groups.list|length > 1 %}T{% endif %}{{group.get_ranking}}</td>
-                    <td>{{group.group_name}}</td>
-                    <td>{{group.points}}</td>
-                </tr>
-            {% endfor %} -->
             </tbody>
         </table>
     </div>
