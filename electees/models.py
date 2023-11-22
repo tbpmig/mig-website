@@ -181,7 +181,7 @@ class ElecteeGroup(models.Model):
         Does not return anything. Does not re-evaluate event attendance.
         """
         # evts = self.electeegroupevent_set.all()
-        evts = ElecteeGroupEvent.objects.filter(electee_group=self.group_name).values()
+        evts = ElecteeGroupEvent.objects.filter(electee_group=self).values()
         temp_pts = 0
         for evt in evts:
             temp_pts += evt.points
