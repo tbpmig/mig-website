@@ -316,6 +316,22 @@
                 <p><a id="shift-waitlist{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:add_to_waitlist'  shift.id %}',function(){$('#shift-waitlist{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Add self to waitlist (there
                 are currently {{shift.get_waitlist_length}} users ahead of you).</a></p>
                 {% endif %}
+                {% if can_edit_event %}
+                    <!-- Display waitlist -->
+                    <p>Current Waitlist:</p>
+                    <ol>
+                        {% for w in shift.get_ordered_waitlist %}
+                            {% url 'member_resources:profile' w.user.uniqname as profile_url %}
+                            <li id="shift-{{shift.id}}-waitlist-{{w.user.uniqname}}">
+                            {% if w.user.is_member %}
+                                <p><a href="{{profile_url}}">{{w.user}}</a></p>
+                            {% else %}
+                                <p>{{w.user}}</p>
+                            {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% endif %}
                 </td>
             {% elif shift.is_full %}
                 <td>Shift is full, total capacity 0. Waitlist is disabled.</td>
