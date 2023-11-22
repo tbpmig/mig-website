@@ -454,12 +454,12 @@ class CalendarEvent(models.Model):
         accounting for overlapping shifts or gaps in shifts.
         """
         shifts = self.eventshift_set.all().order_by('start_time')
-        print str(shifts)
+        print(str(shifts))
         if shifts.count() == 0:
-            print 'no shifts'
+            print('no shifts')
             return timedelta(hours=0)
         duration = shifts[0].end_time-shifts[0].start_time
-        print str(duration)
+        print(str(duration))
         if shifts.count() == 1:
             return duration
         previous_shift = shifts[0]
@@ -467,7 +467,7 @@ class CalendarEvent(models.Model):
         start_time = previous_shift.start_time
         duration = timedelta(hours=0)
         for shift in shifts[1:]:
-            print str(shift)
+            print(str(shift))
             if shift.start_time < end_time:
                 end_time = max(shift.end_time, end_time)
             else:

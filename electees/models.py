@@ -82,9 +82,9 @@ class ElecteeGroup(models.Model):
         """
         evts = CalendarEvent.objects.filter(
                                 completed=True,
-                                term=grp.term
+                                term=self.term
         )
-        num_members = grp.members.all().count()
+        num_members = self.members.all().count()
         if num_members == 0:
             return None
         service_cat = EventCategory.objects.get(name='Service Hours')
@@ -104,22 +104,22 @@ class ElecteeGroup(models.Model):
 
         # service
         for evt in evts.filter(service_query):
-            if grp.electeegroupevent_set.filter(
+            if self.electeegroupevent_set.filter(
                             related_event_id=evt.id).exists():
                 continue
             num_attendees = 0
-            for group_member in grp.members.all():
+            for group_member in self.members.all():
                 if evt.eventshift_set.filter(attendees=group_member).exists():
                     num_attendees += 1
             if num_attendees == num_members:
-                grp_pts = grp.electeegroupevent_set.create(
+                grp_pts = self.electeegroupevent_set.create(
                         description='Threshold Attendance Event: '+evt.name,
                         points=30,
                         related_event_id=evt.id
                 )
                 grp_pts.save()
             elif num_attendees >= num_members/2.0:
-                grp_pts = grp.electeegroupevent_set.create(
+                grp_pts = self.electeegroupevent_set.create(
                         description='Threshold Attendance Event: '+evt.name,
                         points=15,
                         related_event_id=evt.id
@@ -127,35 +127,35 @@ class ElecteeGroup(models.Model):
                 grp_pts.save()
         # social
         for evt in evts.filter(social_query):
-            if grp.electeegroupevent_set.filter(
+            if self.electeegroupevent_set.filter(
                             related_event_id=evt.id).exists():
                 continue
             num_attendees = 0
-            for group_member in grp.members.all():
+            for group_member in self.members.all():
                 if evt.eventshift_set.filter(attendees=group_member).exists():
                     num_attendees += 1
             if num_attendees == num_members:
-                grp_pts = grp.electeegroupevent_set.create(
+                grp_pts = self.electeegroupevent_set.create(
                         description='Threshold Attendance Event: '+evt.name,
                         points=10,
                         related_event_id=evt.id
                 )
                 grp_pts.save()
             elif num_attendees >= num_members/2.0:
-                grp_pts = grp.electeegroupevent_set.create(
+                grp_pts = self.electeegroupevent_set.create(
                         description='Threshold Attendance Event: '+evt.name,
                         points=5,
                         related_event_id=evt.id
                 )
                 grp_pts.save()
-        grp.electeegroupevent_set.filter(
+        self.electeegroupevent_set.filter(
                     description='half_members_3_socials'
         ).delete()
-        grp.electeegroupevent_set.filter(
+        self.electeegroupevent_set.filter(
                     description='All_members_3_socials'
         ).delete()
         num_w_three = 0
-        for group_member in grp.members.all():
+        for group_member in self.members.all():
             socials_attended = evts.filter(
                                     social_query
                 ).filter(
@@ -164,13 +164,13 @@ class ElecteeGroup(models.Model):
             if socials_attended >= 3:
                 num_w_three += 1
         if num_w_three == num_members:
-            grp_pts = grp.electeegroupevent_set.create(
+            grp_pts = self.electeegroupevent_set.create(
                                 description='All_members_3_socials',
                                 points=40
             )
             grp_pts.save()
         elif num_w_three >= num_members/2.0:
-            grp_pts = grp.electeegroupevent_set.create(
+            grp_pts = self.electeegroupevent_set.create(
                                 description='half_members_3_socials',
                                 points=20
             )
@@ -180,7 +180,8 @@ class ElecteeGroup(models.Model):
         """ Sums and saves the group points.
         Does not return anything. Does not re-evaluate event attendance.
         """
-        evts = self.electeegroupevent_set.all()
+        # evts = self.electeegroupevent_set.all()
+        evts = ElecteeGroupEvent.objects.filter(electee_group=self.group_name)
         temp_pts = 0
         for evt in evts:
             temp_pts += evt.points
@@ -191,7 +192,9 @@ class ElecteeGroup(models.Model):
         """ Tabulates and returns the group points.
         Provided that the group indeed has members."""
         if self.members.count() > 0:
-            self.add_threshold_attendance_points()
+            # Hunter: I commented this out since VPs have been manually doing points
+            #         so it's unnecessary to have the website calculate it
+            # self.add_threshold_attendance_points()
             self.sum_group_points()
         return self.points
 
