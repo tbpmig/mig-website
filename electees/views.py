@@ -120,9 +120,6 @@ def get_common_context(request):
 
 def view_electee_groups(request):
     request.session['current_page']=request.path
-    e_groups = ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term())
-    for grp in e_groups:
-        grp.get_points()
     e_groups = ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term()).order_by('points')
     packets = ElecteeResource.objects.filter(term=AcademicTerm.get_current_term(),resource_type__is_packet=True).order_by('resource_type')
     resources = ElecteeResource.objects.filter(term=AcademicTerm.get_current_term(),resource_type__is_packet=False).order_by('resource_type')
@@ -255,6 +252,7 @@ def edit_electee_group_points(request):
         if formset.is_valid():
             formset.save()
             request.session['success_message']='Electee team points updated successfully'
+            update_electee_teams_points()
             return redirect('electees:view_electee_groups')
         else:
             request.session['error_message']='Form is invalid. Please correct the noted errors.'
@@ -274,6 +272,7 @@ def edit_electee_group_points(request):
         }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
+    update_electee_teams_points()
     return HttpResponse(template.render(context_dict, request))
 
 def submit_background_form(request):
@@ -773,3 +772,10 @@ def view_interview_follow_up_table(request):
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     return HttpResponse(template.render(context_dict, request))
+
+def update_electee_teams_points():
+    """ Update the points for all electee teams for the current semester"""
+    e_groups = ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term())
+    for grp in e_groups:
+        grp.get_points()
+    return
