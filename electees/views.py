@@ -120,6 +120,9 @@ def get_common_context(request):
 
 def view_electee_groups(request):
     request.session['current_page']=request.path
+    e_groups = ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term())
+    for grp in e_groups:
+        grp.get_points()
     e_groups = ElecteeGroup.objects.filter(term=AcademicTerm.get_current_term()).order_by('points')
     packets = ElecteeResource.objects.filter(term=AcademicTerm.get_current_term(),resource_type__is_packet=True).order_by('resource_type')
     resources = ElecteeResource.objects.filter(term=AcademicTerm.get_current_term(),resource_type__is_packet=False).order_by('resource_type')
