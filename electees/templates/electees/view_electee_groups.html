@@ -138,7 +138,7 @@
             {% for point_groups in groups_by_points %}
                 {% for group in point_groups.list %}
                     <tr>
-                        <td>{% if point_groups.list|length > 1 %}T{% endif %}{{group.get_ranking}}</td>
+                        <td>{% if groups_by_points.list|length > 1 %}T{% endif %}{{group.get_ranking}}</td>
                         <td>{{group.group_name}}</td>
                         <td>{{point_groups.grouper}}</td>
                     </tr>
