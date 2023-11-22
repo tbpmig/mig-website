@@ -318,6 +318,7 @@
                 {% endif %}
                 {% if can_edit_event %}
                     <!-- Display waitlist -->
+                    {% if shift.get_waitlist_length > 0 %}
                     <p>Current Waitlist:</p>
                     <ol>
                         {% for w in shift.get_ordered_waitlist %}
@@ -331,6 +332,7 @@
                             </li>
                         {% endfor %}
                     </ol>
+                    {% endif %}
                 {% endif %}
                 </td>
             {% elif shift.is_full %}
