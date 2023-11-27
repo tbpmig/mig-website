@@ -4,20 +4,20 @@
 {% block content %}
 <div class="row">
     <div class="col-md-12">
-<h3>Officer Positions</h3>
-{% for position in positions %}
-<h4>{{position.name}}</h4>
-{% with teams_led=position.get_teams_led teams=position.get_teams %}
-{% if teams_led %}<p><strong>Team Lead:</strong> {% for lead in teams_led%}{{lead}} {%endfor%}</p> {%endif%}
-{% if teams %}
-{% if teams|length > 1 or not teams_led %}
-<p><strong>Team{{teams|length|pluralize}}:</strong> {% for team in teams%}{{team}}{% if teams|length > 2 and not forloop.last %}, {% endif %}{% if teams|length > 1 and forloop.revcounter == 2 %} and {% endif %}{% endfor %}</p>
-{% endif %}
-{% endif %}
-{% endwith %}
-{{position.description|my_markdown}}
-<hr>
-{% endfor %}
-</div>
+        <h3>Officer Positions</h3>
+        {% for position in positions %}
+            <h4>{{position.name}}</h4>
+            {% with teams_led=position.get_teams_led teams=position.get_teams %}
+            {% if teams_led %}<p><strong>Team Lead:</strong> {% for lead in teams_led%}{{lead}} {%endfor%}</p> {%endif%}
+            {% if teams %}
+                {% if teams|length > 1 or not teams_led %}
+                <p><strong>Team{{teams|length|pluralize}}:</strong> {% for team in teams%}{{team}}{% if teams|length > 2 and not forloop.last %}, {% endif %}{% if teams|length > 1 and forloop.revcounter == 2 %} and {% endif %}{% endfor %}</p>
+                {% endif %}
+            {% endif %}
+            {% endwith %}
+            {{position.description|my_markdown}}
+            <hr>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}
