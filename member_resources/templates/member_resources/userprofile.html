@@ -46,7 +46,7 @@
                         <p><b>Educational Background Form:</b> <a href="{{profile.edu_bckgrd_form.url}}">Link</a>
                     {% endif %}
                     <p><b>Alternate email address:</b> <a href="mailto:{{profile.alt_email}}">{{profile.alt_email}}</a></p>
-                    <p><b>Phone number:</b>: {{profile.phone}} </p>
+                    <p><b>Phone number:</b> {{profile.phone}} </p>
                     <p><b>Receive Corporate/Job Emails?</b>: {{profile.jobs_email|yesno:"Yes,No"}} </p>
                     {% if profile.resume %}
                         <p><b>Resume</b>: <a href="{{profile.resume.url}}">Link</a> </p>
