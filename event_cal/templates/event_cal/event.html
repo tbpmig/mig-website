@@ -39,6 +39,7 @@
 {% endif %}
 {% if show_shifts %}
 {% if event.eventshift_set.all|length < 2 %}
+<!-- Single Shift Event -->
 {% for shift in event.eventshift_set.all|dictsort:"start_time" %}
 {% with total_attending=shift.attendees.count %}
 <div id="event-shift">
@@ -148,32 +149,53 @@
     {% else %}
         <p>You must login to sign-up</p>
     {% endif %}
-    <p><b>Attendees:</b><p>
-    {% if full_view and has_profile%} 
-    <ul>
-        {% for attendee in shift.attendees.all %}
-            {% url 'member_resources:profile' attendee.uniqname as profile_url %}
-            <li id="shift-{{shift.id}}-attendee-{{attendee.uniqname}}">
-            {% if attendee.is_member %}
-                <p><a href="{{profile_url}}">{{attendee}}</a>{% if attendee in event.get_users_who_can_bring_items %} <span class="text-success">(can bring item)</span>{% elif attendee in event.get_users_who_cannot_bring_items %} <span class="text-danger">(cannot bring item)</span>{%endif%} {% if can_edit_event %}<a id="shift-{{shift.id}}-user-{{attendee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{shift.id}}-user-{{attendee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% url 'event_cal:manual_remove_user_from_shift' shift.id attendee.uniqname %}')">Remove attendee</a>{% endif %}</p>
-            {% else %}
-                <p>{{attendee}}{% if attendee in event.get_users_who_can_bring_items %} <span class="text-success">(can bring item)</span>{% elif attendee in event.get_users_who_cannot_bring_items %} <span class="text-danger">(cannot bring item)</span>{%endif%} {% if can_edit_event %}<a id="shift-{{shift.id}}-user-{{attendee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{shift.id}}-user-{{attendee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% url 'event_cal:manual_remove_user_from_shift' shift.id attendee.uniqname %}')">Remove attendee</a>{% endif %}</p>
-            {% endif %}
-            </li>
-        {% endfor %}
-    </ul>
-    <p>Total:</p>
+    <div class="row">
+    <div class="col-md">
+        <p><b>Attendees:</b><p>
+        {% if full_view and has_profile%} 
+        <ul>
+            {% for attendee in shift.attendees.all %}
+                {% url 'member_resources:profile' attendee.uniqname as profile_url %}
+                <li id="shift-{{shift.id}}-attendee-{{attendee.uniqname}}">
+                {% if attendee.is_member %}
+                    <p><a href="{{profile_url}}">{{attendee}}</a>{% if attendee in event.get_users_who_can_bring_items %} <span class="text-success">(can bring item)</span>{% elif attendee in event.get_users_who_cannot_bring_items %} <span class="text-danger">(cannot bring item)</span>{%endif%} {% if can_edit_event %}<a id="shift-{{shift.id}}-user-{{attendee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{shift.id}}-user-{{attendee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% url 'event_cal:manual_remove_user_from_shift' shift.id attendee.uniqname %}')">Remove attendee</a>{% endif %}</p>
+                {% else %}
+                    <p>{{attendee}}{% if attendee in event.get_users_who_can_bring_items %} <span class="text-success">(can bring item)</span>{% elif attendee in event.get_users_who_cannot_bring_items %} <span class="text-danger">(cannot bring item)</span>{%endif%} {% if can_edit_event %}<a id="shift-{{shift.id}}-user-{{attendee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{shift.id}}-user-{{attendee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% url 'event_cal:manual_remove_user_from_shift' shift.id attendee.uniqname %}')">Remove attendee</a>{% endif %}</p>
+                {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+        <p>Total:</p>
+        {% endif %}
+        {% if shift.max_attendance != None %}
+            <p>{{total_attending}} of {{shift.max_attendance}} spots.</p>
+        {% else %}
+            <p>{{total_attending}} (no limit)</p>
+        {% endif %}
+    </div>
+    {% if can_edit_event and shift.get_waitlist_length > 0 %}
+    <div class="col-md">
+        <p><b>Waitlist:</b><p></p>
+        <ol>
+            {% for w in shift.get_ordered_waitlist %}
+                {% url 'member_resources:profile' w.user.uniqname as profile_url %}
+                <li id="shift-{{shift.id}}-waitlist-{{w.user.uniqname}}">
+                {% if w.user.is_member %}
+                    <p><a href="{{profile_url}}">{{w.user}}</a></p>
+                {% else %}
+                    <p>{{w.user}}</p>
+                {% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    </div>
     {% endif %}
-    {% if shift.max_attendance != None %}
-        <p>{{total_attending}} of {{shift.max_attendance}} spots.</p>
-    {% else %}
-        <p>{{total_attending}} (no limit)</p>
-    {% endif %}
-
+    </div>
 </div>
 {% endwith %}
 {% endfor %}
 {% else %}
+<!-- Multi-shift Event -->
 <div class="panel-group" id="shifts{{ event.id }}">
     <div class="panel panel-default">
         <div class="panel-heading">
@@ -316,9 +338,8 @@
                 <p><a id="shift-waitlist{{shift.id}}" class="btn btn-primary btn-sm" onclick="$('#shift-waitlist{{shift.id}}').attr('disabled',true);ajaxGet('{% url 'event_cal:add_to_waitlist'  shift.id %}',function(){$('#shift-waitlist{{shift.id}}').attr('disabled',false);})"><i class="glyphicon glyphicon-ok"></i> Add self to waitlist (there
                 are currently {{shift.get_waitlist_length}} users ahead of you).</a></p>
                 {% endif %}
-                {% if can_edit_event %}
-                    <!-- Display waitlist -->
-                    {% if shift.get_waitlist_length > 0 %}
+                {% if can_edit_event and shift.get_waitlist_length > 0 %}
+                    <!-- Display Waitlist -->
                     <p>Current Waitlist:</p>
                     <ol>
                         {% for w in shift.get_ordered_waitlist %}
@@ -332,7 +353,6 @@
                             </li>
                         {% endfor %}
                     </ol>
-                    {% endif %}
                 {% endif %}
                 </td>
             {% elif shift.is_full %}
