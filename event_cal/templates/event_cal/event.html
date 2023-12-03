@@ -150,7 +150,7 @@
         <p>You must login to sign-up</p>
     {% endif %}
     <div class="row">
-    <div class="col-md">
+    <div class="col-md-6">
         <p><b>Attendees:</b><p>
         {% if full_view and has_profile%} 
         <ul>
@@ -158,13 +158,13 @@
                 {% url 'member_resources:profile' attendee.uniqname as profile_url %}
                 {% if attendee.is_active %}
                 <li id="shift-{{shift.id}}-attendee-{{attendee.uniqname}}" style="list-style-type: '\24B6';">
-                    <p><a href="{{profile_url}}">{{attendee}}</a>{% if attendee in event.get_users_who_can_bring_items %} <span class="text-success">(can bring item)</span>{% elif attendee in event.get_users_who_cannot_bring_items %} <span class="text-danger">(cannot bring item)</span>{%endif%} {% if can_edit_event %}<a id="shift-{{shift.id}}-user-{{attendee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{shift.id}}-user-{{attendee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% url 'event_cal:manual_remove_user_from_shift' shift.id attendee.uniqname %}')">Remove attendee</a>{% endif %}</p>
+                    <p>&nbsp;<a href="{{profile_url}}">{{attendee}}</a>{% if attendee in event.get_users_who_can_bring_items %} <span class="text-success">(can bring item)</span>{% elif attendee in event.get_users_who_cannot_bring_items %} <span class="text-danger">(cannot bring item)</span>{%endif%} {% if can_edit_event %}<a id="shift-{{shift.id}}-user-{{attendee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{shift.id}}-user-{{attendee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% url 'event_cal:manual_remove_user_from_shift' shift.id attendee.uniqname %}')">Remove attendee</a>{% endif %}</p>
                 {% elif attendee.is_electee %}
                 <li id="shift-{{shift.id}}-attendee-{{attendee.uniqname}}" style="list-style-type: '\24BA';">
-                    <p><a href="{{profile_url}}">{{attendee}}</a>{% if attendee in event.get_users_who_can_bring_items %} <span class="text-success">(can bring item)</span>{% elif attendee in event.get_users_who_cannot_bring_items %} <span class="text-danger">(cannot bring item)</span>{%endif%} {% if can_edit_event %}<a id="shift-{{shift.id}}-user-{{attendee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{shift.id}}-user-{{attendee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% url 'event_cal:manual_remove_user_from_shift' shift.id attendee.uniqname %}')">Remove attendee</a>{% endif %}</p>
+                    <p>&nbsp;<a href="{{profile_url}}">{{attendee}}</a>{% if attendee in event.get_users_who_can_bring_items %} <span class="text-success">(can bring item)</span>{% elif attendee in event.get_users_who_cannot_bring_items %} <span class="text-danger">(cannot bring item)</span>{%endif%} {% if can_edit_event %}<a id="shift-{{shift.id}}-user-{{attendee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{shift.id}}-user-{{attendee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% url 'event_cal:manual_remove_user_from_shift' shift.id attendee.uniqname %}')">Remove attendee</a>{% endif %}</p>
                 {% else %}
                 <li id="shift-{{shift.id}}-attendee-{{attendee.uniqname}}">
-                    <p>{{attendee}}{% if attendee in event.get_users_who_can_bring_items %} <span class="text-success">(can bring item)</span>{% elif attendee in event.get_users_who_cannot_bring_items %} <span class="text-danger">(cannot bring item)</span>{%endif%} {% if can_edit_event %}<a id="shift-{{shift.id}}-user-{{attendee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{shift.id}}-user-{{attendee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% url 'event_cal:manual_remove_user_from_shift' shift.id attendee.uniqname %}')">Remove attendee</a>{% endif %}</p>
+                    <p>&nbsp;{{attendee}}{% if attendee in event.get_users_who_can_bring_items %} <span class="text-success">(can bring item)</span>{% elif attendee in event.get_users_who_cannot_bring_items %} <span class="text-danger">(cannot bring item)</span>{%endif%} {% if can_edit_event %}<a id="shift-{{shift.id}}-user-{{attendee.uniqname}}-remove" class="btn btn-small btn-danger confirmation" onclick="$('#shift-{{shift.id}}-user-{{attendee.uniqname}}-remove').attr('disabled',true);ajaxGet('{% url 'event_cal:manual_remove_user_from_shift' shift.id attendee.uniqname %}')">Remove attendee</a>{% endif %}</p>
                 {% endif %}
                 </li>
             {% endfor %}
@@ -178,7 +178,7 @@
         {% endif %}
     </div>
     {% if can_edit_event and shift.get_waitlist_length > 0 %}
-    <div class="col-md">
+    <div class="col-md-6">
         <p><b>Waitlist:</b><p></p>
         <ol>
             {% for w in shift.get_ordered_waitlist %}
