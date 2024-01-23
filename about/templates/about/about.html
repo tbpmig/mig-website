@@ -7,19 +7,22 @@
         {% if can_edit_about_photos %}
             <p><a class="btn btn-warning" href="{% url 'about:update_about_photos' %}">Update About Page Photos</a></p>
         {% endif %}
-        <h2> What is Tau Beta Pi?</h2>
+        <h2>What is Tau Beta Pi?</h2>
         <p> Tau Beta Pi (TBP) is the only engineering honor society representing the entire 
             engineering profession. It is the nation's second-oldest honor society, founded 
-            at Lehigh University in 1885. There are now collegiate chapters at 242 US 
-            colleges and universities, 39 active alumnus chapters in 16 districts across 
-            the country, and more than 554,000 total members.</p>  
-        <p>Additional information on TBP is available from the <a href="http://tbp.org/about.cfm">national website</a>.</p>
+            at Lehigh University in 1885. There are now active collegiate chapters at 255 US 
+            colleges and universities, 50 active alumni chapters in 16 districts across the 
+            country, and a total initiated membership of over 630,000.</p>  
+        <p> Additional information on TBP is available from the <a href="http://tbp.org/about.cfm">national website</a>.</p>
         <h3>What is Michigan Gamma?</h3>
-        <p>Michigan Gamma is the TBP chapter at the University of Michigan, Ann Arbor.
+        <p> Michigan Gamma is the TBP chapter at the University of Michigan, Ann Arbor.
             It was established in 1906 and has since grown to be the second largest chapter
             in TBP.</p>
         <h3>What does TBP MI-G do?</h3>
-        <p>In addition to being one of the largest chapters, we have one of the most active as well. We co-run the <a href="http://umcareerfair.org">SWE/TBP Career Fair</a> with SWE each fall. We run the <a href="http://tbpbookswap.org">TBP Book Swap</a> every semester and  organize free one-on-one <a href="{% url 'outreach:tutoring' %}">tutoring</a>. We also have a number of awesome socials and intersociety activities.</p>
+        <p> In addition to being one of the largest chapters, we are also the most active. 
+            We partner with SWE to host the yearly <a href="http://umcareerfair.org">Fall Engineering Career Fair</a>,
+            organize free one-on-one <a href="{% url 'outreach:tutoring' %}">tutoring</a>, and run dozens of community service, K-12 
+            outreach, and professional development events each semester.</p>
     </div>
     <div class="col-lg-5 col-md-7 col-xs-12">
         {% if slideshow_photos %}
