@@ -53,7 +53,7 @@ def home(request):
     slideshow_photos = SlideShowPhoto.objects.filter(active=True)
     now = timezone.localtime(timezone.now())
     upcoming_events = CalendarEvent.get_upcoming_events()
-    web_articles = WebsiteArticle.get_stories()[:3]
+    web_articles = WebsiteArticle.get_stories()[:1] # Need to make this time based
     upcoming_html = cache.get('upcoming_events_html', None)
     if not upcoming_html:
         upcoming_html = loader.render_to_string(
