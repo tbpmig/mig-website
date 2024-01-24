@@ -8,13 +8,13 @@
         <h4>Current {{list_name}}</h4>
         <p>These are the members who currently are listed as {{list_name|lower}}, will be able to log-in and (if they haven't done so already) create profiles</p>
         <br>
-        <table class="table table-sm table-striped">
+        <table class="table table-bordered table-sm table-striped">
             {% for member in current_list %}
-            {% if forloop.counter0|divisibleby:5 %}
+            {% if forloop.counter0|divisibleby:8 %}
             <tr>
             {% endif %}
                 <td><p>{{member}}</p></td>
-            {% if forloop.counter|divisibleby:5 or forloop.last %}
+            {% if forloop.counter|divisibleby:8 or forloop.last %}
             </tr>
             {% endif %}
             {% endfor %}
