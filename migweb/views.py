@@ -1,5 +1,6 @@
 # Create your views here.
 import json
+from datetime import date, timedelta
 from os.path import isfile
 
 from django.core.cache import cache
@@ -53,7 +54,7 @@ def home(request):
     slideshow_photos = SlideShowPhoto.objects.filter(active=True)
     now = timezone.localtime(timezone.now())
     upcoming_events = CalendarEvent.get_upcoming_events()
-    web_articles = WebsiteArticle.get_stories()[:1] # Need to make this time based
+    web_articles = WebsiteArticle.get_stories().exclude(date_posted__lt=date.today()-timedelta(days=60))
     upcoming_html = cache.get('upcoming_events_html', None)
     if not upcoming_html:
         upcoming_html = loader.render_to_string(
