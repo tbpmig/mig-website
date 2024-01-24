@@ -330,7 +330,7 @@ def manage_outreach_event_types(request):
         request.session['error_message'] = ('You are not authorized to edit '
                                             'outreach events types')
         return get_previous_page(request, alternate='outreach:index')
-    OutreachFormSet = modelformset_factory(OutreachEventType)
+    OutreachFormSet = modelformset_factory(OutreachEventType, exclude=[])
     prefix = 'outreach'
     formset = OutreachFormSet(request.POST or None, prefix=prefix)
     if request.method == 'POST':
