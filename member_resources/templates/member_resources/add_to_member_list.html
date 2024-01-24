@@ -7,10 +7,20 @@
         <a class="btn btn-default" href="{% url 'member_resources:view_misc_reqs' %}"><i class="glyphicon glyphicon-chevron-left"></i> Back to Membership Admin</a>
         <h4>Current {{list_name}}</h4>
         <p>These are the members who currently are listed as {{list_name|lower}}, will be able to log-in and (if they haven't done so already) create profiles</p>
-        <hr>
-        {% for  member in current_list %}
-        <p>{{member}}</p>
-        {% endfor %}
+        <br>
+        <table class="table table-sm table-striped">
+            <tr>
+            {% for member in current_list %}
+                <td><p>{{member}}</p></td>
+                {% if forloop.counter%5==0 and not forloop.last %}
+            </tr>
+            <tr>
+                {% endif %}
+            {% empty %}
+                <td><p> No members </p></td>
+            {% endfor %}
+            </tr>
+        </table>
     </div>
     <div class="col-md-6">
         <form method="post" action="{{request.path}}">
