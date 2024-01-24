@@ -9,17 +9,14 @@
         <p>These are the members who currently are listed as {{list_name|lower}}, will be able to log-in and (if they haven't done so already) create profiles</p>
         <br>
         <table class="table table-sm table-striped">
-            <tr>
             {% for member in current_list %}
-                <td><p>{{member}}</p></td>
-                {% if forloop.counter%5==0 and not forloop.last %}
-            </tr>
+            {% if forloop.counter0|divisibleby:5 %}
             <tr>
-                {% endif %}
-            {% empty %}
-                <td><p> No members </p></td>
-            {% endfor %}
+            {% endif %}
+                <td><p>{{member}}</p></td>
+            {% if forloop.counter|divisibleby:5 or forloop.last %}
             </tr>
+            {% endif %}
         </table>
     </div>
     <div class="col-md-6">
