@@ -2060,7 +2060,7 @@ def add_to_list(request, type_of_list):
     context_dict = {
         'mass_form': form,
         'error_lists': error_lists,
-        'current_list': current_list.sort(),
+        'current_list': current_list,
         'is_active_list': is_active_list,
         'list_name': type_of_list,
         'subnav': 'misc_reqs',
