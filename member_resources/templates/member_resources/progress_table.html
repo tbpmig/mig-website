@@ -5,13 +5,16 @@
 <div class="row">
     <div class="col-md-8">
         <a class="btn btn-default" href="{%url 'member_resources:view_progress_list' %}"><i class="glyphicon glyphicon-chevron-left"></i> Member Progress</a>
+        <a class="btn btn-default" href="#active_progress"> Active Progress </a>
+        <a class="btn btn-default" href="#ug_electee_progress"> Undergrad Electee Progress </a>
+        <a class="btn btn-default" href="#grad_electee_progress"> Grad Electee Progress </a>
         <p>Parenthesized quantities indicate progress after events signed up for are taken into account.</p>
     </div>
 </div>
 {%if can_manage_actives %}  
 <div class="row">
     <div class="col-md-12">
-        <h4>Active Progress</h4>
+        <h4 id="active_progress">Active Progress</h4>
         <table class="table table-striped table-bordered table-autosort:0">
             <thead>
             <tr>
@@ -50,7 +53,7 @@
 {%if can_manage_electees %}
 <div class="row">
     <div class="col-md-12">
-        <h4>Undergrad Electee Progress</h4>
+        <h4 id="ug_electee_progress">Undergrad Electee Progress</h4>
         <table class="table table-striped table-bordered table-autosort:0">
             <thead>
             <tr>
@@ -83,7 +86,7 @@
 </div>
 <div class="row">
     <div class="col-md-12">
-        <h4>Grad Electee Progress</h4>
+        <h4 id="grad_electee_progress">Grad Electee Progress</h4>
         <table class="table table-striped table-bordered table-autosort:0">
             <thead>
             <tr>
