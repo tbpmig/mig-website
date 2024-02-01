@@ -60,7 +60,7 @@
 
                 {% if background_check_view and checks %}
                     <p><b>Background Checks on file:</b><br/>
-                    This lists the date the check was filed. AAPS background checks and BSA training are good for 2 years. UM background checks are good for 3.
+                    This lists the date the check was filed. AAPS background checks and BSA training are good for 2 years. UM background checks are good for 2.
                     <ul>
                     {% regroup checks|dictsort:"check_type" by get_check_type_display as grouped_checks %}
                     {% for check_type in grouped_checks %}
