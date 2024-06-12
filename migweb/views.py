@@ -74,7 +74,7 @@ def home(request):
                                 CalendarEvent.get_current_meeting_query()
                             ),
         'needs_social_media': True,
-        }
+    }
     context_dict.update(get_common_context(request))
     context_dict.update(get_permissions(request.user))
     return HttpResponse(template.render(context_dict, request))
