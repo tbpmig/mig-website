@@ -257,6 +257,9 @@
                             {% else %}
                                 <p>{{total_attending}} (no limit)</p>
                             {% endif %}
+                            {% if can_edit_event and shift.get_waitlist_length > 0 %}
+                                <p><i>There are currently {{shift.get_waitlist_length}} users in the waitlist.</i></p>
+                            {% endif %}
                             </td>
                             {% if user.is_authenticated and has_profile %}
     {% if user.userprofile.is_member and user.userprofile.memberprofile in event.get_attendees_with_progress %}
